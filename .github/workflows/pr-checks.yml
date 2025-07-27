@@ -1,0 +1,87 @@
+name: Pull Request Checks
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  pr-checks:
+    name: PR Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+        components: rustfmt, clippy
+
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-pr-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Check formatting
+      run: cargo fmt --all -- --check
+
+    - name: Run clippy
+      run: cargo clippy --all-targets --all-features -- -D warnings
+
+    - name: Run tests
+      run: cargo test --all-features
+
+    - name: Build examples
+      run: cargo build --examples --all-features
+
+    - name: Check documentation
+      run: cargo doc --all-features --no-deps
+
+    - name: Check for TODO/FIXME comments
+      run: |
+        if grep -r "TODO\|FIXME" src/ --include="*.rs"; then
+          echo "Found TODO/FIXME comments. Please address them before merging."
+          exit 1
+        fi
+
+    - name: Check for debug prints
+      run: |
+        if grep -r "println!\|dbg!" src/ --include="*.rs"; then
+          echo "Found debug prints. Please remove them before merging."
+          exit 1
+        fi
+
+  size-check:
+    name: Binary Size Check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+
+    - name: Build release
+      run: cargo build --release
+
+    - name: Check binary size
+      run: |
+        BINARY_SIZE=$(stat -c%s target/release/jetcrab 2>/dev/null || stat -f%z target/release/jetcrab 2>/dev/null || echo "0")
+        echo "Binary size: $BINARY_SIZE bytes"
+        if [ "$BINARY_SIZE" -gt 10485760 ]; then
+          echo "Binary size exceeds 10MB limit"
+          exit 1
+        fi 
