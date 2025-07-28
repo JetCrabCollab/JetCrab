@@ -89,6 +89,24 @@ impl Executor {
                         self.stack.push(Value::Number(f64::NAN));
                     }
                 }
+                Instruction::Mod => {
+                    let b = self.stack.pop().unwrap();
+                    let a = self.stack.pop().unwrap();
+                    if let (Value::Number(a), Value::Number(b)) = (a, b) {
+                        self.stack.push(Value::Number(a % b));
+                    } else {
+                        self.stack.push(Value::Number(f64::NAN));
+                    }
+                }
+                Instruction::Exp => {
+                    let b = self.stack.pop().unwrap();
+                    let a = self.stack.pop().unwrap();
+                    if let (Value::Number(a), Value::Number(b)) = (a, b) {
+                        self.stack.push(Value::Number(a.powf(b)));
+                    } else {
+                        self.stack.push(Value::Number(f64::NAN));
+                    }
+                }
                 Instruction::Eq => {
                     let b = self.stack.pop().unwrap();
                     let a = self.stack.pop().unwrap();
@@ -134,6 +152,20 @@ impl Executor {
                     } else {
                         self.stack.push(Value::Boolean(false));
                     }
+                }
+                Instruction::And => {
+                    let b = self.stack.pop().unwrap();
+                    let a = self.stack.pop().unwrap();
+                    self.stack.push(Value::Boolean(a.as_bool().unwrap_or(false) && b.as_bool().unwrap_or(false)));
+                }
+                Instruction::Or => {
+                    let b = self.stack.pop().unwrap();
+                    let a = self.stack.pop().unwrap();
+                    self.stack.push(Value::Boolean(a.as_bool().unwrap_or(false) || b.as_bool().unwrap_or(false)));
+                }
+                Instruction::Not => {
+                    let a = self.stack.pop().unwrap();
+                    self.stack.push(Value::Boolean(!a.as_bool().unwrap_or(false)));
                 }
                 Instruction::Jump(target) => {
                     ip = target.as_usize();
@@ -381,6 +413,18 @@ impl Executor {
                     } else {
                         self.stack.push(Value::Undefined);
                     }
+                }
+                Instruction::PushTrue => {
+                    self.stack.push(Value::Boolean(true));
+                }
+                Instruction::PushFalse => {
+                    self.stack.push(Value::Boolean(false));
+                }
+                Instruction::PushNull => {
+                    self.stack.push(Value::Null);
+                }
+                Instruction::PushUndefined => {
+                    self.stack.push(Value::Undefined);
                 }
                 _ => todo!("Instrução não implementada ainda"),
             }

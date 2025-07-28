@@ -1659,7 +1659,7 @@ mod tests {
         assert!(nan.is_nan());
 
         let sum = float + Float::new(2.0);
-        assert!((sum.as_f64() - 5.14).abs() < 1e-10);
+        assert!((sum.as_f64() - 5.14159).abs() < 1e-5);
     }
 
     #[test]

@@ -14,6 +14,7 @@ pub enum Instruction {
     Mul,
     Div,
     Mod,
+    Exp,
     Inc,
     Dec,
 

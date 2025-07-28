@@ -177,6 +177,16 @@ impl BytecodeGenerator {
                     "-" => self.instructions.push(Instruction::Sub),
                     "*" => self.instructions.push(Instruction::Mul),
                     "/" => self.instructions.push(Instruction::Div),
+                    "%" => self.instructions.push(Instruction::Mod),
+                    "**" => self.instructions.push(Instruction::Exp),
+                    "<" => self.instructions.push(Instruction::Lt),
+                    ">" => self.instructions.push(Instruction::Gt),
+                    "<=" => self.instructions.push(Instruction::Le),
+                    ">=" => self.instructions.push(Instruction::Ge),
+                    "==" => self.instructions.push(Instruction::Eq),
+                    "!=" => self.instructions.push(Instruction::Ne),
+                    "===" => self.instructions.push(Instruction::StrictEq),
+                    "!==" => self.instructions.push(Instruction::StrictNe),
                     _ => {
                         self.instructions.push(Instruction::Add);
                     }

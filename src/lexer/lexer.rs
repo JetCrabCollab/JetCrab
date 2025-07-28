@@ -451,6 +451,11 @@ impl Lexer {
                     self.advance();
                     return Ok(TokenKind::LogicalOr);
                 }
+                "**" => {
+                    self.advance();
+                    self.advance();
+                    return Ok(TokenKind::StarStar);
+                }
                 "=>" => {
                     self.advance();
                     self.advance();
