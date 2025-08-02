@@ -1,4 +1,4 @@
-use crate::ast::node::Position;
+use crate::ast::Position;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -56,28 +56,28 @@ impl std::fmt::Display for RuntimeError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             RuntimeError::TypeError { message, position } => {
-                write!(f, "TypeError: {}", message)?;
+                write!(f, "TypeError: {message}")?;
                 if let Some(pos) = position {
                     write!(f, " at line {}, column {}", pos.line, pos.column)?;
                 }
                 Ok(())
             }
             RuntimeError::ReferenceError { message, position } => {
-                write!(f, "ReferenceError: {}", message)?;
+                write!(f, "ReferenceError: {message}")?;
                 if let Some(pos) = position {
                     write!(f, " at line {}, column {}", pos.line, pos.column)?;
                 }
                 Ok(())
             }
             RuntimeError::RangeError { message, position } => {
-                write!(f, "RangeError: {}", message)?;
+                write!(f, "RangeError: {message}")?;
                 if let Some(pos) = position {
                     write!(f, " at line {}, column {}", pos.line, pos.column)?;
                 }
                 Ok(())
             }
             RuntimeError::SyntaxError { message, position } => {
-                write!(f, "SyntaxError: {}", message)?;
+                write!(f, "SyntaxError: {message}")?;
                 if let Some(pos) = position {
                     write!(f, " at line {}, column {}", pos.line, pos.column)?;
                 }
@@ -88,7 +88,7 @@ impl std::fmt::Display for RuntimeError {
                 property,
                 position,
             } => {
-                write!(f, "Cannot read property '{}' of {}", property, object)?;
+                write!(f, "Cannot read property '{property}' of {object}")?;
                 if let Some(pos) = position {
                     write!(f, " at line {}, column {}", pos.line, pos.column)?;
                 }
@@ -99,14 +99,14 @@ impl std::fmt::Display for RuntimeError {
                 message,
                 position,
             } => {
-                write!(f, "Invalid call to '{}': {}", function, message)?;
+                write!(f, "Invalid call to '{function}': {message}")?;
                 if let Some(pos) = position {
                     write!(f, " at line {}, column {}", pos.line, pos.column)?;
                 }
                 Ok(())
             }
             RuntimeError::ContextError { message, position } => {
-                write!(f, "Context error: {}", message)?;
+                write!(f, "Context error: {message}")?;
                 if let Some(pos) = position {
                     write!(f, " at line {}, column {}", pos.line, pos.column)?;
                 }
@@ -117,14 +117,14 @@ impl std::fmt::Display for RuntimeError {
                 message,
                 position,
             } => {
-                write!(f, "Builtin '{}' error: {}", builtin, message)?;
+                write!(f, "Builtin '{builtin}' error: {message}")?;
                 if let Some(pos) = position {
                     write!(f, " at line {}, column {}", pos.line, pos.column)?;
                 }
                 Ok(())
             }
             RuntimeError::ObjectError { message, position } => {
-                write!(f, "Object error: {}", message)?;
+                write!(f, "Object error: {message}")?;
                 if let Some(pos) = position {
                     write!(f, " at line {}, column {}", pos.line, pos.column)?;
                 }

@@ -79,7 +79,34 @@ cargo test
 - `benches/` - Performance benchmarks
 - `docs/` - Documentation
 
-### Building
+### Development Tools
+
+#### Automatic Formatting
+
+The project is configured to automatically format code on commit. You can also run formatting manually:
+
+```bash
+# Format code
+cargo fmt --all
+
+# Check formatting without changing files
+cargo fmt --all -- --check
+```
+
+#### Code Quality
+
+```bash
+# Run clippy linter
+cargo clippy --all-targets --all-features -- -D warnings
+
+# Run all development checks
+make dev
+
+# Or use the development script
+./scripts/dev.sh
+```
+
+#### Building
 
 ```bash
 # Debug build
@@ -93,6 +120,21 @@ cargo test
 
 # Run benchmarks
 cargo bench
+```
+
+#### Makefile Commands
+
+```bash
+make help          # Show all available commands
+make fmt           # Format code
+make clippy        # Run linter
+make test          # Run tests
+make build         # Build project
+make dev           # Run all checks
+make check         # Check formatting and linting
+make bench         # Run benchmarks
+make doc           # Generate documentation
+make run-examples  # Run all examples
 ```
 
 ## Contributing

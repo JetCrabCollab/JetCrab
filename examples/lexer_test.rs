@@ -1,3 +1,4 @@
+use jetcrab::lexer::tokens::Keyword;
 use jetcrab::lexer::{Lexer, TokenKind};
 
 fn main() {
@@ -37,7 +38,7 @@ fn main() {
 
             if tokens.len() >= 8 {
                 let expected = vec![
-                    TokenKind::Keyword("let".to_string()),
+                    TokenKind::Keyword(Keyword::Let),
                     TokenKind::Identifier("x".to_string()),
                     TokenKind::Assign,
                     TokenKind::Number(45.0),
@@ -59,7 +60,7 @@ fn main() {
             }
         }
         Err(error) => {
-            println!("Error tokenizing: {:?}", error);
+            println!("Error tokenizing: {error:?}");
         }
     }
 }

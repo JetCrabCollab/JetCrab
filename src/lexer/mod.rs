@@ -1,10 +1,14 @@
+pub mod core;
 pub mod error;
-pub mod lexer;
+pub mod scanners;
 pub mod token;
+pub mod tokens;
+pub mod utils;
 
+pub use core::Lexer;
 pub use error::LexerError;
-pub use lexer::Lexer;
-pub use token::{Position, Span, Token, TokenKind};
+pub use token::{Token, TokenKind};
+pub use tokens::{Keyword, Literal, Operator, Punctuation};
 
 pub fn tokenize(source: &str) -> Result<Vec<Token>, LexerError> {
     let mut lexer = Lexer::new(source);

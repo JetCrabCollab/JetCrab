@@ -1,4 +1,4 @@
-use crate::ast::node::Position;
+use crate::ast::Position;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -57,7 +57,7 @@ impl std::fmt::Display for MemoryError {
                 size,
                 position,
             } => {
-                write!(f, "Memory allocation error ({} bytes): {}", size, message)?;
+                write!(f, "Memory allocation error ({size} bytes): {message}")?;
                 if let Some(pos) = position {
                     write!(f, " at line {}, column {}", pos.line, pos.column)?;
                 }
@@ -70,8 +70,7 @@ impl std::fmt::Display for MemoryError {
             } => {
                 write!(
                     f,
-                    "Out of memory: requested {} bytes, available {} bytes",
-                    requested, available
+                    "Out of memory: requested {requested} bytes, available {available} bytes",
                 )?;
                 if let Some(pos) = position {
                     write!(f, " at line {}, column {}", pos.line, pos.column)?;
@@ -79,7 +78,7 @@ impl std::fmt::Display for MemoryError {
                 Ok(())
             }
             MemoryError::GarbageCollectionError { message, position } => {
-                write!(f, "Garbage collection error: {}", message)?;
+                write!(f, "Garbage collection error: {message}")?;
                 if let Some(pos) = position {
                     write!(f, " at line {}, column {}", pos.line, pos.column)?;
                 }
@@ -90,7 +89,7 @@ impl std::fmt::Display for MemoryError {
                 message,
                 position,
             } => {
-                write!(f, "Invalid pointer 0x{:x}: {}", pointer, message)?;
+                write!(f, "Invalid pointer 0x{pointer:x}: {message}")?;
                 if let Some(pos) = position {
                     write!(f, " at line {}, column {}", pos.line, pos.column)?;
                 }
@@ -101,14 +100,14 @@ impl std::fmt::Display for MemoryError {
                 message,
                 position,
             } => {
-                write!(f, "Memory corruption at 0x{:x}: {}", address, message)?;
+                write!(f, "Memory corruption at 0x{address:x}: {message}")?;
                 if let Some(pos) = position {
                     write!(f, " at line {}, column {}", pos.line, pos.column)?;
                 }
                 Ok(())
             }
             MemoryError::HeapFull { message, position } => {
-                write!(f, "Heap full: {}", message)?;
+                write!(f, "Heap full: {message}")?;
                 if let Some(pos) = position {
                     write!(f, " at line {}, column {}", pos.line, pos.column)?;
                 }
@@ -121,8 +120,7 @@ impl std::fmt::Display for MemoryError {
             } => {
                 write!(
                     f,
-                    "Invalid allocation: size {} bytes, alignment {} bytes",
-                    size, alignment
+                    "Invalid allocation: size {size} bytes, alignment {alignment} bytes",
                 )?;
                 if let Some(pos) = position {
                     write!(f, " at line {}, column {}", pos.line, pos.column)?;
@@ -130,7 +128,7 @@ impl std::fmt::Display for MemoryError {
                 Ok(())
             }
             MemoryError::FragmentationError { message, position } => {
-                write!(f, "Memory fragmentation error: {}", message)?;
+                write!(f, "Memory fragmentation error: {message}")?;
                 if let Some(pos) = position {
                     write!(f, " at line {}, column {}", pos.line, pos.column)?;
                 }

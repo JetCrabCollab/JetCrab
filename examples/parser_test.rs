@@ -20,7 +20,7 @@ fn main() {
             match parser.parse() {
                 Ok(ast) => {
                     println!("Parser successful!");
-                    println!("AST: {:#?}", ast);
+                    println!("AST: {ast:#?}");
 
                     println!();
                     println!("Semantic Analysis:");
@@ -35,17 +35,17 @@ fn main() {
                             println!("Variable count: {}", analyzer.variable_count());
                         }
                         Err(error) => {
-                            println!("❌ Semantic error: {:?}", error);
+                            println!("❌ Semantic error: {error:?}");
                         }
                     }
                 }
                 Err(error) => {
-                    println!("❌ Parser error: {:?}", error);
+                    println!("❌ Parser error: {error:?}");
                 }
             }
         }
         Err(error) => {
-            println!("❌ Lexer error: {:?}", error);
+            println!("❌ Lexer error: {error:?}");
         }
     }
 }

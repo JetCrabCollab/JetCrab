@@ -1,6 +1,4 @@
-use jetcrab::vm::{
-    heap::Heap, ArrayHandle, FunctionHandle, HeapHandleId, ObjectHandle, Value, INVALID_HANDLE,
-};
+use jetcrab::vm::{ArrayHandle, FunctionHandle, HeapHandleId, ObjectHandle, Value, INVALID_HANDLE};
 
 fn main() {
     println!("=== Type-Safe Handles Example ===\n");
@@ -10,18 +8,18 @@ fn main() {
     let function_handle = FunctionHandle::from_usize(44);
 
     println!("Created handles:");
-    println!("  Object: {}", object_handle);
-    println!("  Array:  {}", array_handle);
-    println!("  Function: {}", function_handle);
+    println!("  Object: {object_handle}");
+    println!("  Array:  {array_handle}");
+    println!("  Function: {function_handle}");
 
     let object_value = Value::Object(object_handle.clone());
     let array_value = Value::Array(array_handle.clone());
     let function_value = Value::Function(function_handle.clone());
 
     println!("\nValues with type-safe handles:");
-    println!("  Object value: {:?}", object_value);
-    println!("  Array value:  {:?}", array_value);
-    println!("  Function value: {:?}", function_value);
+    println!("  Object value: {object_value:?}");
+    println!("  Array value:  {array_value:?}");
+    println!("  Function value: {function_value:?}");
 
     println!("\nHandle validation:");
     println!("  Object handle valid: {}", object_handle.is_valid());
@@ -34,19 +32,16 @@ fn main() {
     println!("\nHandle conversions:");
     let handle_id: HeapHandleId = object_handle.id();
     let back_to_usize: usize = handle_id.into();
-    println!(
-        "  Object handle ID: {} -> usize: {}",
-        handle_id, back_to_usize
-    );
+    println!("  Object handle ID: {handle_id} -> usize: {back_to_usize}");
 
     println!("\nHelper functions:");
     let obj_handle_2 = jetcrab::vm::handle::create_object_handle(100);
     let arr_handle_2 = jetcrab::vm::handle::create_array_handle(101);
     let func_handle_2 = jetcrab::vm::handle::create_function_handle(102);
 
-    println!("  Created object handle: {}", obj_handle_2);
-    println!("  Created array handle:  {}", arr_handle_2);
-    println!("  Created function handle: {}", func_handle_2);
+    println!("  Created object handle: {obj_handle_2}");
+    println!("  Created array handle:  {arr_handle_2}");
+    println!("  Created function handle: {func_handle_2}");
 
     println!("\n=== Benefits of Type-Safe Handles ===");
     println!("✅ Type safety: Prevents mixing different handle types");

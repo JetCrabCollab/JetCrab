@@ -1,12 +1,26 @@
 use crate::ast::node::Node;
+use crate::bytecode::expressions::{
+    ArithmeticCore, ArithmeticGenerator, AssignmentCore, AssignmentGenerator, ComparisonCore,
+    LogicalCore, LogicalGenerator, UnaryCore, UnaryGenerator,
+};
+use crate::bytecode::literals::{
+    ArrayCore, ArrayGenerator, FunctionLiteralCore, ObjectCore, ObjectGenerator,
+};
+use crate::bytecode::scope::{ConstantCore, ConstantManager, ScopeCore, ScopeManager};
+use crate::bytecode::statements::{
+    ClassCore, ClassGenerator, ControlFlowCore, ControlFlowGenerator, FunctionCore,
+    FunctionGenerator, VariableCore, VariableGenerator,
+};
 use crate::vm::instructions::Instruction;
-use crate::vm::types::{ArraySize, CodeAddress, ConstantIndex, FunctionIndex, LocalIndex};
+use crate::vm::types::{CodeAddress, ConstantIndex, LocalIndex};
 use std::collections::HashMap;
 
 pub struct BytecodeGenerator {
     constants: Vec<String>,
     constant_map: HashMap<String, ConstantIndex>,
     instructions: Vec<Instruction>,
+    local_vars: HashMap<String, LocalIndex>,
+    next_local: usize,
 }
 
 impl BytecodeGenerator {
@@ -15,16 +29,26 @@ impl BytecodeGenerator {
             constants: Vec::new(),
             constant_map: HashMap::new(),
             instructions: Vec::new(),
+            local_vars: HashMap::new(),
+            next_local: 0,
         }
     }
+}
 
+impl Default for BytecodeGenerator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl BytecodeGenerator {
     pub fn generate(&mut self, ast: &Node) -> Vec<Instruction> {
         self.visit_node(ast);
         self.instructions.clone()
     }
 
     pub fn get_constants(&self) -> &Vec<String> {
-        &self.constants
+        <Self as ConstantManager>::get_constants(self)
     }
 
     fn visit_node(&mut self, node: &Node) {
@@ -34,45 +58,18 @@ impl BytecodeGenerator {
                     self.visit_node(stmt);
                 }
             }
-            Node::VariableDeclaration(decl) => {
-                for var in &decl.declarations {
-                    self.visit_node(&var.id);
-                    if let Some(init) = &var.init {
-                        self.visit_node(init);
-                        self.instructions
-                            .push(Instruction::StoreLocal(LocalIndex::new(0)));
-                    }
-                }
+            Node::VariableDeclaration(_decl) => {
+                <Self as VariableGenerator>::generate_variable_declaration(self, node);
             }
-            Node::FunctionDeclaration(decl) => {
-                if let Some(id) = &decl.id {
-                    self.visit_node(id);
-                }
-                for param in &decl.params {
-                    self.visit_node(param);
-                }
-                self.visit_node(&decl.body);
+            Node::FunctionDeclaration(_decl) => {
+                <Self as FunctionGenerator>::generate_function_declaration(self, node);
             }
-            Node::ClassDeclaration(decl) => {
-                if let Some(id) = &decl.id {
-                    self.visit_node(id);
-                }
-                if let Some(super_class) = &decl.super_class {
-                    self.visit_node(super_class);
-                }
-                self.visit_node(&decl.body);
-                self.instructions.push(Instruction::NewClass);
+            Node::ClassDeclaration(_decl) => {
+                <Self as ClassGenerator>::generate_class_declaration(self, node);
             }
             Node::ImportDeclaration(_) | Node::ExportDeclaration(_) => {}
-            Node::ClassExpression(expr) => {
-                if let Some(id) = &expr.id {
-                    self.visit_node(id);
-                }
-                if let Some(super_class) = &expr.super_class {
-                    self.visit_node(super_class);
-                }
-                self.visit_node(&expr.body);
-                self.instructions.push(Instruction::NewClass);
+            Node::ClassExpression(_expr) => {
+                <Self as ClassGenerator>::generate_class_expression(self, node);
             }
             Node::YieldExpression(expr) => {
                 if let Some(arg) = &expr.argument {
@@ -111,23 +108,17 @@ impl BytecodeGenerator {
                 self.visit_node(&clause.body);
                 self.instructions.push(Instruction::Catch);
             }
-            Node::ThrowStatement(stmt) => {
-                self.visit_node(&stmt.argument);
-                self.instructions.push(Instruction::Throw);
+            Node::ThrowStatement(_stmt) => {
+                <Self as ControlFlowGenerator>::generate_throw_statement(self, node);
             }
-            Node::ReturnStatement(stmt) => {
-                if let Some(arg) = &stmt.argument {
-                    self.visit_node(arg);
-                }
-                self.instructions.push(Instruction::Return);
+            Node::ReturnStatement(_stmt) => {
+                <Self as ControlFlowGenerator>::generate_return_statement(self, node);
             }
             Node::BreakStatement(_) => {
-                self.instructions
-                    .push(Instruction::Jump(CodeAddress::new(0)));
+                <Self as ControlFlowGenerator>::generate_break_statement(self, node);
             }
             Node::ContinueStatement(_) => {
-                self.instructions
-                    .push(Instruction::Jump(CodeAddress::new(0)));
+                <Self as ControlFlowGenerator>::generate_continue_statement(self, node);
             }
             Node::LabeledStatement(stmt) => {
                 self.visit_node(&stmt.label);
@@ -162,134 +153,39 @@ impl BytecodeGenerator {
                 self.instructions.push(Instruction::Spread);
             }
             Node::RegExp(re) => {
-                let constant_id = self.add_constant(re.pattern.clone());
+                let constant_id = <Self as ConstantManager>::add_constant(self, re.pattern.clone());
                 self.instructions.push(Instruction::PushConst(constant_id));
             }
             Node::BigInt(val) => {
-                let constant_id = self.add_constant(val.clone());
+                let constant_id = <Self as ConstantManager>::add_constant(self, val.clone());
                 self.instructions.push(Instruction::PushBigInt(constant_id));
             }
-            Node::BinaryExpression(expr) => {
-                self.visit_node(&expr.left);
-                self.visit_node(&expr.right);
-                match expr.operator.as_str() {
-                    "+" => self.instructions.push(Instruction::Add),
-                    "-" => self.instructions.push(Instruction::Sub),
-                    "*" => self.instructions.push(Instruction::Mul),
-                    "/" => self.instructions.push(Instruction::Div),
-                    _ => {
-                        self.instructions.push(Instruction::Add);
-                    }
-                }
+            Node::BinaryExpression(_expr) => {
+                <Self as ArithmeticGenerator>::generate_binary_expression(self, node);
             }
-            Node::UnaryExpression(expr) => {
-                self.visit_node(&expr.argument);
-                match expr.operator.as_str() {
-                    "!" => self.instructions.push(Instruction::Not),
-                    "-" => {
-                        self.instructions
-                            .push(Instruction::PushConst(ConstantIndex::new(0)));
-                        self.instructions.push(Instruction::Sub);
-                    }
-                    "+" => {}
-                    "~" => {
-                        self.instructions
-                            .push(Instruction::PushConst(ConstantIndex::new(0)));
-                        self.instructions.push(Instruction::Sub);
-                        self.instructions.push(Instruction::Inc);
-                    }
-                    "typeof" => self.instructions.push(Instruction::TypeOf),
-                    "void" => {
-                        self.instructions.push(Instruction::Pop);
-                        self.instructions.push(Instruction::PushUndefined);
-                    }
-                    "delete" => self.instructions.push(Instruction::Delete),
-                    _ => {}
-                }
+            Node::UnaryExpression(_expr) => {
+                <Self as UnaryGenerator>::generate_unary_expression(self, node);
             }
-            Node::CallExpression(expr) => {
-                for arg in &expr.arguments {
-                    self.visit_node(arg);
-                }
-                self.visit_node(&expr.callee);
-                self.instructions
-                    .push(Instruction::Call(FunctionIndex::new(expr.arguments.len())));
+            Node::CallExpression(_expr) => {
+                <Self as AssignmentGenerator>::generate_call_expression(self, node);
             }
-            Node::NewExpression(expr) => {
-                for arg in &expr.arguments {
-                    self.visit_node(arg);
-                }
-                self.visit_node(&expr.callee);
-                self.instructions.push(Instruction::New);
+            Node::NewExpression(_expr) => {
+                <Self as AssignmentGenerator>::generate_new_expression(self, node);
             }
-            Node::MemberExpression(expr) => {
-                self.visit_node(&expr.object);
-                self.visit_node(&expr.property);
-                self.instructions.push(Instruction::GetProperty);
+            Node::MemberExpression(_expr) => {
+                <Self as AssignmentGenerator>::generate_member_expression(self, node);
             }
-            Node::AssignmentExpression(expr) => {
-                self.visit_node(&expr.right);
-                self.visit_node(&expr.left);
-                self.instructions
-                    .push(Instruction::StoreLocal(LocalIndex::new(0)));
+            Node::AssignmentExpression(_expr) => {
+                <Self as AssignmentGenerator>::generate_assignment_expression(self, node);
             }
-            Node::ConditionalExpression(expr) => {
-                self.visit_node(&expr.test);
-
-                let jump_to_alternate = self.instructions.len();
-                self.instructions
-                    .push(Instruction::JumpIfFalse(CodeAddress::new(0)));
-
-                self.visit_node(&expr.consequent);
-
-                let jump_to_end = self.instructions.len();
-                self.instructions
-                    .push(Instruction::Jump(CodeAddress::new(0)));
-
-                let alternate_start = self.instructions.len();
-                self.instructions[jump_to_alternate] =
-                    Instruction::JumpIfFalse(CodeAddress::new(alternate_start));
-
-                self.visit_node(&expr.alternate);
-
-                let end_pos = self.instructions.len();
-                self.instructions[jump_to_end] = Instruction::Jump(CodeAddress::new(end_pos));
+            Node::ConditionalExpression(_expr) => {
+                <Self as AssignmentGenerator>::generate_conditional_expression(self, node);
             }
-            Node::LogicalExpression(expr) => {
-                self.visit_node(&expr.left);
-                self.visit_node(&expr.right);
-                match expr.operator.as_str() {
-                    "&&" => self.instructions.push(Instruction::And),
-                    "||" => self.instructions.push(Instruction::Or),
-                    "??" => self.instructions.push(Instruction::NullishCoalesce),
-                    _ => {
-                        self.instructions.push(Instruction::And);
-                    }
-                }
+            Node::LogicalExpression(_expr) => {
+                <Self as LogicalGenerator>::generate_logical_expression(self, node);
             }
-            Node::UpdateExpression(expr) => {
-                self.visit_node(&expr.argument);
-                match expr.operator.as_str() {
-                    "++" => {
-                        if expr.prefix {
-                            self.instructions.push(Instruction::Inc);
-                        } else {
-                            self.instructions.push(Instruction::Dup);
-                            self.instructions.push(Instruction::Inc);
-                        }
-                    }
-                    "--" => {
-                        if expr.prefix {
-                            self.instructions.push(Instruction::Dec);
-                        } else {
-                            self.instructions.push(Instruction::Dup);
-                            self.instructions.push(Instruction::Dec);
-                        }
-                    }
-                    _ => {
-                        self.instructions.push(Instruction::Inc);
-                    }
-                }
+            Node::UpdateExpression(_expr) => {
+                <Self as UnaryGenerator>::generate_update_expression(self, node);
             }
             Node::ArrowFunctionExpression(expr) => {
                 for param in &expr.params {
@@ -311,54 +207,26 @@ impl BytecodeGenerator {
                     self.visit_node(node);
                 }
             }
-            Node::IfStatement(stmt) => {
-                self.visit_node(&stmt.test);
-                self.visit_node(&stmt.consequent);
-                if let Some(alt) = &stmt.alternate {
-                    self.visit_node(alt);
-                }
+            Node::IfStatement(_stmt) => {
+                <Self as ControlFlowGenerator>::generate_if_statement(self, node);
             }
-            Node::ForStatement(stmt) => {
-                if let Some(init) = &stmt.init {
-                    self.visit_node(init);
-                }
-                if let Some(test) = &stmt.test {
-                    self.visit_node(test);
-                }
-                if let Some(update) = &stmt.update {
-                    self.visit_node(update);
-                }
-                self.visit_node(&stmt.body);
+            Node::ForStatement(_stmt) => {
+                <Self as ControlFlowGenerator>::generate_for_statement(self, node);
             }
-            Node::WhileStatement(stmt) => {
-                self.visit_node(&stmt.test);
-                self.visit_node(&stmt.body);
+            Node::WhileStatement(_stmt) => {
+                <Self as ControlFlowGenerator>::generate_while_statement(self, node);
             }
-            Node::DoWhileStatement(stmt) => {
-                self.visit_node(&stmt.body);
-                self.visit_node(&stmt.test);
+            Node::DoWhileStatement(_stmt) => {
+                <Self as ControlFlowGenerator>::generate_do_while_statement(self, node);
             }
             Node::ExpressionStatement(stmt) => {
                 self.visit_node(&stmt.expression);
             }
-            Node::ArrayLiteral(lit) => {
-                for elem in &lit.elements {
-                    if let Some(e) = elem {
-                        self.visit_node(e);
-                    }
-                }
-                self.instructions
-                    .push(Instruction::NewArray(ArraySize::new(lit.elements.len())));
+            Node::ArrayLiteral(_lit) => {
+                <Self as ArrayGenerator>::generate_array_literal(self, node);
             }
-            Node::ObjectLiteral(lit) => {
-                for prop in &lit.properties {
-                    if let Node::Property(property) = prop {
-                        self.visit_node(&property.key);
-                        self.visit_node(&property.value);
-                        self.instructions.push(Instruction::SetProperty);
-                    }
-                }
-                self.instructions.push(Instruction::NewObject);
+            Node::ObjectLiteral(_lit) => {
+                <Self as ObjectGenerator>::generate_object_literal(self, node);
             }
             Node::Property(prop) => {
                 self.visit_node(&prop.key);
@@ -368,15 +236,19 @@ impl BytecodeGenerator {
                 self.visit_node(&elem.argument);
             }
             Node::Identifier(name) => {
-                let constant_id = self.add_constant(name.clone());
-                self.instructions.push(Instruction::PushConst(constant_id));
+                if let Some(&local_idx) = <Self as ScopeManager>::get_local(self, name) {
+                    self.instructions.push(Instruction::LoadLocal(local_idx));
+                } else {
+                    let constant_id = <Self as ConstantManager>::add_constant(self, name.clone());
+                    self.instructions.push(Instruction::PushConst(constant_id));
+                }
             }
             Node::Number(n) => {
-                let constant_id = self.add_constant(n.to_string());
+                let constant_id = <Self as ConstantManager>::add_constant(self, n.to_string());
                 self.instructions.push(Instruction::PushConst(constant_id));
             }
             Node::String(s) => {
-                let constant_id = self.add_constant(s.clone());
+                let constant_id = <Self as ConstantManager>::add_constant(self, s.clone());
                 self.instructions.push(Instruction::PushConst(constant_id));
             }
             Node::Boolean(b) => {
@@ -397,15 +269,160 @@ impl BytecodeGenerator {
             }
         }
     }
+}
 
-    fn add_constant(&mut self, value: String) -> ConstantIndex {
-        if let Some(&id) = self.constant_map.get(&value) {
-            id
-        } else {
-            let id = ConstantIndex::new(self.constants.len());
-            self.constants.push(value.clone());
-            self.constant_map.insert(value, id);
-            id
-        }
+impl ConstantCore for BytecodeGenerator {
+    fn constants(&self) -> &Vec<String> {
+        &self.constants
+    }
+
+    fn constant_map(&self) -> &HashMap<String, ConstantIndex> {
+        &self.constant_map
+    }
+
+    fn constants_mut(&mut self) -> &mut Vec<String> {
+        &mut self.constants
+    }
+
+    fn constant_map_mut(&mut self) -> &mut HashMap<String, ConstantIndex> {
+        &mut self.constant_map
+    }
+}
+
+impl ScopeCore for BytecodeGenerator {
+    fn local_vars(&self) -> &HashMap<String, LocalIndex> {
+        &self.local_vars
+    }
+
+    fn local_vars_mut(&mut self) -> &mut HashMap<String, LocalIndex> {
+        &mut self.local_vars
+    }
+
+    fn next_local(&self) -> usize {
+        self.next_local
+    }
+
+    fn set_next_local(&mut self, next: usize) {
+        self.next_local = next;
+    }
+}
+
+impl VariableCore for BytecodeGenerator {
+    fn instructions(&mut self) -> &mut Vec<Instruction> {
+        &mut self.instructions
+    }
+
+    fn visit_node(&mut self, node: &Node) {
+        self.visit_node(node)
+    }
+}
+
+impl FunctionCore for BytecodeGenerator {
+    fn instructions(&mut self) -> &mut Vec<Instruction> {
+        &mut self.instructions
+    }
+
+    fn visit_node(&mut self, node: &Node) {
+        self.visit_node(node)
+    }
+}
+
+impl ClassCore for BytecodeGenerator {
+    fn instructions(&mut self) -> &mut Vec<Instruction> {
+        &mut self.instructions
+    }
+
+    fn visit_node(&mut self, node: &Node) {
+        self.visit_node(node)
+    }
+}
+
+impl ControlFlowCore for BytecodeGenerator {
+    fn instructions(&mut self) -> &mut Vec<Instruction> {
+        &mut self.instructions
+    }
+
+    fn visit_node(&mut self, node: &Node) {
+        self.visit_node(node)
+    }
+}
+
+impl ArithmeticCore for BytecodeGenerator {
+    fn instructions(&mut self) -> &mut Vec<Instruction> {
+        &mut self.instructions
+    }
+
+    fn visit_node(&mut self, node: &Node) {
+        self.visit_node(node)
+    }
+}
+
+impl ComparisonCore for BytecodeGenerator {
+    fn instructions(&mut self) -> &mut Vec<Instruction> {
+        &mut self.instructions
+    }
+
+    fn visit_node(&mut self, node: &Node) {
+        self.visit_node(node)
+    }
+}
+
+impl LogicalCore for BytecodeGenerator {
+    fn instructions(&mut self) -> &mut Vec<Instruction> {
+        &mut self.instructions
+    }
+
+    fn visit_node(&mut self, node: &Node) {
+        self.visit_node(node)
+    }
+}
+
+impl UnaryCore for BytecodeGenerator {
+    fn instructions(&mut self) -> &mut Vec<Instruction> {
+        &mut self.instructions
+    }
+
+    fn visit_node(&mut self, node: &Node) {
+        self.visit_node(node)
+    }
+}
+
+impl AssignmentCore for BytecodeGenerator {
+    fn instructions(&mut self) -> &mut Vec<Instruction> {
+        &mut self.instructions
+    }
+
+    fn visit_node(&mut self, node: &Node) {
+        self.visit_node(node)
+    }
+}
+
+impl ObjectCore for BytecodeGenerator {
+    fn instructions(&mut self) -> &mut Vec<Instruction> {
+        &mut self.instructions
+    }
+
+    fn visit_node(&mut self, node: &Node) {
+        self.visit_node(node)
+    }
+}
+
+impl ArrayCore for BytecodeGenerator {
+    fn instructions(&mut self) -> &mut Vec<Instruction> {
+        &mut self.instructions
+    }
+
+    fn visit_node(&mut self, node: &Node) {
+        self.visit_node(node)
+    }
+}
+
+impl FunctionLiteralCore for BytecodeGenerator {
+    fn instructions(&mut self) -> &mut Vec<Instruction> {
+        &mut self.instructions
+    }
+
+    fn visit_node(&mut self, node: &Node) {
+        self.visit_node(node)
     }
 }

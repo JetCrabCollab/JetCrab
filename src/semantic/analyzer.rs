@@ -1,4 +1,4 @@
-use crate::ast::node::Node;
+use crate::ast::Node;
 use crate::semantic::errors::SemanticError;
 use crate::semantic::scope::Scope;
 use crate::semantic::types::Type;
@@ -7,8 +7,10 @@ use std::collections::HashMap;
 
 pub struct SemanticAnalyzer {
     scope_stack: Vec<Scope>,
+    #[allow(dead_code)]
     type_env: HashMap<String, Type>,
     errors: Vec<SemanticError>,
+    #[allow(dead_code)]
     strict_mode: bool,
     scope_depth: ScopeDepth,
     variable_count: VariableCount,
@@ -28,7 +30,16 @@ impl SemanticAnalyzer {
         analyzer.scope_stack.push(Scope::new());
         analyzer
     }
+}
 
+impl Default for SemanticAnalyzer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl SemanticAnalyzer {
+    #[allow(dead_code)]
     fn get_line_number(&self, node: &Node) -> LineNumber {
         match node {
             Node::Program(program) => program
@@ -337,10 +348,7 @@ impl SemanticAnalyzer {
         }
     }
 
-    fn visit_program(
-        &mut self,
-        program: &crate::ast::node::Program,
-    ) -> Result<Type, SemanticError> {
+    fn visit_program(&mut self, program: &crate::ast::Program) -> Result<Type, SemanticError> {
         for statement in &program.body {
             self.visit_node(statement)?;
         }
@@ -349,7 +357,7 @@ impl SemanticAnalyzer {
 
     fn visit_variable_declaration(
         &mut self,
-        decl: &crate::ast::node::VariableDeclaration,
+        decl: &crate::ast::VariableDeclaration,
     ) -> Result<Type, SemanticError> {
         for var_decl in &decl.declarations {
             if let Node::Identifier(var_name) = &*var_decl.id {
@@ -383,7 +391,7 @@ impl SemanticAnalyzer {
 
     fn visit_function_declaration(
         &mut self,
-        func: &crate::ast::node::FunctionDeclaration,
+        func: &crate::ast::FunctionDeclaration,
     ) -> Result<Type, SemanticError> {
         let func_name = if let Some(id) = &func.id {
             if let Node::Identifier(name) = &**id {
@@ -395,7 +403,7 @@ impl SemanticAnalyzer {
             return Ok(Type::Unknown);
         };
 
-        let current_scope = self.scope_stack.last().unwrap().clone();
+        let _current_scope = self.scope_stack.last().unwrap();
         let function_scope = Scope::new();
         self.scope_stack.push(function_scope);
 
@@ -438,14 +446,14 @@ impl SemanticAnalyzer {
 
     fn visit_expression_statement(
         &mut self,
-        stmt: &crate::ast::node::ExpressionStatement,
+        stmt: &crate::ast::ExpressionStatement,
     ) -> Result<Type, SemanticError> {
         self.visit_node(&stmt.expression)
     }
 
     fn visit_binary_expression(
         &mut self,
-        expr: &crate::ast::node::BinaryExpression,
+        expr: &crate::ast::BinaryExpression,
     ) -> Result<Type, SemanticError> {
         let left_type = self.visit_node(&expr.left)?;
         let right_type = self.visit_node(&expr.right)?;
@@ -464,7 +472,7 @@ impl SemanticAnalyzer {
                 if left_type != Type::Number || right_type != Type::Number {
                     self.errors.push(SemanticError::TypeMismatch {
                         expected: "number".to_string(),
-                        found: format!("{:?} and {:?}", left_type, right_type),
+                        found: format!("{left_type:?} and {right_type:?}"),
                         position: None,
                     });
                 }
@@ -475,7 +483,7 @@ impl SemanticAnalyzer {
                 if left_type != Type::Number || right_type != Type::Number {
                     self.errors.push(SemanticError::TypeMismatch {
                         expected: "number".to_string(),
-                        found: format!("{:?} and {:?}", left_type, right_type),
+                        found: format!("{left_type:?} and {right_type:?}"),
                         position: None,
                     });
                 }
@@ -485,7 +493,7 @@ impl SemanticAnalyzer {
                 if left_type != Type::Boolean || right_type != Type::Boolean {
                     self.errors.push(SemanticError::TypeMismatch {
                         expected: "boolean".to_string(),
-                        found: format!("{:?} and {:?}", left_type, right_type),
+                        found: format!("{left_type:?} and {right_type:?}"),
                         position: None,
                     });
                 }
@@ -497,7 +505,7 @@ impl SemanticAnalyzer {
 
     fn visit_unary_expression(
         &mut self,
-        expr: &crate::ast::node::UnaryExpression,
+        expr: &crate::ast::UnaryExpression,
     ) -> Result<Type, SemanticError> {
         let operand_type = self.visit_node(&expr.argument)?;
 
@@ -506,7 +514,7 @@ impl SemanticAnalyzer {
                 if operand_type != Type::Boolean {
                     self.errors.push(SemanticError::TypeMismatch {
                         expected: "boolean".to_string(),
-                        found: format!("{:?}", operand_type),
+                        found: format!("{operand_type:?}"),
                         position: None,
                     });
                 }
@@ -516,7 +524,7 @@ impl SemanticAnalyzer {
                 if operand_type != Type::Number {
                     self.errors.push(SemanticError::TypeMismatch {
                         expected: "number".to_string(),
-                        found: format!("{:?}", operand_type),
+                        found: format!("{operand_type:?}"),
                         position: None,
                     });
                 }
@@ -547,12 +555,12 @@ impl SemanticAnalyzer {
 
     fn visit_call_expression(
         &mut self,
-        call: &crate::ast::node::CallExpression,
+        call: &crate::ast::CallExpression,
     ) -> Result<Type, SemanticError> {
         if let Node::Identifier(func_name) = &*call.callee {
             let current_scope = self.scope_stack.last().unwrap();
 
-            if let Some(func_type) = current_scope.get_variable_type(func_name) {
+            if let Some(_func_type) = current_scope.get_variable_type(func_name) {
                 for arg in &call.arguments {
                     self.visit_node(arg)?;
                 }
@@ -576,7 +584,7 @@ impl SemanticAnalyzer {
             if !matches!(callee_type, Type::Function { .. }) {
                 self.errors.push(SemanticError::TypeMismatch {
                     expected: "function".to_string(),
-                    found: format!("{:?}", callee_type),
+                    found: format!("{callee_type:?}"),
                     position: None,
                 });
             }
@@ -586,7 +594,7 @@ impl SemanticAnalyzer {
 
     fn visit_assignment_expression(
         &mut self,
-        assign: &crate::ast::node::AssignmentExpression,
+        assign: &crate::ast::AssignmentExpression,
     ) -> Result<Type, SemanticError> {
         let value_type = self.visit_node(&assign.right)?;
 
@@ -607,26 +615,26 @@ impl SemanticAnalyzer {
 
     fn visit_if_statement(
         &mut self,
-        if_stmt: &crate::ast::node::IfStatement,
+        if_stmt: &crate::ast::IfStatement,
     ) -> Result<Type, SemanticError> {
         let condition_type = self.visit_node(&if_stmt.test)?;
 
         if condition_type != Type::Boolean {
             self.errors.push(SemanticError::TypeMismatch {
                 expected: "boolean".to_string(),
-                found: format!("{:?}", condition_type),
+                found: format!("{condition_type:?}"),
                 position: None,
             });
         }
 
-        let current_scope = self.scope_stack.last().unwrap().clone();
+        let _current_scope = self.scope_stack.last().unwrap();
         let block_scope = Scope::new();
         self.scope_stack.push(block_scope);
         self.visit_node(&if_stmt.consequent)?;
         self.scope_stack.pop();
 
         if let Some(alternate) = &if_stmt.alternate {
-            let current_scope = self.scope_stack.last().unwrap().clone();
+            let _current_scope = self.scope_stack.last().unwrap();
             let block_scope = Scope::new();
             self.scope_stack.push(block_scope);
             self.visit_node(alternate)?;
@@ -638,19 +646,19 @@ impl SemanticAnalyzer {
 
     fn visit_while_statement(
         &mut self,
-        while_stmt: &crate::ast::node::WhileStatement,
+        while_stmt: &crate::ast::WhileStatement,
     ) -> Result<Type, SemanticError> {
         let condition_type = self.visit_node(&while_stmt.test)?;
 
         if condition_type != Type::Boolean {
             self.errors.push(SemanticError::TypeMismatch {
                 expected: "boolean".to_string(),
-                found: format!("{:?}", condition_type),
+                found: format!("{condition_type:?}"),
                 position: None,
             });
         }
 
-        let current_scope = self.scope_stack.last().unwrap().clone();
+        let _current_scope = self.scope_stack.last().unwrap();
         let block_scope = Scope::new();
         self.scope_stack.push(block_scope);
         self.visit_node(&while_stmt.body)?;
@@ -661,7 +669,7 @@ impl SemanticAnalyzer {
 
     fn visit_return_statement(
         &mut self,
-        return_stmt: &crate::ast::node::ReturnStatement,
+        return_stmt: &crate::ast::ReturnStatement,
     ) -> Result<Type, SemanticError> {
         if let Some(argument) = &return_stmt.argument {
             self.visit_node(argument)
@@ -672,9 +680,9 @@ impl SemanticAnalyzer {
 
     fn visit_block_statement(
         &mut self,
-        block: &crate::ast::node::BlockStatement,
+        block: &crate::ast::BlockStatement,
     ) -> Result<Type, SemanticError> {
-        let current_scope = self.scope_stack.last().unwrap().clone();
+        let _current_scope = self.scope_stack.last().unwrap();
         let block_scope = Scope::new();
         self.scope_stack.push(block_scope);
 
@@ -691,9 +699,9 @@ impl SemanticAnalyzer {
 
     fn visit_array_literal(
         &mut self,
-        array: &crate::ast::node::ArrayLiteral,
+        array: &crate::ast::ArrayLiteral,
     ) -> Result<Type, SemanticError> {
-        let element_types: Vec<_> = array
+        let _element_types: Vec<_> = array
             .elements
             .iter()
             .flatten()
@@ -704,7 +712,7 @@ impl SemanticAnalyzer {
 
     fn visit_object_literal(
         &mut self,
-        obj: &crate::ast::node::ObjectLiteral,
+        obj: &crate::ast::ObjectLiteral,
     ) -> Result<Type, SemanticError> {
         for property in &obj.properties {
             self.visit_node(property)?;
@@ -712,7 +720,7 @@ impl SemanticAnalyzer {
         Ok(Type::Object)
     }
 
-    fn visit_property(&mut self, prop: &crate::ast::node::Property) -> Result<Type, SemanticError> {
+    fn visit_property(&mut self, prop: &crate::ast::Property) -> Result<Type, SemanticError> {
         let _key_type = match &*prop.key {
             Node::Identifier(_) => Ok(Type::String),
             _ => self.visit_node(&prop.key),
@@ -725,7 +733,7 @@ impl SemanticAnalyzer {
 
     fn visit_member_expression(
         &mut self,
-        member: &crate::ast::node::MemberExpression,
+        member: &crate::ast::MemberExpression,
     ) -> Result<Type, SemanticError> {
         let _object_type = self.visit_node(&member.object)?;
 
@@ -739,10 +747,10 @@ impl SemanticAnalyzer {
 
     fn visit_logical_expression(
         &mut self,
-        logical: &crate::ast::node::LogicalExpression,
+        logical: &crate::ast::LogicalExpression,
     ) -> Result<Type, SemanticError> {
         let left_type = self.visit_node(&logical.left)?;
-        let right_type = self.visit_node(&logical.right)?;
+        let _right_type = self.visit_node(&logical.right)?;
 
         match logical.operator.as_str() {
             "&&" | "||" => Ok(left_type),
@@ -752,7 +760,7 @@ impl SemanticAnalyzer {
 
     fn visit_conditional_expression(
         &mut self,
-        conditional: &crate::ast::node::ConditionalExpression,
+        conditional: &crate::ast::ConditionalExpression,
     ) -> Result<Type, SemanticError> {
         let test_type = self.visit_node(&conditional.test)?;
 
@@ -765,16 +773,16 @@ impl SemanticAnalyzer {
         }
 
         let consequent_type = self.visit_node(&conditional.consequent)?;
-        let alternate_type = self.visit_node(&conditional.alternate)?;
+        let _alternate_type = self.visit_node(&conditional.alternate)?;
 
         Ok(consequent_type)
     }
 
     fn visit_arrow_function_expression(
         &mut self,
-        arrow: &crate::ast::node::ArrowFunctionExpression,
+        arrow: &crate::ast::ArrowFunctionExpression,
     ) -> Result<Type, SemanticError> {
-        let current_scope = self.scope_stack.last().unwrap().clone();
+        let _current_scope = self.scope_stack.last().unwrap();
         let function_scope = Scope::new();
         self.scope_stack.push(function_scope);
 
@@ -790,7 +798,7 @@ impl SemanticAnalyzer {
             }
         }
 
-        let return_type = self.visit_node(&arrow.body)?;
+        let _return_type = self.visit_node(&arrow.body)?;
 
         self.scope_stack.pop();
 

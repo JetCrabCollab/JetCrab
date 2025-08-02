@@ -24,10 +24,8 @@ pub fn create_global_builtins() -> Vec<Function> {
     ]
 }
 
-fn console_log(_context: &mut Context, arguments: &[Value]) -> Result<Value, String> {
-    if let Some(message) = arguments.first() {
-        println!("{message}");
-    }
+fn console_log(_context: &mut Context, _arguments: &[Value]) -> Result<Value, String> {
+    // console.log functionality removed for production
     Ok(Value::Undefined)
 }
 
