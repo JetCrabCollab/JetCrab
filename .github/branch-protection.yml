@@ -1,0 +1,25 @@
+# Branch Protection Rules
+# This file defines protection rules for the main branch
+
+branches:
+  - name: main
+    protection:
+      required_status_checks:
+        strict: true
+        contexts:
+          - "Code Coverage"
+          - "Tests"
+          - "Format"
+          - "Clippy"
+          - "Build"
+          - "Security"
+      enforce_admins: false
+      required_pull_request_reviews:
+        required_approving_review_count: 1
+        dismiss_stale_reviews: true
+        require_code_owner_reviews: false
+      restrictions: null
+      allow_force_pushes: false
+      allow_deletions: false
+      block_creations: false
+      required_conversation_resolution: true 

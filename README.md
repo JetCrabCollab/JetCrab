@@ -1,4 +1,12 @@
 <img src="assets/logo.png" alt="JetCrab Logo" width="200" />
+
+[![Tests](https://github.com/JetCrabCollab/JetCrab/actions/workflows/ci.yml/badge.svg?branch=main&job=test)](https://github.com/JetCrabCollab/JetCrab/actions/workflows/ci.yml)
+[![Format](https://github.com/JetCrabCollab/JetCrab/actions/workflows/ci.yml/badge.svg?branch=main&job=format)](https://github.com/JetCrabCollab/JetCrab/actions/workflows/ci.yml)
+[![Clippy](https://github.com/JetCrabCollab/JetCrab/actions/workflows/ci.yml/badge.svg?branch=main&job=clippy)](https://github.com/JetCrabCollab/JetCrab/actions/workflows/ci.yml)
+[![Build](https://github.com/JetCrabCollab/JetCrab/actions/workflows/ci.yml/badge.svg?branch=main&job=build)](https://github.com/JetCrabCollab/JetCrab/actions/workflows/ci.yml)
+[![Security](https://github.com/JetCrabCollab/JetCrab/actions/workflows/ci.yml/badge.svg?branch=main&job=security)](https://github.com/JetCrabCollab/JetCrab/actions/workflows/ci.yml)
+[![Coverage](https://github.com/JetCrabCollab/JetCrab/actions/workflows/coverage.yml/badge.svg?branch=main)](https://github.com/JetCrabCollab/JetCrab/actions/workflows/coverage.yml)
+
 # JetCrab
 
 A modern JavaScript engine written in Rust, designed for performance, safety, and extensibility.
@@ -136,6 +144,35 @@ make bench         # Run benchmarks
 make doc           # Generate documentation
 make run-examples  # Run all examples
 ```
+
+#### Branch Protection
+
+The main branch is protected and requires all checks to pass before merging:
+
+- **Code Coverage**: Must maintain minimum coverage threshold
+- **Tests**: All tests must pass
+- **Format**: Code must be properly formatted
+- **Clippy**: No warnings allowed
+- **Build**: Must compile successfully
+- **Security**: No security vulnerabilities
+
+To set up branch protection:
+
+1. Go to Settings > Branches in your GitHub repository
+2. Add rule for `main` branch
+3. Enable "Require status checks to pass before merging"
+4. Add all required status checks:
+   - `Code Coverage`
+   - `Tests`
+   - `Format`
+   - `Clippy`
+   - `Build`
+   - `Security`
+5. Enable "Require branches to be up to date before merging"
+6. Enable "Require pull request reviews before merging"
+7. Save changes
+
+Alternatively, run the "Setup Branch Protection" workflow manually.
 
 ## Contributing
 
