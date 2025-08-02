@@ -57,8 +57,7 @@ impl Executor {
                         _ => {
                             let a_str = a.to_string();
                             let b_str = b.to_string();
-                            self.stack
-                                .push(Value::String(format!("{a_str}{b_str}")));
+                            self.stack.push(Value::String(format!("{a_str}{b_str}")));
                         }
                     }
                 }
@@ -156,16 +155,21 @@ impl Executor {
                 Instruction::And => {
                     let b = self.stack.pop().unwrap();
                     let a = self.stack.pop().unwrap();
-                    self.stack.push(Value::Boolean(a.as_bool().unwrap_or(false) && b.as_bool().unwrap_or(false)));
+                    self.stack.push(Value::Boolean(
+                        a.as_bool().unwrap_or(false) && b.as_bool().unwrap_or(false),
+                    ));
                 }
                 Instruction::Or => {
                     let b = self.stack.pop().unwrap();
                     let a = self.stack.pop().unwrap();
-                    self.stack.push(Value::Boolean(a.as_bool().unwrap_or(false) || b.as_bool().unwrap_or(false)));
+                    self.stack.push(Value::Boolean(
+                        a.as_bool().unwrap_or(false) || b.as_bool().unwrap_or(false),
+                    ));
                 }
                 Instruction::Not => {
                     let a = self.stack.pop().unwrap();
-                    self.stack.push(Value::Boolean(!a.as_bool().unwrap_or(false)));
+                    self.stack
+                        .push(Value::Boolean(!a.as_bool().unwrap_or(false)));
                 }
                 Instruction::Jump(target) => {
                     ip = target.as_usize();
@@ -364,11 +368,19 @@ impl Executor {
                         .push(Value::Array(ArrayHandle::from(handle.as_usize())));
                 }
                 Instruction::SetProperty => {
+                    if self.stack.values.len() < 3 {
+                        panic!("Stack underflow in SetProperty");
+                    }
                     let value = self.stack.pop().unwrap();
                     let key = self.stack.pop().unwrap();
                     let obj = self.stack.pop().unwrap();
-                    if let (Value::Object(handle), Value::String(key)) = (obj, key) {
-                        self.heap.set_object_property(handle.id(), key, value);
+                    match (obj, key) {
+                        (Value::Object(handle), Value::String(key_str)) => {
+                            self.heap.set_object_property(handle.id(), key_str, value);
+                        }
+                        (obj, key) => {
+                            panic!("Invalid types for SetProperty: obj={obj:?}, key={key:?}",);
+                        }
                     }
                 }
                 Instruction::GetProperty => {
@@ -425,6 +437,20 @@ impl Executor {
                 }
                 Instruction::PushUndefined => {
                     self.stack.push(Value::Undefined);
+                }
+                Instruction::TypeOf => {
+                    let value = self.stack.pop().unwrap();
+                    let type_str = match value {
+                        Value::Number(_) => "number",
+                        Value::String(_) => "string",
+                        Value::Boolean(_) => "boolean",
+                        Value::Null => "object", // JavaScript quirk
+                        Value::Undefined => "undefined",
+                        Value::Object(_) => "object",
+                        Value::Array(_) => "object",
+                        Value::Function(_) => "function",
+                    };
+                    self.stack.push(Value::String(type_str.to_string()));
                 }
                 _ => todo!("Instrução não implementada ainda"),
             }

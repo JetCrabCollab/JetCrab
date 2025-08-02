@@ -1,7 +1,7 @@
-use std::collections::HashMap;
 use crate::vm::handle::FunctionHandle;
-use crate::vm::types::{CodeAddress, ArgIndex, FramePointer};
+use crate::vm::types::{ArgIndex, CodeAddress, FramePointer};
 use crate::vm::value::Value;
+use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub struct Frame {

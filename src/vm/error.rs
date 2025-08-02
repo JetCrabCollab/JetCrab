@@ -1,4 +1,4 @@
-use crate::ast::node::Position;
+use crate::ast::Position;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

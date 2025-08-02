@@ -36,6 +36,12 @@ impl MemoryAllocator {
         }
     }
 
+    /// # Safety
+    ///
+    /// The caller must ensure that:
+    /// - `ptr` is a valid pointer that was previously allocated by this allocator
+    /// - `size` matches the size that was used when allocating `ptr`
+    /// - `ptr` is not null
     pub unsafe fn deallocate(&mut self, ptr: *mut u8, size: MemorySize) {
         if !ptr.is_null() {
             let layout = Layout::from_size_align(size.as_usize(), 8).unwrap();

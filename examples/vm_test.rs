@@ -1,8 +1,6 @@
 use jetcrab::bytecode::BytecodeGenerator;
 use jetcrab::lexer::Lexer;
 use jetcrab::parser::Parser;
-use jetcrab::vm::value::Value;
-use jetcrab::vm::{Bytecode, Executor};
 
 fn main() {
     println!("Testing VM Execution with: let x = 45 + 12;");
@@ -12,13 +10,13 @@ fn main() {
 
     println!("1. Lexical Analysis:");
     let mut lexer = Lexer::new(source);
-    let tokens = match lexer.tokenize() {
+    let _tokens = match lexer.tokenize() {
         Ok(tokens) => {
             println!("   ✅ Tokens: {}", tokens.len());
             tokens
         }
         Err(error) => {
-            println!("   ❌ Lexer error: {:?}", error);
+            println!("   ❌ Lexer error: {error:?}");
             return;
         }
     };
@@ -31,7 +29,7 @@ fn main() {
             ast
         }
         Err(error) => {
-            println!("   ❌ Parser error: {:?}", error);
+            println!("   ❌ Parser error: {error:?}");
             return;
         }
     };

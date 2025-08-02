@@ -1,23 +1,22 @@
-use crate::ast::node::{
-    ArrayLiteral, ArrowFunctionExpression, AssignmentExpression, BinaryExpression, BlockStatement,
-    BreakStatement, CallExpression, CatchClause, ClassDeclaration, ClassExpression,
-    ContinueStatement, DebuggerStatement, DoWhileStatement, ExportDeclaration, ExpressionStatement,
-    ForStatement, FunctionDeclaration, FunctionExpression, IfStatement, ImportDeclaration,
-    LogicalExpression, MemberExpression, NewExpression, Node, ObjectLiteral, Position, Program,
-    Property, ReturnStatement, Span, SpreadElement, SwitchCase, SwitchStatement, TemplateElement,
-    TemplateLiteral, ThrowStatement, TryStatement, UnaryExpression, UpdateExpression,
-    VariableDeclaration, VariableDeclarator, WhileStatement, WithStatement,
+use crate::ast::{
+    ArrayLiteral, ArrowFunctionExpression, BinaryExpression, BlockStatement, DebuggerStatement,
+    DoWhileStatement, ExportDeclaration, ExpressionStatement, ForStatement, IfStatement,
+    ImportDeclaration, Node, ObjectLiteral, Position, Program, Property, ReturnStatement, Span,
+    SpreadElement, SwitchCase, SwitchStatement, TemplateElement, TemplateLiteral, WhileStatement,
+    WithStatement,
 };
+use crate::lexer::tokens::Keyword;
 use crate::lexer::{Lexer, Token, TokenKind};
 use crate::parser::error::{ParseResult, ParserError};
 use crate::parser::recovery::{ErrorRecovery, ParsingContext, RecoveryContext, RecoveryStrategy};
 
 pub struct Parser {
+    #[allow(dead_code)]
     source: String,
 
     lexer: Lexer,
 
-    current: Option<Token>,
+    pub current: Option<Token>,
 
     previous: Option<Token>,
 
@@ -25,16 +24,14 @@ pub struct Parser {
 
     context: ParsingContext,
 
+    #[allow(dead_code)]
     strict_mode: bool,
 }
 
 impl Parser {
     pub fn new(source: &str) -> Self {
         let mut lexer = Lexer::new(source);
-        let current = match lexer.next_token() {
-            Ok(token) => Some(token),
-            Err(_) => None,
-        };
+        let current = lexer.next_token().ok();
 
         Self {
             source: source.to_string(),
@@ -126,7 +123,11 @@ impl Parser {
                     "export" => self.parse_export_declaration(),
                     _ => self.parse_expression_statement(),
                 },
-                TokenKind::LeftBrace => self.parse_block_statement(),
+                TokenKind::LeftBrace => {
+                    // In statement context, { } is always a block statement
+                    // Object literals are parsed in expression context
+                    self.parse_block_statement()
+                }
                 TokenKind::Semicolon => self.parse_empty_statement(),
                 _ => self.parse_expression_statement(),
             }
@@ -160,121 +161,6 @@ impl Parser {
         }
     }
 
-    fn parse_variable_declaration(&mut self) -> ParseResult<Node> {
-        let kind = if let Some(token) = &self.current {
-            if let TokenKind::Keyword(kw) = &token.kind {
-                match kw.as_str() {
-                    "let" => "let",
-                    "const" => "const",
-                    "var" => "var",
-                    _ => unreachable!(),
-                }
-            } else {
-                unreachable!()
-            }
-        } else {
-            unreachable!()
-        };
-
-        self.advance();
-
-        let mut declarations = Vec::new();
-
-        loop {
-            let id = self.parse_identifier()?;
-            let init = if self.check(TokenKind::Assign) {
-                self.advance();
-                Some(Box::new(self.parse_expression()?))
-            } else {
-                None
-            };
-
-            let span = self.create_span_from_tokens();
-            declarations.push(VariableDeclarator {
-                id: Box::new(id),
-                init,
-                span: Some(span),
-            });
-
-            if !self.check(TokenKind::Comma) {
-                break;
-            }
-            self.advance();
-        }
-
-        if self.check(TokenKind::Semicolon) {
-            self.advance();
-        }
-
-        let span = self.create_span_from_tokens();
-        Ok(Node::VariableDeclaration(VariableDeclaration {
-            kind: kind.to_string(),
-            declarations,
-            span: Some(span),
-        }))
-    }
-
-    fn parse_function_declaration(&mut self) -> ParseResult<Node> {
-        self.advance();
-
-        let id = if self.check_identifier() {
-            Some(Box::new(self.parse_identifier()?))
-        } else {
-            None
-        };
-
-        self.expect(TokenKind::LeftParen)?;
-        let params = self.parse_parameters()?;
-        self.expect(TokenKind::RightParen)?;
-
-        let body = Box::new(self.parse_function_body()?);
-
-        let span = self.create_span_from_tokens();
-        Ok(Node::FunctionDeclaration(FunctionDeclaration {
-            id,
-            params,
-            body,
-            generator: false,
-            r#async: false,
-            span: Some(span),
-        }))
-    }
-
-    fn parse_class_declaration(&mut self) -> ParseResult<Node> {
-        self.advance();
-
-        let id = if self.check_identifier() {
-            Some(Box::new(self.parse_identifier()?))
-        } else {
-            None
-        };
-
-        let super_class = if let Some(token) = &self.current {
-            if let TokenKind::Keyword(kw) = &token.kind {
-                if kw == "extends" {
-                    self.advance();
-                    Some(Box::new(self.parse_expression()?))
-                } else {
-                    None
-                }
-            } else {
-                None
-            }
-        } else {
-            None
-        };
-
-        let body = Box::new(self.parse_class_body()?);
-
-        let span = self.create_span_from_tokens();
-        Ok(Node::ClassDeclaration(ClassDeclaration {
-            id,
-            super_class,
-            body,
-            span: Some(span),
-        }))
-    }
-
     fn parse_if_statement(&mut self) -> ParseResult<Node> {
         self.advance();
 
@@ -286,7 +172,7 @@ impl Parser {
 
         let alternate = if let Some(token) = &self.current {
             if let TokenKind::Keyword(kw) = &token.kind {
-                if kw == "else" {
+                if kw.matches_str("else") {
                     self.advance();
                     Some(Box::new(self.parse_statement()?))
                 } else {
@@ -386,110 +272,6 @@ impl Parser {
         }))
     }
 
-    fn parse_break_statement(&mut self) -> ParseResult<Node> {
-        self.advance();
-
-        let label = if self.check_identifier() {
-            Some(Box::new(self.parse_identifier()?))
-        } else {
-            None
-        };
-
-        let span = self.create_span_from_tokens();
-        Ok(Node::BreakStatement(BreakStatement {
-            label,
-            span: Some(span),
-        }))
-    }
-
-    fn parse_continue_statement(&mut self) -> ParseResult<Node> {
-        self.advance();
-
-        let label = if self.check_identifier() {
-            Some(Box::new(self.parse_identifier()?))
-        } else {
-            None
-        };
-
-        let span = self.create_span_from_tokens();
-        Ok(Node::ContinueStatement(ContinueStatement {
-            label,
-            span: Some(span),
-        }))
-    }
-
-    fn parse_throw_statement(&mut self) -> ParseResult<Node> {
-        self.advance();
-
-        let argument = Box::new(self.parse_expression()?);
-
-        let span = self.create_span_from_tokens();
-        Ok(Node::ThrowStatement(ThrowStatement {
-            argument,
-            span: Some(span),
-        }))
-    }
-
-    fn parse_try_statement(&mut self) -> ParseResult<Node> {
-        self.advance();
-
-        let block = Box::new(self.parse_block_statement()?);
-
-        let handler = if let Some(token) = &self.current {
-            if let TokenKind::Keyword(kw) = &token.kind {
-                if kw == "catch" {
-                    Some(Box::new(self.parse_catch_clause()?))
-                } else {
-                    None
-                }
-            } else {
-                None
-            }
-        } else {
-            None
-        };
-
-        let finalizer = if let Some(token) = &self.current {
-            if let TokenKind::Keyword(kw) = &token.kind {
-                if kw == "finally" {
-                    self.advance();
-                    Some(Box::new(self.parse_block_statement()?))
-                } else {
-                    None
-                }
-            } else {
-                None
-            }
-        } else {
-            None
-        };
-
-        let span = self.create_span_from_tokens();
-        Ok(Node::TryStatement(TryStatement {
-            block,
-            handler,
-            finalizer,
-            span: Some(span),
-        }))
-    }
-
-    fn parse_catch_clause(&mut self) -> ParseResult<Node> {
-        self.advance();
-
-        self.expect(TokenKind::LeftParen)?;
-        let param = Box::new(self.parse_identifier()?);
-        self.expect(TokenKind::RightParen)?;
-
-        let body = Box::new(self.parse_block_statement()?);
-
-        let span = self.create_span_from_tokens();
-        Ok(Node::CatchClause(CatchClause {
-            param,
-            body,
-            span: Some(span),
-        }))
-    }
-
     fn parse_switch_statement(&mut self) -> ParseResult<Node> {
         self.advance();
 
@@ -535,8 +317,8 @@ impl Parser {
         self.expect(TokenKind::Colon)?;
 
         let mut consequent = Vec::new();
-        while !self.check(TokenKind::Keyword("case".to_string()))
-            && !self.check(TokenKind::Keyword("default".to_string()))
+        while !self.check(TokenKind::Keyword(Keyword::Case))
+            && !self.check(TokenKind::Keyword(Keyword::Default))
             && !self.check(TokenKind::RightBrace)
             && !self.is_eof()
         {
@@ -606,7 +388,7 @@ impl Parser {
         }))
     }
 
-    fn parse_block_statement(&mut self) -> ParseResult<Node> {
+    pub fn parse_block_statement(&mut self) -> ParseResult<Node> {
         self.advance();
 
         let old_context = self.context.clone();
@@ -685,84 +467,11 @@ impl Parser {
         }))
     }
 
-    fn parse_expression(&mut self) -> ParseResult<Node> {
+    pub fn parse_expression(&mut self) -> ParseResult<Node> {
         self.parse_assignment_expression()
     }
 
-    fn parse_assignment_expression(&mut self) -> ParseResult<Node> {
-        let left = self.parse_logical_or_expression()?;
-
-        if self.is_assignment_operator() {
-            let operator = self.current_token_string();
-            self.advance();
-            let right = Box::new(self.parse_assignment_expression()?);
-
-            let span = self.create_span_from_tokens();
-            Ok(Node::AssignmentExpression(AssignmentExpression {
-                left: Box::new(left),
-                operator,
-                right,
-                span: Some(span),
-            }))
-        } else if self.check(TokenKind::Arrow) {
-            self.parse_arrow_function_expression(false)
-        } else {
-            Ok(left)
-        }
-    }
-
-    fn parse_logical_or_expression(&mut self) -> ParseResult<Node> {
-        let mut left = self.parse_logical_and_expression()?;
-
-        while self.is_logical_or_operator() {
-            let operator = self.current_token_string();
-            self.advance();
-            let right = Box::new(self.parse_logical_and_expression()?);
-
-            let span = self.create_span_from_tokens();
-            left = Node::LogicalExpression(LogicalExpression {
-                left: Box::new(left),
-                operator,
-                right,
-                span: Some(span),
-            });
-        }
-
-        Ok(left)
-    }
-
-    fn is_logical_or_operator(&self) -> bool {
-        if let Some(token) = &self.current {
-            matches!(
-                token.kind,
-                TokenKind::LogicalOr | TokenKind::NullishCoalescing
-            )
-        } else {
-            false
-        }
-    }
-
-    fn parse_logical_and_expression(&mut self) -> ParseResult<Node> {
-        let mut left = self.parse_equality_expression()?;
-
-        while self.check(TokenKind::LogicalAnd) {
-            let operator = self.current_token_string();
-            self.advance();
-            let right = Box::new(self.parse_equality_expression()?);
-
-            let span = self.create_span_from_tokens();
-            left = Node::LogicalExpression(LogicalExpression {
-                left: Box::new(left),
-                operator,
-                right,
-                span: Some(span),
-            });
-        }
-
-        Ok(left)
-    }
-
-    fn parse_equality_expression(&mut self) -> ParseResult<Node> {
+    pub fn parse_equality_expression(&mut self) -> ParseResult<Node> {
         let mut left = self.parse_relational_expression()?;
 
         while self.is_equality_operator() {
@@ -782,198 +491,7 @@ impl Parser {
         Ok(left)
     }
 
-    fn parse_relational_expression(&mut self) -> ParseResult<Node> {
-        let mut left = self.parse_shift_expression()?;
-
-        while self.is_relational_operator() {
-            let operator = self.current_token_string();
-            self.advance();
-            let right = Box::new(self.parse_shift_expression()?);
-
-            let span = self.create_span_from_tokens();
-            left = Node::BinaryExpression(BinaryExpression {
-                left: Box::new(left),
-                operator,
-                right,
-                span: Some(span),
-            });
-        }
-
-        Ok(left)
-    }
-
-    fn parse_shift_expression(&mut self) -> ParseResult<Node> {
-        let mut left = self.parse_additive_expression()?;
-
-        while self.is_shift_operator() {
-            let operator = self.current_token_string();
-            self.advance();
-            let right = Box::new(self.parse_additive_expression()?);
-
-            let span = self.create_span_from_tokens();
-            left = Node::BinaryExpression(BinaryExpression {
-                left: Box::new(left),
-                operator,
-                right,
-                span: Some(span),
-            });
-        }
-
-        Ok(left)
-    }
-
-    fn parse_additive_expression(&mut self) -> ParseResult<Node> {
-        let mut left = self.parse_multiplicative_expression()?;
-
-        while self.is_additive_operator() {
-            let operator = self.current_token_string();
-            self.advance();
-            let right = Box::new(self.parse_multiplicative_expression()?);
-
-            let span = self.create_span_from_tokens();
-            left = Node::BinaryExpression(BinaryExpression {
-                left: Box::new(left),
-                operator,
-                right,
-                span: Some(span),
-            });
-        }
-
-        Ok(left)
-    }
-
-    fn parse_multiplicative_expression(&mut self) -> ParseResult<Node> {
-        let mut left = self.parse_exponentiation_expression()?;
-
-        while self.is_multiplicative_operator() {
-            let operator = self.current_token_string();
-            self.advance();
-            let right = Box::new(self.parse_exponentiation_expression()?);
-
-            let span = self.create_span_from_tokens();
-            left = Node::BinaryExpression(BinaryExpression {
-                left: Box::new(left),
-                operator,
-                right,
-                span: Some(span),
-            });
-        }
-
-        Ok(left)
-    }
-
-    fn parse_exponentiation_expression(&mut self) -> ParseResult<Node> {
-        let mut left = self.parse_unary_expression()?;
-
-        while self.is_exponentiation_operator() {
-            let operator = self.current_token_string();
-            self.advance();
-            let right = Box::new(self.parse_exponentiation_expression()?);
-
-            let span = self.create_span_from_tokens();
-            left = Node::BinaryExpression(BinaryExpression {
-                left: Box::new(left),
-                operator,
-                right,
-                span: Some(span),
-            });
-        }
-
-        Ok(left)
-    }
-
-    fn parse_unary_expression(&mut self) -> ParseResult<Node> {
-        if self.is_unary_operator() {
-            let operator = self.current_token_string();
-            let prefix = true;
-            self.advance();
-            let argument = Box::new(self.parse_unary_expression()?);
-
-            let span = self.create_span_from_tokens();
-            return Ok(Node::UnaryExpression(UnaryExpression {
-                operator,
-                argument,
-                prefix,
-                span: Some(span),
-            }));
-        }
-
-        self.parse_postfix_expression()
-    }
-
-    fn parse_postfix_expression(&mut self) -> ParseResult<Node> {
-        let mut expr = self.parse_primary_expression()?;
-
-        loop {
-            if let Some(token) = &self.current {
-                match &token.kind {
-                    TokenKind::LeftBracket => {
-                        self.advance();
-                        let property = Box::new(self.parse_expression()?);
-                        self.expect(TokenKind::RightBracket)?;
-
-                        let span = self.create_span_from_tokens();
-                        expr = Node::MemberExpression(MemberExpression {
-                            object: Box::new(expr),
-                            property,
-                            computed: true,
-                            optional: false,
-                            span: Some(span),
-                        });
-                    }
-
-                    TokenKind::Dot => {
-                        self.advance();
-                        let property = Box::new(self.parse_identifier()?);
-
-                        let span = self.create_span_from_tokens();
-                        expr = Node::MemberExpression(MemberExpression {
-                            object: Box::new(expr),
-                            property,
-                            computed: false,
-                            optional: false,
-                            span: Some(span),
-                        });
-                    }
-
-                    TokenKind::LeftParen => {
-                        self.advance();
-                        let arguments = self.parse_arguments()?;
-                        self.expect(TokenKind::RightParen)?;
-
-                        let span = self.create_span_from_tokens();
-                        expr = Node::CallExpression(CallExpression {
-                            callee: Box::new(expr),
-                            arguments,
-                            span: Some(span),
-                        });
-                    }
-
-                    TokenKind::Increment | TokenKind::Decrement => {
-                        let operator = self.current_token_string();
-                        let prefix = false;
-                        self.advance();
-
-                        let span = self.create_span_from_tokens();
-                        expr = Node::UpdateExpression(UpdateExpression {
-                            operator,
-                            argument: Box::new(expr),
-                            prefix,
-                            span: Some(span),
-                        });
-                    }
-
-                    _ => break,
-                }
-            } else {
-                break;
-            }
-        }
-
-        Ok(expr)
-    }
-
-    fn parse_primary_expression(&mut self) -> ParseResult<Node> {
+    pub fn parse_primary_expression(&mut self) -> ParseResult<Node> {
         if let Some(token) = &self.current {
             match &token.kind {
                 TokenKind::Number(n) => {
@@ -1022,7 +540,7 @@ impl Parser {
                 TokenKind::Keyword(kw) if kw == "new" => self.parse_new_expression(),
                 TokenKind::Keyword(kw) if kw == "async" => {
                     self.advance();
-                    if self.check(TokenKind::Keyword("function".to_string())) {
+                    if self.check(TokenKind::Keyword(Keyword::Function)) {
                         self.parse_function_expression()
                     } else {
                         self.parse_arrow_function_expression(true)
@@ -1044,170 +562,7 @@ impl Parser {
         }
     }
 
-    fn parse_array_literal(&mut self) -> ParseResult<Node> {
-        self.advance();
-
-        let mut elements = Vec::new();
-
-        while !self.check(TokenKind::RightBracket) && !self.is_eof() {
-            if self.check(TokenKind::Comma) {
-                elements.push(None);
-                self.advance();
-            } else {
-                elements.push(Some(self.parse_expression()?));
-
-                if self.check(TokenKind::Comma) {
-                    self.advance();
-                }
-            }
-        }
-
-        self.expect(TokenKind::RightBracket)?;
-
-        let span = self.create_span_from_tokens();
-        Ok(Node::ArrayLiteral(ArrayLiteral {
-            elements,
-            span: Some(span),
-        }))
-    }
-
-    fn parse_object_literal(&mut self) -> ParseResult<Node> {
-        self.advance();
-
-        let mut properties = Vec::new();
-
-        while !self.check(TokenKind::RightBrace) && !self.is_eof() {
-            properties.push(self.parse_property()?);
-
-            if self.check(TokenKind::Comma) {
-                self.advance();
-            }
-        }
-
-        self.expect(TokenKind::RightBrace)?;
-
-        let span = self.create_span_from_tokens();
-        Ok(Node::ObjectLiteral(ObjectLiteral {
-            properties,
-            span: Some(span),
-        }))
-    }
-
-    fn parse_property(&mut self) -> ParseResult<Node> {
-        let key = if self.check_identifier() {
-            Box::new(self.parse_identifier()?)
-        } else if let Some(token) = &self.current {
-            if let TokenKind::String(_) = &token.kind {
-                Box::new(self.parse_primary_expression()?)
-            } else {
-                return Err(ParserError::invalid_syntax(
-                    "Expected identifier or string literal",
-                    self.current_position().unwrap_or_default(),
-                ));
-            }
-        } else {
-            return Err(ParserError::unexpected_end_of_input(None));
-        };
-
-        self.expect(TokenKind::Colon)?;
-        let value = Box::new(self.parse_expression()?);
-
-        let span = self.create_span_from_tokens();
-        Ok(Node::Property(Property {
-            key,
-            value,
-            kind: "init".to_string(),
-            computed: false,
-            method: false,
-            shorthand: false,
-            span: Some(span),
-        }))
-    }
-
-    fn parse_function_expression(&mut self) -> ParseResult<Node> {
-        self.advance();
-
-        let id = if self.check_identifier() {
-            Some(Box::new(self.parse_identifier()?))
-        } else {
-            None
-        };
-
-        self.expect(TokenKind::LeftParen)?;
-        let params = self.parse_parameters()?;
-        self.expect(TokenKind::RightParen)?;
-
-        let body = Box::new(self.parse_function_body()?);
-
-        let span = self.create_span_from_tokens();
-        Ok(Node::FunctionExpression(FunctionExpression {
-            id,
-            params,
-            body,
-            generator: false,
-            r#async: false,
-            span: Some(span),
-        }))
-    }
-
-    fn parse_class_expression(&mut self) -> ParseResult<Node> {
-        self.advance();
-
-        let id = if self.check_identifier() {
-            Some(Box::new(self.parse_identifier()?))
-        } else {
-            None
-        };
-
-        let super_class = if let Some(token) = &self.current {
-            if let TokenKind::Keyword(kw) = &token.kind {
-                if kw == "extends" {
-                    self.advance();
-                    Some(Box::new(self.parse_expression()?))
-                } else {
-                    None
-                }
-            } else {
-                None
-            }
-        } else {
-            None
-        };
-
-        let body = Box::new(self.parse_class_body()?);
-
-        let span = self.create_span_from_tokens();
-        Ok(Node::ClassExpression(ClassExpression {
-            id,
-            super_class,
-            body,
-            span: Some(span),
-        }))
-    }
-
-    fn parse_new_expression(&mut self) -> ParseResult<Node> {
-        self.advance();
-
-        let callee = Box::new(self.parse_primary_expression()?);
-
-        let arguments = if self.check(TokenKind::LeftParen) {
-            self.advance();
-            let args = self.parse_arguments()?;
-            self.expect(TokenKind::RightParen)?;
-            args
-        } else {
-            Vec::new()
-        };
-
-        let span = self.create_span_from_tokens();
-        Ok(Node::NewExpression(NewExpression {
-            callee,
-            arguments,
-            span: Some(span),
-        }))
-    }
-
-    fn parse_parameters(&mut self) -> ParseResult<Vec<Node>> {
+    pub fn parse_parameters(&mut self) -> ParseResult<Vec<Node>> {
         let mut params = Vec::new();
 
         while !self.check(TokenKind::RightParen) && !self.is_eof() {
@@ -1221,7 +576,7 @@ impl Parser {
         Ok(params)
     }
 
-    fn parse_arguments(&mut self) -> ParseResult<Vec<Node>> {
+    pub fn parse_arguments(&mut self) -> ParseResult<Vec<Node>> {
         let mut arguments = Vec::new();
 
         while !self.check(TokenKind::RightParen) && !self.is_eof() {
@@ -1235,11 +590,11 @@ impl Parser {
         Ok(arguments)
     }
 
-    fn parse_function_body(&mut self) -> ParseResult<Node> {
+    pub fn parse_function_body(&mut self) -> ParseResult<Node> {
         self.parse_block_statement()
     }
 
-    fn parse_class_body(&mut self) -> ParseResult<Node> {
+    pub fn parse_class_body(&mut self) -> ParseResult<Node> {
         self.expect(TokenKind::LeftBrace)?;
 
         let mut body = Vec::new();
@@ -1256,7 +611,7 @@ impl Parser {
         }))
     }
 
-    fn parse_identifier(&mut self) -> ParseResult<Node> {
+    pub fn parse_identifier(&mut self) -> ParseResult<Node> {
         if let Some(token) = &self.current {
             if let TokenKind::Identifier(ident) = &token.kind {
                 let name = ident.clone();
@@ -1277,7 +632,7 @@ impl Parser {
         self.current.as_ref()
     }
 
-    fn current_token_string(&self) -> String {
+    pub fn current_token_string(&self) -> String {
         if let Some(token) = &self.current {
             match &token.kind {
                 TokenKind::Plus => "+".to_string(),
@@ -1337,7 +692,7 @@ impl Parser {
                 TokenKind::Identifier(id) => id.clone(),
                 TokenKind::String(s) => s.clone(),
                 TokenKind::Number(n) => n.to_string(),
-                TokenKind::Keyword(kw) => kw.clone(),
+                TokenKind::Keyword(kw) => kw.as_str().to_string(),
                 TokenKind::Boolean(b) => b.to_string(),
                 TokenKind::Eof => "EOF".to_string(),
                 _ => format!("{:?}", token.kind),
@@ -1347,7 +702,7 @@ impl Parser {
         }
     }
 
-    fn check(&self, token_kind: TokenKind) -> bool {
+    pub fn check(&self, token_kind: TokenKind) -> bool {
         if let Some(token) = &self.current {
             std::mem::discriminant(&token.kind) == std::mem::discriminant(&token_kind)
         } else {
@@ -1355,43 +710,40 @@ impl Parser {
         }
     }
 
-    fn check_identifier(&self) -> bool {
+    pub fn check_identifier(&self) -> bool {
         self.current_token()
             .map(|t| t.is_identifier())
             .unwrap_or(false)
     }
 
-    fn expect(&mut self, token_kind: TokenKind) -> ParseResult<()> {
+    pub fn expect(&mut self, token_kind: TokenKind) -> ParseResult<()> {
         if self.check(token_kind.clone()) {
             self.advance();
             Ok(())
         } else {
-            let current = self
+            let _current = self
                 .current_token()
                 .map(|t| format!("{:?}", t.kind))
                 .unwrap_or_else(|| "EOF".to_string());
             Err(ParserError::unexpected_token(
                 self.current_token()
                     .unwrap_or_else(|| panic!("No current token")),
-                Some(&format!("{:?}", token_kind)),
+                Some(&format!("{token_kind:?}")),
             ))
         }
     }
 
-    fn advance(&mut self) {
+    pub fn advance(&mut self) {
         self.previous = self.current.take();
-        self.current = match self.lexer.next_token() {
-            Ok(token) => Some(token),
-            Err(_) => None,
-        };
+        self.current = self.lexer.next_token().ok();
     }
 
-    fn is_eof(&self) -> bool {
+    pub fn is_eof(&self) -> bool {
         self.current.is_none()
             || matches!(self.current.as_ref().map(|t| &t.kind), Some(TokenKind::Eof))
     }
 
-    fn current_position(&self) -> Option<Position> {
+    pub fn current_position(&self) -> Option<Position> {
         self.current.as_ref().map(|t| Position {
             line: t.start().line,
             column: t.start().column,
@@ -1405,7 +757,7 @@ impl Parser {
         })
     }
 
-    fn create_span_from_tokens(&self) -> Span {
+    pub fn create_span_from_tokens(&self) -> Span {
         let start = self.previous_position().unwrap_or_default();
         let end = self.current_position().unwrap_or_default();
         Span::new(start, end)
@@ -1427,7 +779,7 @@ impl Parser {
         }
     }
 
-    fn is_assignment_operator(&self) -> bool {
+    pub fn is_assignment_operator(&self) -> bool {
         if let Some(token) = &self.current {
             matches!(
                 token.kind,
@@ -1450,21 +802,7 @@ impl Parser {
         }
     }
 
-    fn is_equality_operator(&self) -> bool {
-        if let Some(token) = &self.current {
-            matches!(
-                token.kind,
-                TokenKind::Equal
-                    | TokenKind::NotEqual
-                    | TokenKind::StrictEqual
-                    | TokenKind::StrictNotEqual
-            )
-        } else {
-            false
-        }
-    }
-
-    fn is_relational_operator(&self) -> bool {
+    pub fn is_relational_operator(&self) -> bool {
         if let Some(token) = &self.current {
             matches!(
                 token.kind,
@@ -1478,7 +816,7 @@ impl Parser {
         }
     }
 
-    fn is_shift_operator(&self) -> bool {
+    pub fn is_shift_operator(&self) -> bool {
         if let Some(token) = &self.current {
             matches!(
                 token.kind,
@@ -1489,7 +827,7 @@ impl Parser {
         }
     }
 
-    fn is_additive_operator(&self) -> bool {
+    pub fn is_additive_operator(&self) -> bool {
         if let Some(token) = &self.current {
             matches!(token.kind, TokenKind::Plus | TokenKind::Minus)
         } else {
@@ -1497,7 +835,7 @@ impl Parser {
         }
     }
 
-    fn is_multiplicative_operator(&self) -> bool {
+    pub fn is_multiplicative_operator(&self) -> bool {
         if let Some(token) = &self.current {
             matches!(
                 token.kind,
@@ -1508,7 +846,7 @@ impl Parser {
         }
     }
 
-    fn is_exponentiation_operator(&self) -> bool {
+    pub fn is_exponentiation_operator(&self) -> bool {
         if let Some(token) = &self.current {
             matches!(token.kind, TokenKind::StarStar)
         } else {
@@ -1516,7 +854,7 @@ impl Parser {
         }
     }
 
-    fn is_unary_operator(&self) -> bool {
+    pub fn is_unary_operator(&self) -> bool {
         if let Some(token) = &self.current {
             matches!(
                 token.kind,
@@ -1677,6 +1015,7 @@ impl Parser {
         }))
     }
 
+    #[allow(dead_code)]
     fn parse_destructuring_pattern(&mut self) -> ParseResult<Node> {
         if self.check(TokenKind::LeftBrace) {
             self.advance();

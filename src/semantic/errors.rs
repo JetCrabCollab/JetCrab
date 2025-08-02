@@ -1,4 +1,4 @@
-use crate::ast::node::Position;
+use crate::ast::Position;
 use crate::vm::types::{ColumnNumber, LineNumber};
 use serde::{Deserialize, Serialize};
 
@@ -106,10 +106,9 @@ impl std::fmt::Display for SemanticError {
                 position,
             } => {
                 write!(
-                    f,
-                    "Function '{function_name}' expects {} arguments, but {} were provided",
-                    expected, found
-                )?;
+        f,
+        "Function '{function_name}' expects {expected} arguments, but {found} were provided",
+    )?;
                 if let Some(pos) = position {
                     write!(f, " at line {}, column {}", pos.line, pos.column)?;
                 }
@@ -134,10 +133,7 @@ impl std::fmt::Display for SemanticError {
                 type_name,
                 position,
             } => {
-                write!(
-                    f,
-                    "Invalid operation '{operation}' on type '{type_name}'",
-                )?;
+                write!(f, "Invalid operation '{operation}' on type '{type_name}'",)?;
                 if let Some(pos) = position {
                     write!(f, " at line {}, column {}", pos.line, pos.column)?;
                 }

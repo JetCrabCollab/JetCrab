@@ -22,15 +22,8 @@ impl BytecodeOptimizer {
 
             match instruction {
                 Instruction::Pop => {
-                    if let Some(prev) = result.last() {
-                        match prev {
-                            Instruction::PushConst(_) => {
-                                result.pop();
-                            }
-                            _ => {
-                                result.push(instruction.clone());
-                            }
-                        }
+                    if let Some(Instruction::PushConst(_)) = result.last() {
+                        result.pop();
                     } else {
                         result.push(instruction.clone());
                     }

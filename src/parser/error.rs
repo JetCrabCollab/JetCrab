@@ -1,4 +1,4 @@
-use crate::ast::node::{Position, Span};
+use crate::ast::{Position, Span};
 use crate::lexer::Token;
 use thiserror::Error;
 

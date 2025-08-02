@@ -1,4 +1,4 @@
-use crate::ast::node::Position;
+use crate::ast::Position;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -51,14 +51,14 @@ impl std::fmt::Display for ApiError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ApiError::CompilationError { message, position } => {
-                write!(f, "Compilation error: {}", message)?;
+                write!(f, "Compilation error: {message}")?;
                 if let Some(pos) = position {
                     write!(f, " at line {}, column {}", pos.line, pos.column)?;
                 }
                 Ok(())
             }
             ApiError::ExecutionError { message, position } => {
-                write!(f, "Execution error: {}", message)?;
+                write!(f, "Execution error: {message}")?;
                 if let Some(pos) = position {
                     write!(f, " at line {}, column {}", pos.line, pos.column)?;
                 }
@@ -69,28 +69,28 @@ impl std::fmt::Display for ApiError {
                 input,
                 position,
             } => {
-                write!(f, "Invalid input '{}': {}", input, message)?;
+                write!(f, "Invalid input '{input}': {message}")?;
                 if let Some(pos) = position {
                     write!(f, " at line {}, column {}", pos.line, pos.column)?;
                 }
                 Ok(())
             }
             ApiError::EngineError { message, position } => {
-                write!(f, "Engine error: {}", message)?;
+                write!(f, "Engine error: {message}")?;
                 if let Some(pos) = position {
                     write!(f, " at line {}, column {}", pos.line, pos.column)?;
                 }
                 Ok(())
             }
             ApiError::InterpreterError { message, position } => {
-                write!(f, "Interpreter error: {}", message)?;
+                write!(f, "Interpreter error: {message}")?;
                 if let Some(pos) = position {
                     write!(f, " at line {}, column {}", pos.line, pos.column)?;
                 }
                 Ok(())
             }
             ApiError::ConfigurationError { message, position } => {
-                write!(f, "Configuration error: {}", message)?;
+                write!(f, "Configuration error: {message}")?;
                 if let Some(pos) = position {
                     write!(f, " at line {}, column {}", pos.line, pos.column)?;
                 }
@@ -101,7 +101,7 @@ impl std::fmt::Display for ApiError {
                 message,
                 position,
             } => {
-                write!(f, "Resource '{}' error: {}", resource, message)?;
+                write!(f, "Resource '{resource}' error: {message}")?;
                 if let Some(pos) = position {
                     write!(f, " at line {}, column {}", pos.line, pos.column)?;
                 }
@@ -112,11 +112,7 @@ impl std::fmt::Display for ApiError {
                 timeout_ms,
                 position,
             } => {
-                write!(
-                    f,
-                    "Operation '{}' timed out after {}ms",
-                    operation, timeout_ms
-                )?;
+                write!(f, "Operation '{operation}' timed out after {timeout_ms}ms",)?;
                 if let Some(pos) = position {
                     write!(f, " at line {}, column {}", pos.line, pos.column)?;
                 }

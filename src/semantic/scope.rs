@@ -2,6 +2,7 @@ use crate::semantic::types::Type;
 use crate::vm::types::LineNumber;
 use std::collections::HashMap;
 
+#[derive(Clone)]
 pub struct Scope {
     variables: HashMap<String, VariableInfo>,
     functions: HashMap<String, FunctionInfo>,
@@ -15,7 +16,7 @@ impl Default for Scope {
             variables: HashMap::new(),
             functions: HashMap::new(),
             parent: None,
-            scope_type: ScopeType::Function, 
+            scope_type: ScopeType::Function,
         }
     }
 }

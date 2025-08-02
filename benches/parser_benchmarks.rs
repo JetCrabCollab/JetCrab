@@ -1,5 +1,5 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use jetcrab::lexer::tokenize;
+
 use jetcrab::parser::Parser;
 
 fn parser_benchmark(c: &mut Criterion) {

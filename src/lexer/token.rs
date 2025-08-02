@@ -1,78 +1,29 @@
-use crate::vm::types::{ColumnNumber, LineNumber};
+use crate::ast::common::{Position, Span};
+use crate::lexer::tokens::{Keyword, Literal, Operator, Punctuation};
 use serde::{Deserialize, Serialize};
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Position {
-    pub line: LineNumber,
-    pub column: ColumnNumber,
-}
-
-impl Position {
-    pub fn new(line: usize, column: usize) -> Self {
-        Self {
-            line: LineNumber::new(line),
-            column: ColumnNumber::new(column),
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Span {
-    pub start: Position,
-    pub end: Position,
-}
-
-impl Span {
-    pub fn new(start: Position, end: Position) -> Self {
-        Self { start, end }
-    }
-
-    pub fn from_positions(
-        start_line: usize,
-        start_col: usize,
-        end_line: usize,
-        end_col: usize,
-    ) -> Self {
-        Self {
-            start: Position::new(start_line, start_col),
-            end: Position::new(end_line, end_col),
-        }
-    }
-}
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum TokenKind {
+    // Direct variants for backward compatibility
     Identifier(String),
-    Number(f64),
-    BigInt(String),
-    String(String),
-    TemplateString(String),
-    Boolean(bool),
-    Null,
-    Undefined,
-    Regex(String),
-
-    Keyword(String),
-    Symbol(String),
-
+    Keyword(Keyword),
+    Operator(Operator),
+    Literal(Literal),
+    Punctuation(Punctuation),
     Comment(String),
     Whitespace,
     Eof,
 
-    LeftParen,
-    RightParen,
-    LeftBrace,
-    RightBrace,
-    LeftBracket,
-    RightBracket,
-    Dot,
-    Semicolon,
-    Comma,
-    Colon,
-    Question,
-    Exclamation,
-    Tilde,
+    // Literal variants
+    Number(f64),
+    String(String),
+    Boolean(bool),
+    Null,
+    Undefined,
+    BigInt(String),
 
+    // Direct token variants for lexer and parser compatibility
+    // Assignment operators
     Assign,
     PlusAssign,
     MinusAssign,
@@ -87,6 +38,7 @@ pub enum TokenKind {
     BitwiseOrAssign,
     BitwiseXorAssign,
 
+    // Comparison operators
     Equal,
     NotEqual,
     StrictEqual,
@@ -96,13 +48,13 @@ pub enum TokenKind {
     GreaterThan,
     GreaterThanEqual,
 
+    // Logical operators
     LogicalAnd,
     LogicalOr,
+    LogicalNot,
     NullishCoalescing,
 
-    Increment,
-    Decrement,
-
+    // Arithmetic operators
     Plus,
     Minus,
     Star,
@@ -110,22 +62,44 @@ pub enum TokenKind {
     Percent,
     StarStar,
 
+    // Bitwise operators
     BitwiseAnd,
     BitwiseOr,
     BitwiseXor,
     LeftShift,
     RightShift,
     UnsignedRightShift,
+    BitwiseNot,
 
+    // Increment/Decrement
+    Increment,
+    Decrement,
+
+    // Special operators
     Arrow,
     OptionalChaining,
     Spread,
     Rest,
     PrivateField,
 
+    // Punctuation
+    LeftParen,
+    RightParen,
+    LeftBrace,
+    RightBrace,
+    LeftBracket,
+    RightBracket,
+    Dot,
+    Semicolon,
+    Comma,
+    Colon,
+    Question,
+    Exclamation,
+    Tilde,
     TemplateStart,
     TemplateEnd,
     TemplateExpr,
+    TemplateString(String),
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -146,10 +120,8 @@ impl Token {
         end_line: usize,
         end_col: usize,
     ) -> Self {
-        Self {
-            kind,
-            span: Span::from_positions(start_line, start_col, end_line, end_col),
-        }
+        let span = Span::from_positions(start_line, start_col, end_line, end_col);
+        Self::new(kind, span)
     }
 
     pub fn start(&self) -> Position {
@@ -169,25 +141,26 @@ impl Token {
     }
 
     pub fn is_literal(&self) -> bool {
-        matches!(
-            self.kind,
-            TokenKind::Number(_)
-                | TokenKind::String(_)
-                | TokenKind::Boolean(_)
-                | TokenKind::Null
-                | TokenKind::Undefined
-        )
+        matches!(self.kind, TokenKind::Literal(_))
     }
 
     pub fn is_operator(&self) -> bool {
         matches!(
             self.kind,
-            TokenKind::Plus
-                | TokenKind::Minus
-                | TokenKind::Star
-                | TokenKind::Slash
-                | TokenKind::Percent
-                | TokenKind::StarStar
+            TokenKind::Operator(_)
+                | TokenKind::Assign
+                | TokenKind::PlusAssign
+                | TokenKind::MinusAssign
+                | TokenKind::StarAssign
+                | TokenKind::SlashAssign
+                | TokenKind::PercentAssign
+                | TokenKind::StarStarAssign
+                | TokenKind::LeftShiftAssign
+                | TokenKind::RightShiftAssign
+                | TokenKind::UnsignedRightShiftAssign
+                | TokenKind::BitwiseAndAssign
+                | TokenKind::BitwiseOrAssign
+                | TokenKind::BitwiseXorAssign
                 | TokenKind::Equal
                 | TokenKind::NotEqual
                 | TokenKind::StrictEqual
@@ -196,17 +169,107 @@ impl Token {
                 | TokenKind::LessThanEqual
                 | TokenKind::GreaterThan
                 | TokenKind::GreaterThanEqual
-                | TokenKind::LeftShift
-                | TokenKind::RightShift
-                | TokenKind::UnsignedRightShift
+                | TokenKind::LogicalAnd
+                | TokenKind::LogicalOr
+                | TokenKind::LogicalNot
+                | TokenKind::Plus
+                | TokenKind::Minus
+                | TokenKind::Star
+                | TokenKind::Slash
+                | TokenKind::Percent
+                | TokenKind::StarStar
                 | TokenKind::BitwiseAnd
                 | TokenKind::BitwiseOr
                 | TokenKind::BitwiseXor
-                | TokenKind::LogicalAnd
-                | TokenKind::LogicalOr
-                | TokenKind::NullishCoalescing
+                | TokenKind::LeftShift
+                | TokenKind::RightShift
+                | TokenKind::UnsignedRightShift
+                | TokenKind::BitwiseNot
                 | TokenKind::Increment
                 | TokenKind::Decrement
+                | TokenKind::Arrow
+                | TokenKind::OptionalChaining
+                | TokenKind::Spread
+                | TokenKind::Rest
+                | TokenKind::PrivateField
         )
+    }
+
+    pub fn is_punctuation(&self) -> bool {
+        matches!(
+            self.kind,
+            TokenKind::Punctuation(_)
+                | TokenKind::LeftParen
+                | TokenKind::RightParen
+                | TokenKind::LeftBrace
+                | TokenKind::RightBrace
+                | TokenKind::LeftBracket
+                | TokenKind::RightBracket
+                | TokenKind::Dot
+                | TokenKind::Semicolon
+                | TokenKind::Comma
+                | TokenKind::Colon
+                | TokenKind::Question
+                | TokenKind::Exclamation
+                | TokenKind::Tilde
+                | TokenKind::TemplateStart
+                | TokenKind::TemplateEnd
+                | TokenKind::TemplateExpr
+                | TokenKind::TemplateString(_)
+        )
+    }
+
+    pub fn is_comment(&self) -> bool {
+        matches!(self.kind, TokenKind::Comment(_))
+    }
+
+    pub fn is_whitespace(&self) -> bool {
+        matches!(self.kind, TokenKind::Whitespace)
+    }
+
+    pub fn is_eof(&self) -> bool {
+        matches!(self.kind, TokenKind::Eof)
+    }
+
+    pub fn as_identifier(&self) -> Option<&str> {
+        match &self.kind {
+            TokenKind::Identifier(s) => Some(s),
+            _ => None,
+        }
+    }
+
+    pub fn as_keyword(&self) -> Option<&Keyword> {
+        match &self.kind {
+            TokenKind::Keyword(k) => Some(k),
+            _ => None,
+        }
+    }
+
+    pub fn as_operator(&self) -> Option<&Operator> {
+        match &self.kind {
+            TokenKind::Operator(op) => Some(op),
+            _ => None,
+        }
+    }
+
+    pub fn as_literal(&self) -> Option<&Literal> {
+        match &self.kind {
+            TokenKind::Literal(lit) => Some(lit),
+            _ => None,
+        }
+    }
+
+    pub fn as_punctuation(&self) -> Option<&Punctuation> {
+        match &self.kind {
+            TokenKind::Punctuation(punct) => Some(punct),
+            _ => None,
+        }
+    }
+
+    pub fn as_comment(&self) -> Option<&str> {
+        match &self.kind {
+            TokenKind::Comment(s) => Some(s),
+            _ => None,
+        }
     }
 }

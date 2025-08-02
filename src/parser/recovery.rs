@@ -107,13 +107,11 @@ impl RecoveryContext {
         self.recovery_tokens.iter().any(|t| token_str.contains(t))
     }
 
-    pub fn current_position(&self) -> Option<crate::ast::node::Position> {
-        self.current_token
-            .as_ref()
-            .map(|t| crate::ast::node::Position {
-                line: t.start().line,
-                column: t.start().column,
-            })
+    pub fn current_position(&self) -> Option<crate::ast::Position> {
+        self.current_token.as_ref().map(|t| crate::ast::Position {
+            line: t.start().line,
+            column: t.start().column,
+        })
     }
 }
 

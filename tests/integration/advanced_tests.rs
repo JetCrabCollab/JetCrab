@@ -1,5 +1,5 @@
-use jetcrab::api::{Engine, Compiler};
-use jetcrab::ast::visitor::{Visitor, NodeCounter, AstPrinter};
+use jetcrab::api::{Compiler, Engine};
+use jetcrab::ast::visitor::{AstPrinter, NodeCounter, Visitor};
 use jetcrab::semantic::analyzer::SemanticAnalyzer;
 
 #[test]
@@ -10,7 +10,7 @@ fn test_template_literals() {
         const multi = `Line 1
         Line 2 ${name}`;
     "#;
-    
+
     let mut engine = Engine::new();
     let result = engine.evaluate(source);
     assert!(result.is_ok());
@@ -25,7 +25,7 @@ fn test_meta_property() {
             }
         }
     "#;
-    
+
     let mut engine = Engine::new();
     let result = engine.evaluate(source);
     assert!(result.is_ok());
@@ -51,7 +51,7 @@ fn test_advanced_operations() {
         let pre_inc = ++x;
         let post_dec = y--;
     "#;
-    
+
     let mut engine = Engine::new();
     let result = engine.evaluate(source);
     assert!(result.is_ok());
@@ -64,7 +64,7 @@ fn test_conditional_expressions() {
         let y = 10;
         let result = x > y ? "greater" : "less";
     "#;
-    
+
     let mut engine = Engine::new();
     let result = engine.evaluate(source);
     assert!(result.is_ok());
@@ -81,7 +81,7 @@ fn test_object_literals() {
             }
         };
     "#;
-    
+
     let mut engine = Engine::new();
     let result = engine.evaluate(source);
     assert!(result.is_ok());
@@ -92,12 +92,10 @@ fn test_visitor_pattern() {
     let source = "let x = 5; let y = 10;";
     let mut compiler = Compiler::new();
     let ast = compiler.parse(source).unwrap();
-    
 
     let mut counter = NodeCounter::new();
     counter.visit_node(&ast);
     assert!(counter.count > 0);
-    
 
     let mut printer = AstPrinter::new();
     printer.visit_node(&ast);
@@ -115,10 +113,10 @@ fn test_semantic_analysis_with_line_numbers() {
             return z;
         }
     "#;
-    
+
     let mut compiler = Compiler::new();
     let ast = compiler.parse(source).unwrap();
-    
+
     let mut analyzer = SemanticAnalyzer::new();
     let result = analyzer.analyze(&ast);
     assert!(result.is_ok());
@@ -130,10 +128,10 @@ fn test_error_handling() {
         let x = 5;
         let x = 10;
     "#;
-    
+
     let mut compiler = Compiler::new();
     let ast = compiler.parse(source).unwrap();
-    
+
     let mut analyzer = SemanticAnalyzer::new();
     let result = analyzer.analyze(&ast);
 
@@ -147,10 +145,10 @@ fn test_bytecode_generation() {
         let y = 10;
         let result = x + y * 2;
     "#;
-    
+
     let mut compiler = Compiler::new();
     let ast = compiler.parse(source).unwrap();
-    
+
     let bytecode = compiler.compile(&ast).unwrap();
     assert!(!bytecode.is_empty());
-} 
+}

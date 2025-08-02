@@ -1,4 +1,4 @@
-use crate::ast::node::{Node, *};
+use crate::ast::{Node, *};
 use crate::vm::types::{IndentLevel, NodeCount};
 
 pub trait Visitor {
@@ -63,7 +63,7 @@ pub trait Visitor {
         }
     }
 
-    fn visit_program(&mut self, program: &crate::ast::node::Program) -> Self::Output {
+    fn visit_program(&mut self, program: &crate::ast::Program) -> Self::Output {
         for statement in &program.body {
             self.visit_node(statement);
         }
@@ -72,7 +72,7 @@ pub trait Visitor {
 
     fn visit_variable_declaration(
         &mut self,
-        decl: &crate::ast::node::VariableDeclaration,
+        decl: &crate::ast::VariableDeclaration,
     ) -> Self::Output {
         for declarator in &decl.declarations {
             self.visit_node(&declarator.id);
@@ -85,7 +85,7 @@ pub trait Visitor {
 
     fn visit_function_declaration(
         &mut self,
-        decl: &crate::ast::node::FunctionDeclaration,
+        decl: &crate::ast::FunctionDeclaration,
     ) -> Self::Output {
         if let Some(id) = &decl.id {
             self.visit_node(id);
@@ -97,10 +97,7 @@ pub trait Visitor {
         self.default_output()
     }
 
-    fn visit_class_declaration(
-        &mut self,
-        decl: &crate::ast::node::ClassDeclaration,
-    ) -> Self::Output {
+    fn visit_class_declaration(&mut self, decl: &crate::ast::ClassDeclaration) -> Self::Output {
         if let Some(id) = &decl.id {
             self.visit_node(id);
         }
@@ -111,21 +108,18 @@ pub trait Visitor {
         self.default_output()
     }
 
-    fn visit_binary_expression(
-        &mut self,
-        expr: &crate::ast::node::BinaryExpression,
-    ) -> Self::Output {
+    fn visit_binary_expression(&mut self, expr: &crate::ast::BinaryExpression) -> Self::Output {
         self.visit_node(&expr.left);
         self.visit_node(&expr.right);
         self.default_output()
     }
 
-    fn visit_unary_expression(&mut self, expr: &crate::ast::node::UnaryExpression) -> Self::Output {
+    fn visit_unary_expression(&mut self, expr: &crate::ast::UnaryExpression) -> Self::Output {
         self.visit_node(&expr.argument);
         self.default_output()
     }
 
-    fn visit_call_expression(&mut self, expr: &crate::ast::node::CallExpression) -> Self::Output {
+    fn visit_call_expression(&mut self, expr: &crate::ast::CallExpression) -> Self::Output {
         self.visit_node(&expr.callee);
         for arg in &expr.arguments {
             self.visit_node(arg);
@@ -133,7 +127,7 @@ pub trait Visitor {
         self.default_output()
     }
 
-    fn visit_new_expression(&mut self, expr: &crate::ast::node::NewExpression) -> Self::Output {
+    fn visit_new_expression(&mut self, expr: &crate::ast::NewExpression) -> Self::Output {
         self.visit_node(&expr.callee);
         for arg in &expr.arguments {
             self.visit_node(arg);
@@ -141,10 +135,7 @@ pub trait Visitor {
         self.default_output()
     }
 
-    fn visit_member_expression(
-        &mut self,
-        expr: &crate::ast::node::MemberExpression,
-    ) -> Self::Output {
+    fn visit_member_expression(&mut self, expr: &crate::ast::MemberExpression) -> Self::Output {
         self.visit_node(&expr.object);
         if expr.computed {
             self.visit_node(&expr.property);
@@ -154,7 +145,7 @@ pub trait Visitor {
 
     fn visit_assignment_expression(
         &mut self,
-        expr: &crate::ast::node::AssignmentExpression,
+        expr: &crate::ast::AssignmentExpression,
     ) -> Self::Output {
         self.visit_node(&expr.left);
         self.visit_node(&expr.right);
@@ -277,10 +268,8 @@ pub trait Visitor {
     }
 
     fn visit_array_literal(&mut self, lit: &ArrayLiteral) -> Self::Output {
-        for element in &lit.elements {
-            if let Some(elem) = element {
-                self.visit_node(elem);
-            }
+        for elem in lit.elements.iter().flatten() {
+            self.visit_node(elem);
         }
         self.default_output()
     }
@@ -467,12 +456,16 @@ impl NodeCounter {
     }
 }
 
+impl Default for NodeCounter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Visitor for NodeCounter {
     type Output = ();
 
-    fn default_output(&self) -> Self::Output {
-        ()
-    }
+    fn default_output(&self) -> Self::Output {}
 
     fn visit_node(&mut self, node: &Node) {
         self.count.increment();
@@ -553,10 +546,8 @@ impl Visitor for NodeCounter {
                 self.visit_node(&stmt.expression);
             }
             Node::ArrayLiteral(lit) => {
-                for element in &lit.elements {
-                    if let Some(elem) = element {
-                        self.visit_node(elem);
-                    }
+                for elem in lit.elements.iter().flatten() {
+                    self.visit_node(elem);
                 }
             }
             Node::ObjectLiteral(lit) => {
@@ -591,40 +582,44 @@ impl AstPrinter {
     }
 }
 
+impl Default for AstPrinter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Visitor for AstPrinter {
     type Output = ();
 
-    fn default_output(&self) -> Self::Output {
-        ()
-    }
+    fn default_output(&self) -> Self::Output {}
 
     fn visit_node(&mut self, node: &Node) {
         self.print_indent();
         match node {
-            Node::Program(_) => println!("Program"),
-            Node::VariableDeclaration(_) => println!("VariableDeclaration"),
-            Node::FunctionDeclaration(_) => println!("FunctionDeclaration"),
-            Node::BinaryExpression(_) => println!("BinaryExpression"),
-            Node::UnaryExpression(_) => println!("UnaryExpression"),
-            Node::CallExpression(_) => println!("CallExpression"),
-            Node::MemberExpression(_) => println!("MemberExpression"),
-            Node::BlockStatement(_) => println!("BlockStatement"),
-            Node::IfStatement(_) => println!("IfStatement"),
-            Node::WhileStatement(_) => println!("WhileStatement"),
-            Node::ForStatement(_) => println!("ForStatement"),
-            Node::ReturnStatement(_) => println!("ReturnStatement"),
-            Node::ExpressionStatement(_) => println!("ExpressionStatement"),
-            Node::ArrayLiteral(_) => println!("ArrayLiteral"),
-            Node::ObjectLiteral(_) => println!("ObjectLiteral"),
-            Node::Property(_) => println!("Property"),
-            Node::Identifier(id) => println!("Identifier: {}", id),
-            Node::Number(num) => println!("Number: {}", num),
-            Node::String(s) => println!("String: {}", s),
-            Node::Boolean(b) => println!("Boolean: {}", b),
-            Node::Null => println!("Null"),
-            Node::Undefined => println!("Undefined"),
-            Node::This => println!("This"),
-            _ => println!("Unknown node"),
+            Node::Program(_) => {}
+            Node::VariableDeclaration(_) => {}
+            Node::FunctionDeclaration(_) => {}
+            Node::BinaryExpression(_) => {}
+            Node::UnaryExpression(_) => {}
+            Node::CallExpression(_) => {}
+            Node::MemberExpression(_) => {}
+            Node::BlockStatement(_) => {}
+            Node::IfStatement(_) => {}
+            Node::WhileStatement(_) => {}
+            Node::ForStatement(_) => {}
+            Node::ReturnStatement(_) => {}
+            Node::ExpressionStatement(_) => {}
+            Node::ArrayLiteral(_) => {}
+            Node::ObjectLiteral(_) => {}
+            Node::Property(_) => {}
+            Node::Identifier(_id) => {}
+            Node::Number(_num) => {}
+            Node::String(_s) => {}
+            Node::Boolean(_b) => {}
+            Node::Null => {}
+            Node::Undefined => {}
+            Node::This => {}
+            _ => {}
         }
 
         self.indent += 1;
@@ -705,10 +700,8 @@ impl Visitor for AstPrinter {
                 self.visit_node(&stmt.expression);
             }
             Node::ArrayLiteral(lit) => {
-                for element in &lit.elements {
-                    if let Some(elem) = element {
-                        self.visit_node(elem);
-                    }
+                for elem in lit.elements.iter().flatten() {
+                    self.visit_node(elem);
                 }
             }
             Node::ObjectLiteral(lit) => {
