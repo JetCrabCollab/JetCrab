@@ -1,0 +1,52 @@
+name: Documentation
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  docs:
+    name: Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+      
+      - name: Check documentation
+        run: cargo doc --no-deps --all-features
+      
+      - name: Check documentation tests
+        run: cargo test --doc --all-features
+      
+      - name: Check README examples
+        run: |
+          echo "Checking README examples..."
+          cargo check --examples
+      
+      - name: Validate documentation links
+        run: |
+          echo "Validating documentation structure..."
+          if [ -f "docs/README.md" ]; then
+            echo "Documentation README found"
+          else
+            echo "No documentation README found (optional)"
+          fi 

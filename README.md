@@ -1,11 +1,9 @@
 <img src="assets/logo.png" alt="JetCrab Logo" width="200" />
 
-[![Tests](https://github.com/JetCrabCollab/JetCrab/actions/workflows/ci.yml/badge.svg?branch=main&job=test)](https://github.com/JetCrabCollab/JetCrab/actions/workflows/ci.yml)
-[![Format](https://github.com/JetCrabCollab/JetCrab/actions/workflows/ci.yml/badge.svg?branch=main&job=format)](https://github.com/JetCrabCollab/JetCrab/actions/workflows/ci.yml)
-[![Clippy](https://github.com/JetCrabCollab/JetCrab/actions/workflows/ci.yml/badge.svg?branch=main&job=clippy)](https://github.com/JetCrabCollab/JetCrab/actions/workflows/ci.yml)
-[![Build](https://github.com/JetCrabCollab/JetCrab/actions/workflows/ci.yml/badge.svg?branch=main&job=build)](https://github.com/JetCrabCollab/JetCrab/actions/workflows/ci.yml)
-[![Security](https://github.com/JetCrabCollab/JetCrab/actions/workflows/ci.yml/badge.svg?branch=main&job=security)](https://github.com/JetCrabCollab/JetCrab/actions/workflows/ci.yml)
-[![Coverage](https://github.com/JetCrabCollab/JetCrab/actions/workflows/coverage.yml/badge.svg?branch=main)](https://github.com/JetCrabCollab/JetCrab/actions/workflows/coverage.yml)
+![CI](https://github.com/JetCrabCollab/JetCrab/actions/workflows/ci.yml/badge.svg?branch=main)
+![Security](https://github.com/JetCrabCollab/JetCrab/actions/workflows/security.yml/badge.svg?branch=main)
+![Coverage](https://github.com/JetCrabCollab/JetCrab/actions/workflows/coverage.yml/badge.svg?branch=main)
+![Documentation](https://github.com/JetCrabCollab/JetCrab/actions/workflows/docs.yml/badge.svg?branch=main)
 
 # JetCrab
 
@@ -149,12 +147,10 @@ make run-examples  # Run all examples
 
 The main branch is protected and requires all checks to pass before merging:
 
-- **Code Coverage**: Must maintain minimum coverage threshold
-- **Tests**: All tests must pass
-- **Format**: Code must be properly formatted
-- **Clippy**: No warnings allowed
-- **Build**: Must compile successfully
+- **CI**: All tests, build, clippy, and format checks must pass
 - **Security**: No security vulnerabilities
+- **Coverage**: Must maintain minimum coverage threshold
+- **Documentation**: Documentation must be valid
 
 To set up branch protection:
 
@@ -162,12 +158,10 @@ To set up branch protection:
 2. Add rule for `main` branch
 3. Enable "Require status checks to pass before merging"
 4. Add all required status checks:
-   - `Code Coverage`
-   - `Tests`
-   - `Format`
-   - `Clippy`
-   - `Build`
+   - `CI`
    - `Security`
+   - `Coverage`
+   - `Documentation`
 5. Enable "Require branches to be up to date before merging"
 6. Enable "Require pull request reviews before merging"
 7. Save changes
