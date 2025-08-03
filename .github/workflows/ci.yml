@@ -40,7 +40,7 @@ jobs:
           cargo run --example ecmascript_2024_compliance
 
   format:
-    name: Format Check
+    name: Format
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -91,7 +91,7 @@ jobs:
         run: cargo build --release --target ${{ matrix.target }}
 
   security:
-    name: Security Audit
+    name: Security
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
