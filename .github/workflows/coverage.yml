@@ -9,7 +9,7 @@ on:
 
 jobs:
   coverage:
-    name: Code Coverage
+    name: Coverage
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
