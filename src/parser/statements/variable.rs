@@ -25,7 +25,11 @@ impl Parser {
         let mut declarations = Vec::new();
 
         loop {
-            let id = self.parse_identifier()?;
+            let id = if self.check(TokenKind::LeftBrace) || self.check(TokenKind::LeftBracket) {
+                self.parse_destructuring_pattern()?
+            } else {
+                self.parse_identifier()?
+            };
             let init = if self.check(TokenKind::Assign) {
                 self.advance();
                 Some(Box::new(self.parse_expression()?))

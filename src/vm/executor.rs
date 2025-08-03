@@ -116,6 +116,34 @@ impl Executor {
                     let a = self.stack.pop().unwrap();
                     self.stack.push(Value::Boolean(a != b));
                 }
+                Instruction::StrictEq => {
+                    let b = self.stack.pop().unwrap();
+                    let a = self.stack.pop().unwrap();
+                    // Strict equality: same type and value
+                    let result = match (&a, &b) {
+                        (Value::Number(a), Value::Number(b)) => a == b,
+                        (Value::String(a), Value::String(b)) => a == b,
+                        (Value::Boolean(a), Value::Boolean(b)) => a == b,
+                        (Value::Null, Value::Null) => true,
+                        (Value::Undefined, Value::Undefined) => true,
+                        _ => false, // Different types are never strictly equal
+                    };
+                    self.stack.push(Value::Boolean(result));
+                }
+                Instruction::StrictNe => {
+                    let b = self.stack.pop().unwrap();
+                    let a = self.stack.pop().unwrap();
+                    // Strict inequality: different types or different values
+                    let result = match (&a, &b) {
+                        (Value::Number(a), Value::Number(b)) => a != b,
+                        (Value::String(a), Value::String(b)) => a != b,
+                        (Value::Boolean(a), Value::Boolean(b)) => a != b,
+                        (Value::Null, Value::Null) => false,
+                        (Value::Undefined, Value::Undefined) => false,
+                        _ => true, // Different types are always strictly unequal
+                    };
+                    self.stack.push(Value::Boolean(result));
+                }
                 Instruction::Lt => {
                     let b = self.stack.pop().unwrap();
                     let a = self.stack.pop().unwrap();
@@ -165,6 +193,16 @@ impl Executor {
                     self.stack.push(Value::Boolean(
                         a.as_bool().unwrap_or(false) || b.as_bool().unwrap_or(false),
                     ));
+                }
+                Instruction::NullishCoalesce => {
+                    let b = self.stack.pop().unwrap();
+                    let a = self.stack.pop().unwrap();
+                    // Return the right operand if the left is null or undefined, otherwise return the left
+                    let result = match a {
+                        Value::Null | Value::Undefined => b,
+                        _ => a,
+                    };
+                    self.stack.push(result);
                 }
                 Instruction::Not => {
                     let a = self.stack.pop().unwrap();
@@ -409,7 +447,7 @@ impl Executor {
                     if let Some(func_handle) = &self.frame.function_handle {
                         self.stack.push(Value::Function(func_handle.clone()));
                     } else {
-                        panic!("LoadThisFunction chamado fora de uma função");
+                        panic!("LoadThisFunction called outside of a function");
                     }
                 }
                 Instruction::LoadThis => {
@@ -452,7 +490,7 @@ impl Executor {
                     };
                     self.stack.push(Value::String(type_str.to_string()));
                 }
-                _ => todo!("Instrução não implementada ainda"),
+                _ => todo!("Instruction not implemented yet"),
             }
             ip += 1;
         }

@@ -35,7 +35,10 @@ impl Lexer {
                 break;
             }
 
-            tokens.push(token);
+            // Skip comment tokens - they should not be included in the output
+            if !matches!(token.kind, TokenKind::Comment(_)) {
+                tokens.push(token);
+            }
 
             <Self as PositionManager>::update_position(self, start_line, start_col);
         }
@@ -78,6 +81,22 @@ impl Lexer {
             <Self as crate::lexer::scanners::StringReader>::read_string(self)?
         } else if c == '`' {
             <Self as crate::lexer::scanners::StringReader>::read_template_string(self)?
+        } else if c == '#' {
+            // Handle private fields
+            self.advance(); // consume '#'
+            let mut field_name = String::new();
+
+            while self.pos < self.source.len() {
+                let next_c = self.source[self.pos];
+                if next_c.is_ascii_alphanumeric() || next_c == '_' || next_c == '$' {
+                    field_name.push(next_c);
+                    self.advance();
+                } else {
+                    break;
+                }
+            }
+
+            TokenKind::PrivateField
         } else if c == '/' {
             if <Self as PositionManager>::peek_char(self, 1) == Some('/') {
                 <Self as crate::lexer::scanners::CommentReader>::read_line_comment(self)?

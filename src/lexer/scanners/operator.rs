@@ -12,6 +12,101 @@ where
     fn read_operator(&mut self) -> Result<TokenKind, LexerError> {
         let c = self.source()[self.pos()];
 
+        // Check for three-character operators first
+        if self.pos() + 2 < self.source().len() {
+            let next_c = self.source()[self.pos() + 1];
+            let next_next_c = self.source()[self.pos() + 2];
+            let three_char_op = format!("{}{}{}", c, next_c, next_next_c);
+
+            match three_char_op.as_str() {
+                "===" => {
+                    self.advance_pos();
+                    self.advance_pos();
+                    self.advance_pos();
+                    return Ok(TokenKind::StrictEqual);
+                }
+                "!==" => {
+                    self.advance_pos();
+                    self.advance_pos();
+                    self.advance_pos();
+                    return Ok(TokenKind::StrictNotEqual);
+                }
+                "..." => {
+                    self.advance_pos();
+                    self.advance_pos();
+                    self.advance_pos();
+                    return Ok(TokenKind::Spread);
+                }
+                _ => {}
+            }
+        }
+
+        // Check for two-character operators
+        if self.pos() + 1 < self.source().len() {
+            let next_c = self.source()[self.pos() + 1];
+            let two_char_op = format!("{}{}", c, next_c);
+
+            match two_char_op.as_str() {
+                "==" => {
+                    self.advance_pos();
+                    self.advance_pos();
+                    return Ok(TokenKind::Equal);
+                }
+                "!=" => {
+                    self.advance_pos();
+                    self.advance_pos();
+                    return Ok(TokenKind::NotEqual);
+                }
+                "<=" => {
+                    self.advance_pos();
+                    self.advance_pos();
+                    return Ok(TokenKind::LessThanEqual);
+                }
+                ">=" => {
+                    self.advance_pos();
+                    self.advance_pos();
+                    return Ok(TokenKind::GreaterThanEqual);
+                }
+                "++" => {
+                    self.advance_pos();
+                    self.advance_pos();
+                    return Ok(TokenKind::Increment);
+                }
+                "--" => {
+                    self.advance_pos();
+                    self.advance_pos();
+                    return Ok(TokenKind::Decrement);
+                }
+                "&&" => {
+                    self.advance_pos();
+                    self.advance_pos();
+                    return Ok(TokenKind::LogicalAnd);
+                }
+                "||" => {
+                    self.advance_pos();
+                    self.advance_pos();
+                    return Ok(TokenKind::LogicalOr);
+                }
+                "**" => {
+                    self.advance_pos();
+                    self.advance_pos();
+                    return Ok(TokenKind::StarStar);
+                }
+                "=>" => {
+                    self.advance_pos();
+                    self.advance_pos();
+                    return Ok(TokenKind::Arrow);
+                }
+                "??" => {
+                    self.advance_pos();
+                    self.advance_pos();
+                    return Ok(TokenKind::NullishCoalescing);
+                }
+                _ => {}
+            }
+        }
+
+        // Single character operators
         match c {
             '(' => {
                 self.advance_pos();

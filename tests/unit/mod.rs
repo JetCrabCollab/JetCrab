@@ -1,0 +1,9 @@
+pub mod ast_tests;
+pub mod bytecode_tests;
+pub mod error_tests;
+pub mod lexer_tests;
+pub mod memory_tests;
+pub mod parser_tests;
+pub mod runtime_tests;
+pub mod semantic_tests;
+pub mod vm_tests;

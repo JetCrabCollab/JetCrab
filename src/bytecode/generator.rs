@@ -1,7 +1,7 @@
 use crate::ast::node::Node;
 use crate::bytecode::expressions::{
     ArithmeticCore, ArithmeticGenerator, AssignmentCore, AssignmentGenerator, ComparisonCore,
-    LogicalCore, LogicalGenerator, UnaryCore, UnaryGenerator,
+    ComparisonGenerator, LogicalCore, LogicalGenerator, UnaryCore, UnaryGenerator,
 };
 use crate::bytecode::literals::{
     ArrayCore, ArrayGenerator, FunctionLiteralCore, ObjectCore, ObjectGenerator,
@@ -160,8 +160,25 @@ impl BytecodeGenerator {
                 let constant_id = <Self as ConstantManager>::add_constant(self, val.clone());
                 self.instructions.push(Instruction::PushBigInt(constant_id));
             }
-            Node::BinaryExpression(_expr) => {
-                <Self as ArithmeticGenerator>::generate_binary_expression(self, node);
+            Node::BinaryExpression(expr) => {
+                // Use ComparisonGenerator for comparison operators
+                match expr.operator.as_str() {
+                    "==" | "!=" | "===" | "!==" | "<" | ">" | "<=" | ">=" => {
+                        <Self as ComparisonGenerator>::generate_comparison_expression(self, node);
+                    }
+                    // Use ArithmeticGenerator for arithmetic operators
+                    "+" | "-" | "*" | "/" | "%" | "**" => {
+                        <Self as ArithmeticGenerator>::generate_binary_expression(self, node);
+                    }
+                    // Use LogicalGenerator for logical operators
+                    "&&" | "||" | "??" => {
+                        <Self as LogicalGenerator>::generate_logical_expression(self, node);
+                    }
+                    // Default to arithmetic for unknown operators
+                    _ => {
+                        <Self as ArithmeticGenerator>::generate_binary_expression(self, node);
+                    }
+                }
             }
             Node::UnaryExpression(_expr) => {
                 <Self as UnaryGenerator>::generate_unary_expression(self, node);
@@ -248,7 +265,9 @@ impl BytecodeGenerator {
                 self.instructions.push(Instruction::PushConst(constant_id));
             }
             Node::String(s) => {
-                let constant_id = <Self as ConstantManager>::add_constant(self, s.clone());
+                // Store string literals with quotes to distinguish from numbers
+                let quoted_string = format!("\"{}\"", s);
+                let constant_id = <Self as ConstantManager>::add_constant(self, quoted_string);
                 self.instructions.push(Instruction::PushConst(constant_id));
             }
             Node::Boolean(b) => {

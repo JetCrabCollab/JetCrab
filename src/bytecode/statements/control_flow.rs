@@ -24,11 +24,35 @@ where
 {
     fn generate_if_statement(&mut self, node: &Node) {
         if let Node::IfStatement(stmt) = node {
+            // Generate test condition
             self.visit_node(&stmt.test);
+
+            // Jump to else block if condition is false
+            let jump_to_else_pos = self.instructions().len();
+            self.instructions()
+                .push(Instruction::JumpIfFalse(CodeAddress::new(0))); // Placeholder
+
+            // Generate consequent block
             self.visit_node(&stmt.consequent);
+
+            // Jump over else block
+            let jump_over_else_pos = self.instructions().len();
+            self.instructions()
+                .push(Instruction::Jump(CodeAddress::new(0))); // Placeholder
+
+            // Update jump to else address
+            let else_start_pos = self.instructions().len();
+            self.instructions()[jump_to_else_pos] =
+                Instruction::JumpIfFalse(CodeAddress::new(else_start_pos));
+
+            // Generate alternate block (else)
             if let Some(alt) = &stmt.alternate {
                 self.visit_node(alt);
             }
+
+            // Update jump over else address
+            let end_pos = self.instructions().len();
+            self.instructions()[jump_over_else_pos] = Instruction::Jump(CodeAddress::new(end_pos));
         }
     }
 

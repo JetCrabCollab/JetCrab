@@ -37,8 +37,23 @@ impl Engine {
         let values: Vec<Value> = constants
             .iter()
             .map(|s| {
-                if let Ok(num) = s.parse::<f64>() {
-                    Value::Number(num)
+                // Check if it's a string that starts and ends with quotes (string literal)
+                if s.starts_with('"') && s.ends_with('"') {
+                    // Remove quotes and treat as string literal
+                    let content = &s[1..s.len() - 1];
+                    Value::String(content.to_string())
+                } else if s.starts_with("'") && s.ends_with("'") {
+                    // Remove quotes and treat as string literal
+                    let content = &s[1..s.len() - 1];
+                    Value::String(content.to_string())
+                } else if let Ok(num) = s.parse::<f64>() {
+                    // Check if it's actually a number (not a string that happens to be numeric)
+                    if s.contains('.') || s.parse::<i64>().is_ok() {
+                        Value::Number(num)
+                    } else {
+                        // If it's a string that looks like a number, keep it as string
+                        Value::String(s.clone())
+                    }
                 } else if s == "true" {
                     Value::Boolean(true)
                 } else if s == "false" {

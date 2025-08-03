@@ -1015,8 +1015,7 @@ impl Parser {
         }))
     }
 
-    #[allow(dead_code)]
-    fn parse_destructuring_pattern(&mut self) -> ParseResult<Node> {
+    pub fn parse_destructuring_pattern(&mut self) -> ParseResult<Node> {
         if self.check(TokenKind::LeftBrace) {
             self.advance();
             let mut properties = Vec::new();
