@@ -6,23 +6,78 @@ JetCrab is organized as a single crate with modular components, each handling a 
 
 ## Project Structure
 
+```mermaid
+graph TB
+    subgraph "JetCrab Project Structure"
+        A[jetcrab/] --> B[Cargo.toml]
+        A --> C[src/]
+        A --> D[examples/]
+        A --> E[tests/]
+        A --> F[benches/]
+        
+        C --> C1[lib.rs]
+        C --> C2[lexer/]
+        C --> C3[ast/]
+        C --> C4[parser/]
+        C --> C5[semantic/]
+        C --> C6[bytecode/]
+        C --> C7[vm/]
+        C --> C8[runtime/]
+        C --> C9[memory/]
+        C --> C10[api/]
+        
+        C2 --> C2A[token.rs]
+        C2 --> C2B[lexer.rs]
+        C2 --> C2C[error.rs]
+        
+        C3 --> C3A[node.rs]
+        C3 --> C3B[visitor.rs]
+        
+        C4 --> C4A[parser.rs]
+        C4 --> C4B[error.rs]
+        C4 --> C4C[recovery.rs]
+    end
+    
+    style A fill:#e3f2fd
+    style B fill:#e8f5e8
+    style C fill:#fff3e0
+    style D fill:#fce4ec
+    style E fill:#fce4ec
+    style F fill:#fce4ec
 ```
-jetcrab/
-├── Cargo.toml              # Package configuration
-├── src/
-│   ├── lib.rs              # Public API and module declarations
-│   ├── lexer/              # Lexical analysis
-│   ├── ast/                # Abstract Syntax Tree
-│   ├── parser/             # Syntax analysis
-│   ├── semantic/           # Semantic analysis
-│   ├── bytecode/           # Bytecode generation
-│   ├── vm/                 # Virtual Machine
-│   ├── runtime/            # Runtime environment
-│   ├── memory/             # Memory management
-│   └── api/                # Public API
-├── examples/               # Usage examples
-├── tests/                  # Integration tests
-└── benches/                # Performance benchmarks
+
+## Component Relationships
+
+```mermaid
+graph TB
+    subgraph "JetCrab Component Dependencies"
+        A[Source Code] --> B[lexer]
+        B --> C[parser]
+        C --> D[ast]
+        D --> E[semantic]
+        E --> F[bytecode]
+        F --> G[vm]
+        G --> H[runtime]
+        
+        I[memory] -.-> G
+        I -.-> H
+        
+        J[api] --> K[Public Interface]
+        
+        B --> B1[Token Stream]
+        C --> C1[AST]
+        D --> D1[Validated AST]
+        E --> E1[Bytecode]
+        F --> F1[Execution Results]
+    end
+    
+    style A fill:#e1f5fe
+    style K fill:#c8e6c9
+    style B1 fill:#fff3e0
+    style C1 fill:#fff3e0
+    style D1 fill:#fff3e0
+    style E1 fill:#fff3e0
+    style F1 fill:#fff3e0
 ```
 
 ## Individual Component Architecture

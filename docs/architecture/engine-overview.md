@@ -6,26 +6,84 @@ JetCrab is a modern JavaScript engine implemented in Rust, inspired by Google's 
 
 ## High-Level Architecture
 
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Source Code   │───▶│   Lexical       │───▶│   Syntax        │
-│   (JavaScript)  │    │   Analysis      │    │   Analysis      │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-                                │                       │
-                                ▼                       ▼
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Bytecode      │◀───│   Semantic      │◀───│   Abstract      │
-│   Execution     │    │   Analysis      │    │   Syntax Tree   │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-                                │
-                                ▼
-                       ┌─────────────────┐
-                       │   Runtime       │
-                       │   Environment   │
-                       └─────────────────┘
+```mermaid
+graph TB
+    subgraph "JetCrab Engine Pipeline"
+        A[Source Code<br/>JavaScript] --> B[Lexical Analysis<br/>Tokenization]
+        B --> C[Syntax Analysis<br/>Parsing]
+        C --> D[Abstract Syntax Tree<br/>AST]
+        D --> E[Semantic Analysis<br/>Validation]
+        E --> F[Bytecode Generation<br/>Code Generation]
+        F --> G[Virtual Machine<br/>Execution]
+        G --> H[Runtime Environment<br/>Output]
+        
+        I[Memory Management<br/>Garbage Collection] -.-> G
+        I -.-> H
+    end
+    
+    style A fill:#e1f5fe
+    style H fill:#c8e6c9
+    style B fill:#fff3e0
+    style C fill:#fff3e0
+    style D fill:#fff3e0
+    style E fill:#fff3e0
+    style F fill:#fff3e0
+    style G fill:#fff3e0
+    style I fill:#fce4ec
 ```
 
 ## Core Components
+
+```mermaid
+graph TB
+    subgraph "JetCrab Core Components"
+        A[Lexical Analysis<br/>Tokenization] --> A1[ECMAScript Tokens]
+        A --> A2[Unicode Support]
+        A --> A3[Error Recovery]
+        
+        B[Syntax Analysis<br/>Parsing] --> B1[AST Generation]
+        B --> B2[Error Recovery]
+        B --> B3[Source Location]
+        
+        C[Abstract Syntax Tree<br/>Program Structure] --> C1[Node Types]
+        C --> C2[Visitor Pattern]
+        C --> C3[Serialization]
+        
+        D[Semantic Analysis<br/>Validation] --> D1[Type Checking]
+        D --> D2[Scope Analysis]
+        D --> D3[Error Detection]
+        
+        E[Bytecode Generation<br/>Code Generation] --> E1[Instruction Set]
+        E --> E2[Optimization]
+        E --> E3[Constant Pool]
+        
+        F[Virtual Machine<br/>Execution] --> F1[Stack-based Engine]
+        F --> F2[Register Management]
+        F --> F3[Function Support]
+        
+        G[Runtime Environment<br/>Services] --> G1[Value System]
+        G --> G2[Context Management]
+        G --> G3[Object Operations]
+        
+        H[Garbage Collection<br/>Memory Management] --> H1[Mark-Sweep]
+        H --> H2[Object Lifecycle]
+        H --> H3[Heap Management]
+        
+        I[Public API<br/>Integration] --> I1[Engine Init]
+        I --> I2[Embedding Interface]
+        I --> I3[Configuration]
+    end
+    
+    style A fill:#e3f2fd
+    style B fill:#e8f5e8
+    style C fill:#fff3e0
+    style D fill:#fce4ec
+    style E fill:#e3f2fd
+    style F fill:#e8f5e8
+    style G fill:#fff3e0
+    style H fill:#fce4ec
+    style I fill:#e3f2fd
+```
 
 ### 1. Lexical Analysis (v8_lexer)
 - **Purpose**: Converts source code into tokens
@@ -109,6 +167,37 @@ JetCrab is a modern JavaScript engine implemented in Rust, inspired by Google's 
 
 ## Data Flow
 
+```mermaid
+graph LR
+    subgraph "Data Flow Through JetCrab"
+        A[JavaScript Source] --> B[Lexer]
+        B --> C[Tokens]
+        C --> D[Parser]
+        D --> E[AST]
+        
+        E --> F[Semantic Analyzer]
+        F --> G[Validated AST]
+        G --> H[Bytecode Generator]
+        H --> I[Bytecode]
+        
+        I --> J[Virtual Machine]
+        J --> K[Runtime Environment]
+        K --> L[Execution Results]
+        
+        M[Runtime Objects] --> N[Garbage Collector]
+        N --> O[Memory Cleanup]
+        O --> P[Available Memory]
+    end
+    
+    style A fill:#e1f5fe
+    style L fill:#c8e6c9
+    style P fill:#c8e6c9
+    style C fill:#fff3e0
+    style E fill:#fff3e0
+    style G fill:#fff3e0
+    style I fill:#fff3e0
+```
+
 ### 1. Source Code Processing
 ```
 JavaScript Source → Lexer → Tokens → Parser → AST
@@ -130,6 +219,37 @@ Runtime Objects → Garbage Collector → Memory Cleanup → Available Memory
 ```
 
 ## Design Principles
+
+```mermaid
+graph TB
+    subgraph "JetCrab Design Principles"
+        A[Modularity<br/>Component Separation] --> A1[Clear Responsibilities]
+        A --> A2[Loose Coupling]
+        A --> A3[Well-defined Interfaces]
+        
+        B[Performance<br/>Optimization] --> B1[Efficient Data Structures]
+        B --> B2[Optimized Bytecode]
+        B --> B3[Memory-conscious Design]
+        
+        C[Standards Compliance<br/>ECMAScript] --> C1[Specification Adherence]
+        C --> C2[V8 Compatibility]
+        C --> C3[Modern JavaScript Support]
+        
+        D[Extensibility<br/>Future-proof] --> D1[Plugin Architecture]
+        D --> D2[Visitor Pattern]
+        D --> D3[Configurable Components]
+        
+        E[Reliability<br/>Robustness] --> E1[Error Handling]
+        E --> E2[Error Recovery]
+        E --> E3[Memory Safety]
+    end
+    
+    style A fill:#e3f2fd
+    style B fill:#e8f5e8
+    style C fill:#fff3e0
+    style D fill:#fce4ec
+    style E fill:#e3f2fd
+```
 
 ### 1. Modularity
 - Each component is a separate crate with clear responsibilities
@@ -160,6 +280,29 @@ Runtime Objects → Garbage Collector → Memory Cleanup → Available Memory
 - Memory safety through Rust
 
 ## Performance Characteristics
+
+```mermaid
+graph TB
+    subgraph "Performance Characteristics"
+        A[Memory Usage] --> A1[Lexer: Minimal Footprint]
+        A --> A2[Parser: AST-based]
+        A --> A3[VM: Stack-based]
+        A --> A4[GC: Automatic Management]
+        
+        B[Execution Speed] --> B1[Lexical Analysis: O(n)]
+        B --> B2[Parsing: O(n) with Recovery]
+        B --> B3[Bytecode Generation: O(n)]
+        B --> B4[VM Execution: Optimized]
+        
+        C[Scalability] --> C1[Large Files: Streaming]
+        C --> C2[Complex Programs: Optimized]
+        C --> C3[Memory Pressure: GC]
+    end
+    
+    style A fill:#e3f2fd
+    style B fill:#e8f5e8
+    style C fill:#fff3e0
+```
 
 ### Memory Usage
 - **Lexer**: Minimal memory footprint, streaming processing

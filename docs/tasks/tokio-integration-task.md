@@ -1,482 +1,262 @@
-# Task: Integração Tokio no JetCrab
+# Tokio Integration Task
 
-## 📋 Visão Geral
+## Overview
 
-Adicionar integração Tokio nos componentes mais críticos do JetCrab para obter performance disruptiva e execução assíncrona nativa.
+This document outlines the plan for integrating Tokio asynchronous runtime into JetCrab to improve performance, responsiveness, and scalability.
 
-## 🎯 Objetivos
+## Background
 
-- [ ] **Performance**: 3-20x melhoria em cenários I/O intensivos
-- [ ] **Responsividade**: Zero GC pauses e compilação não-bloqueante
-- [ ] **Escalabilidade**: Multi-threading real vs. single-threaded
-- [ ] **Competitividade**: Performance comparável ou superior ao V8/Node.js
+JetCrab currently uses a synchronous execution model. Integrating Tokio will enable:
+- Asynchronous I/O operations
+- Concurrent execution of multiple JavaScript contexts
+- Better resource utilization
+- Improved responsiveness for I/O-bound operations
 
----
+## Objectives
 
-## 🚀 Phase 1: VM + Runtime (Prioridade ALTA)
+1. **Performance Improvement**: Enable concurrent execution of multiple JavaScript contexts
+2. **I/O Optimization**: Asynchronous file system and network operations
+3. **Resource Management**: Better CPU and memory utilization
+4. **Scalability**: Support for high-concurrency scenarios
+5. **Modern Architecture**: Align with Rust's async ecosystem
 
-### **1.1 Adicionar Tokio ao Cargo.toml**
-```toml
-# Cargo.toml
-[dependencies]
-tokio = { version = "1.0", features = ["full"] }
-futures = "0.3"
+## Current Status
+
+```mermaid
+gantt
+    title Tokio Integration Timeline
+    dateFormat  YYYY-MM-DD
+    section Planning
+    Design Phase           :done, design, 2024-01-01, 2024-01-15
+    Architecture Review    :done, review, 2024-01-16, 2024-01-31
+    
+    section Implementation
+    VM Integration         :active, vm, 2024-02-01, 2024-03-31
+    Runtime Integration    :runtime, 2024-04-01, 2024-05-31
+    I/O Operations         :io, 2024-06-01, 2024-07-31
+    
+    section Testing
+    Unit Tests            :test, 2024-08-01, 2024-08-31
+    Integration Tests     :integration, 2024-09-01, 2024-09-30
+    Performance Tests     :perf, 2024-10-01, 2024-10-31
 ```
 
-### **1.2 Refatorar VM para Async**
-```rust
-// src/vm/executor.rs
-use tokio::task;
-use std::sync::Arc;
+- **Phase**: Planning and Design
+- **Progress**: 20% complete
+- **Next Milestone**: VM integration design
+- **Estimated Completion**: Q4 2024
 
-pub struct AsyncExecutor {
-    vm: Arc<VM>,
-    runtime: Arc<tokio::runtime::Runtime>,
-}
+## Prerequisites
 
-impl AsyncExecutor {
-    pub async fn execute_async(&self, bytecode: &Bytecode) -> Result<Value, Error> {
-        for instruction in &bytecode.instructions {
-            match instruction {
-                Instruction::CallFunction(func) => {
-                    let result = self.execute_function_async(func).await?;
-                    self.stack.push(result);
-                }
-                Instruction::LoadFile(path) => {
-                    let content = tokio::fs::read_to_string(path).await?;
-                    self.stack.push(Value::String(content));
-                }
-                _ => {
-                    let executor = self.clone();
-                    let instruction = instruction.clone();
-                    let result = task::spawn_blocking(move || {
-                        executor.execute_instruction_sync(&instruction)
-                    }).await.unwrap()?;
-                    self.stack.push(result);
-                }
-            }
-        }
-        Ok(self.stack.pop().unwrap())
-    }
-}
+### **Technical Requirements**
+- Rust 1.70+ with async/await support
+- Tokio runtime (latest stable version)
+- Async-compatible dependencies
+- Performance benchmarking tools
+
+### **Architecture Changes**
+- VM execution model updates
+- Memory management for async contexts
+- Error handling for async operations
+- Integration with existing bytecode system
+
+### **Testing Infrastructure**
+- Async test framework
+- Performance benchmarking suite
+- Concurrency testing tools
+- Memory leak detection
+
+## Implementation Plan
+
+### **Phase 1: VM + Runtime (HIGH PRIORITY)**
+
+#### **1.1 Async VM Architecture**
+- Design async-compatible VM execution model
+- Implement async instruction dispatch
+- Add async context management
+- Update memory management for async operations
+
+#### **1.2 Runtime Integration**
+- Integrate Tokio runtime with JetCrab
+- Implement async execution contexts
+- Add async error handling
+- Update garbage collection for async scenarios
+
+#### **1.3 Basic Async Operations**
+- Implement async function calls
+- Add async loop support
+- Support async/await syntax
+- Basic async I/O operations
+
+### **Phase 2: I/O Operations (MEDIUM PRIORITY)**
+
+#### **2.1 File System Operations**
+- Async file reading and writing
+- Directory operations
+- File system watching
+- Stream-based file processing
+
+#### **2.2 Network Operations**
+- HTTP client/server support
+- WebSocket implementation
+- TCP/UDP networking
+- DNS resolution
+
+#### **2.3 Stream Processing**
+- Async iterators
+- Stream transformations
+- Backpressure handling
+- Memory-efficient streaming
+
+### **Phase 3: Advanced Features (LOW PRIORITY)**
+
+#### **3.1 Concurrency Control**
+- Worker thread pools
+- Task scheduling
+- Resource sharing
+- Deadlock prevention
+
+#### **3.2 Performance Optimization**
+- Async JIT compilation
+- Memory pooling
+- Cache optimization
+- Load balancing
+
+#### **3.3 Monitoring and Debugging**
+- Async stack traces
+- Performance profiling
+- Memory usage tracking
+- Debug tools integration
+
+### **Phase 4: Asynchronous Profiling (LOW PRIORITY)**
+
+#### **4.1 Performance Monitoring**
+- Async operation profiling
+- Memory usage tracking
+- CPU utilization monitoring
+- I/O performance metrics
+
+#### **4.2 Debugging Tools**
+- Async stack trace support
+- Breakpoint management
+- Variable inspection
+- Performance analysis tools
+
+### **Phase 5: Integration and Testing**
+
+#### **5.1 Comprehensive Testing**
+- Unit tests for async operations
+- Integration tests for I/O
+- Performance benchmarks
+- Stress testing
+
+#### **5.2 Documentation**
+- Async API documentation
+- Performance guidelines
+- Migration guide
+- Best practices
+
+## Technical Architecture
+
+### **Async VM Design**
+
+```mermaid
+graph TB
+    subgraph "Async VM Architecture"
+        A[Async Context] --> B[Async VM]
+        B --> C[Tokio Runtime]
+        C --> D[Async I/O]
+        C --> E[Task Scheduler]
+        
+        F[Bytecode] --> B
+        G[Memory Manager] --> B
+        H[Garbage Collector] --> B
+    end
+    
+    style A fill:#e3f2fd
+    style C fill:#e8f5e8
+    style D fill:#fff3e0
+    style E fill:#fce4ec
 ```
 
-### **1.3 Runtime Assíncrono**
-```rust
-// src/runtime/context.rs
-use tokio::sync::RwLock;
+### **Execution Model**
 
-pub struct AsyncContext {
-    global_object: Arc<RwLock<Object>>,
-    variables: Arc<RwLock<HashMap<String, Value>>>,
-    this_value: Arc<RwLock<Value>>,
-}
+1. **Async Context Creation**: Each JavaScript context runs in its own async task
+2. **Bytecode Execution**: VM executes bytecode asynchronously
+3. **I/O Operations**: Non-blocking I/O operations using Tokio
+4. **Memory Management**: Async-aware garbage collection
+5. **Error Handling**: Async error propagation and recovery
 
-impl AsyncContext {
-    pub async fn execute_function_async(&self, func: &Function, args: &[Value]) -> Result<Value, String> {
-        match &func.function_type {
-            FunctionType::Native(native_func) => {
-                if let Some(async_func) = func.async_native_func {
-                    async_func(args).await
-                } else {
-                    task::spawn_blocking(move || {
-                        native_func(args)
-                    }).await.unwrap()
-                }
-            }
-            FunctionType::User(user_func) => {
-                self.execute_user_function_async(user_func, args).await
-            }
-        }
-    }
-}
-```
+### **Memory Management**
 
-**Estimativa**: 2-3 dias
-**Impacto**: 300-1000% melhoria para I/O intensivo
+- **Async Contexts**: Each async context has its own memory space
+- **Shared Resources**: Thread-safe sharing of common resources
+- **Garbage Collection**: Async-aware GC that doesn't block execution
+- **Memory Pooling**: Efficient memory allocation for async operations
 
----
+## Success Metrics
 
-## 🔥 Phase 2: Garbage Collection Assíncrono (Prioridade ALTA)
+### **Performance Improvements**
+- **Concurrency**: Support for 1000+ concurrent JavaScript contexts
+- **I/O Performance**: 10x improvement in I/O-bound operations
+- **Memory Usage**: Efficient memory utilization in async scenarios
+- **Response Time**: Sub-millisecond response times for async operations
 
-### **2.1 GC Background**
-```rust
-// src/memory/collector.rs
-use tokio::time::{interval, Duration};
+### **Scalability Metrics**
+- **Throughput**: Handle 10,000+ operations per second
+- **Resource Utilization**: 90%+ CPU utilization under load
+- **Memory Efficiency**: <100MB memory per 1000 contexts
+- **Error Rate**: <0.1% error rate under stress
 
-pub struct AsyncGarbageCollector {
-    heap: Arc<RwLock<Heap>>,
-    gc_task: Option<tokio::task::JoinHandle<()>>,
-}
+### **Compatibility**
+- **ECMAScript Compliance**: Maintain full ECMAScript compliance
+- **API Compatibility**: Backward compatibility with sync API
+- **Migration Path**: Smooth migration from sync to async
+- **Tooling Support**: Full debugging and profiling support
 
-impl AsyncGarbageCollector {
-    pub fn new() -> Self {
-        let heap = Arc::new(RwLock::new(Heap::new()));
-        Self { heap, gc_task: None }
-    }
-    
-    pub fn start_background_gc(&mut self) {
-        let heap = Arc::clone(&self.heap);
-        
-        let gc_task = tokio::spawn(async move {
-            let mut interval = interval(Duration::from_millis(100));
-            
-            loop {
-                interval.tick().await;
-                
-                let mut heap = heap.write().await;
-                heap.collect_garbage_async().await;
-            }
-        });
-        
-        self.gc_task = Some(gc_task);
-    }
-    
-    pub async fn collect_async(&self) {
-        let heap = Arc::clone(&self.heap);
-        
-        tokio::spawn(async move {
-            let mut heap = heap.write().await;
-            heap.mark_phase_async().await;
-            heap.sweep_phase_async().await;
-        });
-    }
-}
-```
+## Risks and Mitigation
 
-**Estimativa**: 1-2 dias
-**Impacto**: 500-2000% melhoria (elimina GC pauses)
+### **Technical Risks**
+- **Complexity**: Async VM design complexity
+- **Performance**: Overhead of async operations
+- **Memory**: Memory leaks in async contexts
+- **Debugging**: Difficulty debugging async code
 
----
+### **Mitigation Strategies**
+- **Incremental Implementation**: Phase-by-phase rollout
+- **Performance Testing**: Continuous performance monitoring
+- **Memory Profiling**: Regular memory leak detection
+- **Comprehensive Testing**: Extensive test coverage
 
-## ⚡ Phase 3: JIT Assíncrono (Prioridade MÉDIA)
+## Completion Checklist
 
-### **3.1 Compilação em Background**
-```rust
-// src/jit/compiler.rs
-use tokio::sync::mpsc;
+### **Phase 1: VM Integration**
+- [ ] Design async VM architecture
+- [ ] Implement async instruction dispatch
+- [ ] Add async context management
+- [ ] Update memory management
+- [ ] Basic async operations working
 
-pub struct AsyncJITCompiler {
-    compilation_queue: mpsc::UnboundedSender<CompilationTask>,
-    result_receiver: mpsc::UnboundedReceiver<CompilationResult>,
-}
+### **Phase 2: I/O Operations**
+- [ ] File system operations
+- [ ] Network operations
+- [ ] Stream processing
+- [ ] I/O performance optimization
 
-impl AsyncJITCompiler {
-    pub async fn new() -> Self {
-        let (tx, rx) = mpsc::unbounded_channel();
-        
-        // Inicia worker threads
-        tokio::spawn(Self::compilation_worker(tx, rx));
-        
-        Self {
-            compilation_queue: tx,
-            result_receiver: rx,
-        }
-    }
-    
-    pub async fn compile_function(&self, function: &Function) -> CompiledFunction {
-        let task = CompilationTask::new(function.clone());
-        self.compilation_queue.send(task).await.unwrap();
-        
-        // Retorna função interpretada temporariamente
-        self.create_interpreted_function(function)
-    }
-    
-    async fn compilation_worker(
-        mut receiver: mpsc::UnboundedReceiver<CompilationTask>,
-        sender: mpsc::UnboundedSender<CompilationResult>,
-    ) {
-        while let Some(task) = receiver.recv().await {
-            let result = task::spawn_blocking(move || {
-                task.compile_sync()
-            }).await.unwrap();
-            
-            sender.send(result).await.unwrap();
-        }
-    }
-}
-```
+### **Phase 3: Advanced Features**
+- [ ] Concurrency control
+- [ ] Performance optimization
+- [ ] Monitoring and debugging
+- [ ] Advanced async features
 
-### **3.2 Otimizações Paralelas**
-```rust
-// src/jit/optimizer.rs
-impl AsyncOptimizer {
-    pub async fn optimize_parallel(&self, code: &MachineCode) -> OptimizedCode {
-        let optimizer = self.clone();
-        let code = code.clone();
-        
-        let (constant_folded, dead_eliminated, inlined, loop_optimized) = tokio::join!(
-            task::spawn_blocking(move || {
-                optimizer.constant_folding(&code)
-            }),
-            task::spawn_blocking(move || {
-                optimizer.dead_code_elimination(&code)
-            }),
-            task::spawn_blocking(move || {
-                optimizer.function_inlining(&code)
-            }),
-            task::spawn_blocking(move || {
-                optimizer.loop_optimization(&code)
-            })
-        );
-        
-        self.merge_optimizations(
-            constant_folded.await.unwrap(),
-            dead_eliminated.await.unwrap(),
-            inlined.await.unwrap(),
-            loop_optimized.await.unwrap()
-        )
-    }
-}
-```
+### **Phase 4: Testing and Documentation**
+- [ ] Comprehensive testing
+- [ ] Performance benchmarks
+- [ ] Documentation updates
+- [ ] Migration guide
 
-**Estimativa**: 3-4 dias
-**Impacto**: 5-20x melhoria para compilação
-
----
-
-## 📊 Phase 4: Profiling Assíncrono (Prioridade BAIXA)
-
-### **4.1 Profiler em Background**
-```rust
-// src/profiler/profiler.rs
-use tokio::sync::RwLock;
-
-pub struct AsyncProfiler {
-    profile_data: Arc<RwLock<ProfileData>>,
-    profiling_task: Option<tokio::task::JoinHandle<()>>,
-}
-
-impl AsyncProfiler {
-    pub fn new() -> Self {
-        let profile_data = Arc::new(RwLock::new(ProfileData::new()));
-        Self { profile_data, profiling_task: None }
-    }
-    
-    pub fn start_profiling(&mut self) {
-        let profile_data = Arc::clone(&self.profile_data);
-        
-        let task = tokio::spawn(async move {
-            let mut interval = interval(Duration::from_millis(10));
-            
-            loop {
-                interval.tick().await;
-                
-                let mut data = profile_data.write().await;
-                data.collect_execution_stats().await;
-                data.analyze_hot_paths().await;
-            }
-        });
-        
-        self.profiling_task = Some(task);
-    }
-    
-    pub async fn get_profile_data(&self) -> ProfileData {
-        let data = self.profile_data.read().await;
-        data.clone()
-    }
-}
-```
-
-**Estimativa**: 1 dia
-**Impacto**: Zero overhead de profiling
-
----
-
-## 🔧 Phase 5: Integração e Testes
-
-### **5.1 Main Function Async**
-```rust
-// src/main.rs
-#[tokio::main]
-async fn main() {
-    let vm = Arc::new(AsyncVM::new().await);
-    
-    // Inicia GC em background
-    vm.start_background_gc();
-    
-    // Inicia profiling em background
-    vm.start_profiling();
-    
-    // Executa JavaScript
-    let result = vm.execute_async("console.log('Hello, World!')").await;
-    println!("Result: {:?}", result);
-}
-```
-
-### **5.2 Testes Assíncronos**
-```rust
-// tests/async_tests.rs
-#[tokio::test]
-async fn test_async_execution() {
-    let vm = AsyncVM::new().await;
-    
-    let result = vm.execute_async("1 + 2").await.unwrap();
-    assert_eq!(result, Value::Number(3.0));
-}
-
-#[tokio::test]
-async fn test_parallel_execution() {
-    let vm = Arc::new(AsyncVM::new().await);
-    
-    let mut tasks = Vec::new();
-    
-    for i in 0..10 {
-        let vm = Arc::clone(&vm);
-        let task = tokio::spawn(async move {
-            vm.execute_async(&format!("{} * 2", i)).await
-        });
-        tasks.push(task);
-    }
-    
-    let results = futures::future::join_all(tasks).await;
-    assert_eq!(results.len(), 10);
-}
-```
-
-**Estimativa**: 1-2 dias
-**Impacto**: Garantir funcionamento correto
-
----
-
-## 📈 Phase 6: Performance e Benchmarks
-
-### **6.1 Benchmarks Assíncronos**
-```rust
-// benches/async_benchmarks.rs
-use criterion::{criterion_group, criterion_main, Criterion};
-use tokio::runtime::Runtime;
-
-fn async_benchmark(c: &mut Criterion) {
-    let rt = Runtime::new().unwrap();
-    
-    c.bench_function("async_vm_execution", |b| {
-        b.to_async(&rt).iter(|| async {
-            let vm = AsyncVM::new().await;
-            vm.execute_async("1 + 2").await
-        })
-    });
-    
-    c.bench_function("parallel_execution", |b| {
-        b.to_async(&rt).iter(|| async {
-            let vm = Arc::new(AsyncVM::new().await);
-            let mut tasks = Vec::new();
-            
-            for _ in 0..100 {
-                let vm = Arc::clone(&vm);
-                tasks.push(tokio::spawn(async move {
-                    vm.execute_async("Math.random()").await
-                }));
-            }
-            
-            futures::future::join_all(tasks).await
-        })
-    });
-}
-
-criterion_group!(benches, async_benchmark);
-criterion_main!(benches);
-```
-
-### **6.2 Comparação com Motores Existentes**
-```rust
-// scripts/benchmark_comparison.rs
-async fn compare_with_v8() {
-    let jetcrab = AsyncVM::new().await;
-    let v8_node = NodeJS::new();
-    
-    let test_scripts = vec![
-        "fibonacci(30)",
-        "array_operations(1000000)",
-        "async_operations(1000)",
-    ];
-    
-    for script in test_scripts {
-        let (jetcrab_time, v8_node_time) = tokio::join!(
-    measure_execution_time(&jetcrab, script),
-    measure_execution_time(&v8_node, script)
-);
-        
-        println!("Script: {}", script);
-        println!("JetCrab: {:?}", jetcrab_time);
-        println!("Node.js: {:?}", v8_node_time);
-        println!("Ratio: {:.2}x", v8_node_time.as_millis() as f64 / jetcrab_time.as_millis() as f64);
-    }
-}
-```
-
-**Estimativa**: 1-2 dias
-**Impacto**: Validar melhorias de performance
-
----
-
-## 🎯 Prioridades e Cronograma
-
-### **Semana 1: Foundation**
-- [ ] Phase 1: VM + Runtime (2-3 dias)
-- [ ] Phase 2: GC Assíncrono (1-2 dias)
-
-### **Semana 2: JIT**
-- [ ] Phase 3: JIT Assíncrono (3-4 dias)
-
-### **Semana 3: Polish**
-- [ ] Phase 4: Profiling (1 dia)
-- [ ] Phase 5: Integração e Testes (1-2 dias)
-- [ ] Phase 6: Benchmarks (1-2 dias)
-
----
-
-## 📊 Métricas de Sucesso
-
-### **Performance**
-- [ ] **VM**: 300-1000% melhoria para I/O intensivo
-- [ ] **GC**: Zero pauses durante execução
-- [ ] **JIT**: 5-20x mais rápido para compilação
-- [ ] **Overall**: 3-10x melhoria geral
-
-### **Qualidade**
-- [ ] **Zero regressões** em funcionalidade existente
-- [ ] **100% compatibilidade** com ECMAScript
-- [ ] **Testes passando** (unit + integration)
-- [ ] **Documentação atualizada**
-
-### **Competitividade**
-- [ ] **Performance superior** ao V8 em cenários I/O
-- [ ] **Responsividade melhor** que Node.js
-- [ ] **Escalabilidade** multi-threaded nativa
-
----
-
-## 🚨 Riscos e Mitigações
-
-### **Riscos**
-1. **Complexidade**: Tokio adiciona complexidade significativa
-2. **Debugging**: Async code é mais difícil de debugar
-3. **Memory**: Overhead de tasks e channels
-4. **Compatibility**: Quebrar funcionalidade existente
-
-### **Mitigações**
-1. **Implementação gradual**: Phase por phase
-2. **Testes extensivos**: Unit + integration + performance
-3. **Fallback síncrono**: Manter versão síncrona como backup
-4. **Documentação**: Documentar mudanças e APIs
-
----
-
-## 📝 Checklist de Conclusão
-
-- [ ] **VM assíncrono** funcionando
-- [ ] **GC em background** sem pauses
-- [ ] **JIT não-bloqueante** implementado
-- [ ] **Profiling assíncrono** ativo
-- [ ] **Testes passando** (100%)
-- [ ] **Benchmarks** mostrando melhorias
-- [ ] **Documentação** atualizada
-- [ ] **Performance** validada
-- [ ] **Compatibilidade** mantida
-
----
-
-*Criado em: [Current Date]*
-*Estimativa Total: 2-3 semanas*
-*Impacto Esperado: 3-20x melhoria de performance* 
+### **Final Validation**
+- [ ] All tests passing
+- [ ] Performance targets met
+- [ ] Documentation complete
+- [ ] Ready for production use 
