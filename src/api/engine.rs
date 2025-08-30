@@ -6,6 +6,9 @@ use crate::vm::{Bytecode, Executor, Value};
 
 pub struct Engine {
     context: Context,
+    executor: Executor,
+    generator: BytecodeGenerator,
+    analyzer: SemanticAnalyzer,
 }
 
 impl Default for Engine {
@@ -18,6 +21,9 @@ impl Engine {
     pub fn new() -> Self {
         Self {
             context: Context::new(),
+            executor: Executor::new(),
+            generator: BytecodeGenerator::new(),
+            analyzer: SemanticAnalyzer::new(),
         }
     }
 
@@ -25,14 +31,12 @@ impl Engine {
         let mut parser = Parser::new(source);
         let ast = parser.parse().map_err(|e| format!("Parser error: {e}"))?;
 
-        let mut analyzer = SemanticAnalyzer::new();
-        analyzer
+        self.analyzer
             .analyze(&ast)
             .map_err(|e| format!("Semantic error: {e}"))?;
 
-        let mut generator = BytecodeGenerator::new();
-        let instructions = generator.generate(&ast);
-        let constants = generator.get_constants().clone();
+        let instructions = self.generator.generate(&ast);
+        let constants = self.generator.get_constants().clone();
 
         let values: Vec<Value> = constants
             .iter()
@@ -69,10 +73,10 @@ impl Engine {
             .collect();
 
         let bytecode = Bytecode::new(instructions);
-        let mut executor = Executor::new();
-        executor.execute(&bytecode, &values);
+        self.executor.execute(&bytecode, &values)
+            .map_err(|e| format!("Execution error: {}", e))?;
 
-        Ok(executor.stack.pop().unwrap_or(Value::Undefined))
+        Ok(self.executor.stack_mut().pop().unwrap_or(Value::Undefined))
     }
 
     pub fn get_context(&self) -> &Context {

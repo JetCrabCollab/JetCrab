@@ -210,14 +210,8 @@ impl BytecodeGenerator {
                 }
                 self.visit_node(&expr.body);
             }
-            Node::FunctionExpression(expr) => {
-                if let Some(id) = &expr.id {
-                    self.visit_node(id);
-                }
-                for param in &expr.params {
-                    self.visit_node(param);
-                }
-                self.visit_node(&expr.body);
+            Node::FunctionExpression(_expr) => {
+                <Self as FunctionGenerator>::generate_function_expression(self, node);
             }
             Node::BlockStatement(stmt) => {
                 for node in &stmt.body {
@@ -332,19 +326,13 @@ impl VariableCore for BytecodeGenerator {
     }
 
     fn visit_node(&mut self, node: &Node) {
-        self.visit_node(node)
+        BytecodeGenerator::visit_node(self, node)
     }
 }
 
-impl FunctionCore for BytecodeGenerator {
-    fn instructions(&mut self) -> &mut Vec<Instruction> {
-        &mut self.instructions
-    }
 
-    fn visit_node(&mut self, node: &Node) {
-        self.visit_node(node)
-    }
-}
+
+
 
 impl ClassCore for BytecodeGenerator {
     fn instructions(&mut self) -> &mut Vec<Instruction> {
@@ -352,7 +340,7 @@ impl ClassCore for BytecodeGenerator {
     }
 
     fn visit_node(&mut self, node: &Node) {
-        self.visit_node(node)
+        BytecodeGenerator::visit_node(self, node)
     }
 }
 
@@ -362,7 +350,7 @@ impl ControlFlowCore for BytecodeGenerator {
     }
 
     fn visit_node(&mut self, node: &Node) {
-        self.visit_node(node)
+        BytecodeGenerator::visit_node(self, node)
     }
 }
 
@@ -372,7 +360,7 @@ impl ArithmeticCore for BytecodeGenerator {
     }
 
     fn visit_node(&mut self, node: &Node) {
-        self.visit_node(node)
+        BytecodeGenerator::visit_node(self, node)
     }
 }
 
@@ -382,7 +370,7 @@ impl ComparisonCore for BytecodeGenerator {
     }
 
     fn visit_node(&mut self, node: &Node) {
-        self.visit_node(node)
+        BytecodeGenerator::visit_node(self, node)
     }
 }
 
@@ -392,7 +380,7 @@ impl LogicalCore for BytecodeGenerator {
     }
 
     fn visit_node(&mut self, node: &Node) {
-        self.visit_node(node)
+        BytecodeGenerator::visit_node(self, node)
     }
 }
 
@@ -402,7 +390,7 @@ impl UnaryCore for BytecodeGenerator {
     }
 
     fn visit_node(&mut self, node: &Node) {
-        self.visit_node(node)
+        BytecodeGenerator::visit_node(self, node)
     }
 }
 
@@ -412,7 +400,7 @@ impl AssignmentCore for BytecodeGenerator {
     }
 
     fn visit_node(&mut self, node: &Node) {
-        self.visit_node(node)
+        BytecodeGenerator::visit_node(self, node)
     }
 }
 
@@ -422,7 +410,7 @@ impl ObjectCore for BytecodeGenerator {
     }
 
     fn visit_node(&mut self, node: &Node) {
-        self.visit_node(node)
+        BytecodeGenerator::visit_node(self, node)
     }
 }
 
@@ -432,7 +420,7 @@ impl ArrayCore for BytecodeGenerator {
     }
 
     fn visit_node(&mut self, node: &Node) {
-        self.visit_node(node)
+        BytecodeGenerator::visit_node(self, node)
     }
 }
 
@@ -442,6 +430,16 @@ impl FunctionLiteralCore for BytecodeGenerator {
     }
 
     fn visit_node(&mut self, node: &Node) {
-        self.visit_node(node)
+        BytecodeGenerator::visit_node(self, node)
+    }
+}
+
+impl FunctionCore for BytecodeGenerator {
+    fn instructions(&mut self) -> &mut Vec<Instruction> {
+        &mut self.instructions
+    }
+
+    fn visit_node(&mut self, node: &Node) {
+        BytecodeGenerator::visit_node(self, node)
     }
 }

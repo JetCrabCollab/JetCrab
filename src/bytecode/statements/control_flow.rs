@@ -58,23 +58,78 @@ where
 
     fn generate_for_statement(&mut self, node: &Node) {
         if let Node::ForStatement(stmt) = node {
+            // Generate initialization
             if let Some(init) = &stmt.init {
                 self.visit_node(init);
             }
+
+            // Mark the start of the loop (test condition)
+            let loop_start = self.instructions().len();
+
+            // Generate test condition
             if let Some(test) = &stmt.test {
                 self.visit_node(test);
+
+                // Jump out of loop if condition is false
+                let jump_out_pos = self.instructions().len();
+                self.instructions()
+                    .push(Instruction::JumpIfFalse(CodeAddress::new(0))); // Placeholder
+
+                // Generate loop body
+                self.visit_node(&stmt.body);
+
+                // Generate update
+                if let Some(update) = &stmt.update {
+                    self.visit_node(update);
+                }
+
+                // Jump back to loop start (test condition)
+                self.instructions()
+                    .push(Instruction::Jump(CodeAddress::new(loop_start)));
+
+                // Update jump out address
+                let end_pos = self.instructions().len();
+                self.instructions()[jump_out_pos] =
+                    Instruction::JumpIfFalse(CodeAddress::new(end_pos));
+            } else {
+                // Infinite loop (no test condition)
+                self.visit_node(&stmt.body);
+
+                // Generate update
+                if let Some(update) = &stmt.update {
+                    self.visit_node(update);
+                }
+
+                // Jump back to loop start
+                self.instructions()
+                    .push(Instruction::Jump(CodeAddress::new(loop_start)));
             }
-            if let Some(update) = &stmt.update {
-                self.visit_node(update);
-            }
-            self.visit_node(&stmt.body);
         }
     }
 
     fn generate_while_statement(&mut self, node: &Node) {
         if let Node::WhileStatement(stmt) = node {
+            // Mark the start of the loop
+            let loop_start = self.instructions().len();
+
+            // Generate test condition
             self.visit_node(&stmt.test);
+
+            // Jump out of loop if condition is false
+            let jump_out_pos = self.instructions().len();
+            self.instructions()
+                .push(Instruction::JumpIfFalse(CodeAddress::new(0))); // Placeholder
+
+            // Generate loop body
             self.visit_node(&stmt.body);
+
+            // Jump back to loop start
+            self.instructions()
+                .push(Instruction::Jump(CodeAddress::new(loop_start)));
+
+            // Update jump out address
+            let end_pos = self.instructions().len();
+            self.instructions()[jump_out_pos] = Instruction::JumpIfFalse(CodeAddress::new(end_pos));
         }
     }
 

@@ -83,6 +83,7 @@ pub enum Instruction {
     PushSymbol(ConstantIndex),
     PushBigInt(ConstantIndex),
     CallFunction(FunctionIndex, ArgIndex),
+    CallBuiltin(String, ArgIndex),
     RemoveObjectProperty,
     CallObjectMethod(String, ArgIndex),
     CallArrayMethod(String, ArgIndex),

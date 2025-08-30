@@ -152,32 +152,6 @@ fn test_execute_load_store_global() {
 }
 
 #[test]
-fn test_execute_comparison_operations() {
-    let mut exec = Executor::new();
-    let bytecode = Bytecode::new(vec![
-        Instruction::PushConst(0.into()),
-        Instruction::PushConst(1.into()),
-        Instruction::Lt,
-        Instruction::PushConst(0.into()),
-        Instruction::PushConst(1.into()),
-        Instruction::Gt,
-        Instruction::PushConst(2.into()),
-        Instruction::PushConst(2.into()),
-        Instruction::Eq,
-    ]);
-    let constants = vec![Value::Number(5.0), Value::Number(3.0), Value::Number(5.0)];
-    exec.execute(&bytecode, &constants);
-    assert_eq!(
-        exec.stack.values,
-        vec![
-            Value::Boolean(false),
-            Value::Boolean(true),
-            Value::Boolean(true)
-        ]
-    );
-}
-
-#[test]
 fn test_execute_new_object() {
     let mut exec = Executor::new();
     let bytecode = Bytecode::new(vec![Instruction::NewObject]);
@@ -309,10 +283,171 @@ fn test_execute_number_string_concatenation() {
         Value::Number(42.0),
         Value::String(" is the answer".to_string()),
     ];
-    exec.execute(&bytecode, &constants);
+    exec.execute(&bytecode, &[]);
 
     assert_eq!(
         exec.stack.values,
         vec![Value::String("42 is the answer".to_string())]
+    );
+}
+
+#[test]
+fn test_execute_complex_arithmetic_chain() {
+    let mut exec = Executor::new();
+    let bytecode = Bytecode::new(vec![
+        Instruction::PushConst(0.into()),
+        Instruction::PushConst(1.into()),
+        Instruction::Add,
+        Instruction::PushConst(2.into()),
+        Instruction::Mul,
+        Instruction::PushConst(3.into()),
+        Instruction::Div,
+    ]);
+    let constants = vec![
+        Value::Number(10.0),
+        Value::Number(5.0),
+        Value::Number(3.0),
+        Value::Number(9.0),
+    ];
+    exec.execute(&bytecode, &constants);
+    assert_eq!(exec.stack.values, vec![Value::Number(5.0)]);
+}
+
+#[test]
+fn test_execute_control_flow_jumps() {
+    let mut exec = Executor::new();
+    let bytecode = Bytecode::new(vec![
+        Instruction::PushConst(0.into()),
+        Instruction::PushConst(1.into()),
+        Instruction::JumpIfTrue(5.into()),
+        Instruction::PushConst(2.into()),
+        Instruction::Jump(6.into()),
+        Instruction::PushConst(3.into()),
+        Instruction::PushConst(4.into()),
+    ]);
+    let constants = vec![
+        Value::Number(42.0),
+        Value::Boolean(true),
+        Value::String("skipped".to_string()),
+        Value::String("executed".to_string()),
+        Value::Number(100.0),
+    ];
+    exec.execute(&bytecode, &constants);
+    assert_eq!(
+        exec.stack.values,
+        vec![Value::Number(42.0), Value::Number(100.0)]
+    );
+}
+
+#[test]
+fn test_execute_local_and_global_variables() {
+    let mut exec = Executor::new();
+    let bytecode = Bytecode::new(vec![
+        Instruction::PushConst(0.into()),
+        Instruction::StoreLocal(0.into()),
+        Instruction::PushConst(1.into()),
+        Instruction::StoreGlobal(0.into()),
+        Instruction::LoadLocal(0.into()),
+        Instruction::LoadGlobal(0.into()),
+        Instruction::Add,
+    ]);
+    let constants = vec![Value::Number(42.0), Value::Number(100.0)];
+    exec.execute(&bytecode, &constants);
+    assert_eq!(exec.stack.values, vec![Value::Number(142.0)]);
+    assert_eq!(exec.globals[0], Value::Number(100.0));
+}
+
+#[test]
+fn test_execute_object_creation_and_properties() {
+    let mut exec = Executor::new();
+    let bytecode = Bytecode::new(vec![
+        Instruction::NewObject,
+        Instruction::Dup,
+        Instruction::PushConst(0.into()),
+        Instruction::PushConst(1.into()),
+        Instruction::SetProperty,
+        Instruction::Dup,
+        Instruction::PushConst(2.into()),
+        Instruction::PushConst(3.into()),
+        Instruction::SetProperty,
+        Instruction::Dup,
+        Instruction::PushConst(0.into()),
+        Instruction::GetProperty,
+        Instruction::Dup,
+        Instruction::PushConst(2.into()),
+        Instruction::GetProperty,
+    ]);
+    let constants = vec![
+        Value::String("name".to_string()),
+        Value::String("John".to_string()),
+        Value::String("age".to_string()),
+        Value::Number(30.0),
+    ];
+    exec.execute(&bytecode, &constants);
+    assert_eq!(exec.stack.values.len(), 4);
+    assert!(matches!(exec.stack.values[0], Value::Object(_)));
+    assert_eq!(exec.stack.values[1], Value::String("John".to_string()));
+    assert_eq!(exec.stack.values[2], Value::Number(30.0));
+}
+
+#[test]
+fn test_execute_array_creation() {
+    let mut exec = Executor::new();
+    let bytecode = Bytecode::new(vec![Instruction::NewArray(0.into())]);
+    exec.execute(&bytecode, &[]);
+    assert_eq!(exec.stack.values.len(), 1);
+    assert!(matches!(exec.stack.values[0], Value::Array(_)));
+}
+
+#[test]
+fn test_execute_comparison_operations() {
+    let mut exec = Executor::new();
+    let bytecode = Bytecode::new(vec![
+        Instruction::PushConst(0.into()),
+        Instruction::PushConst(1.into()),
+        Instruction::Gt,
+        Instruction::PushConst(0.into()),
+        Instruction::PushConst(1.into()),
+        Instruction::Lt,
+        Instruction::PushConst(2.into()),
+        Instruction::PushConst(2.into()),
+        Instruction::Eq,
+    ]);
+    let constants = vec![Value::Number(5.0), Value::Number(3.0), Value::Number(5.0)];
+    exec.execute(&bytecode, &constants);
+    assert_eq!(
+        exec.stack.values,
+        vec![
+            Value::Boolean(true),
+            Value::Boolean(false),
+            Value::Boolean(true)
+        ]
+    );
+}
+
+#[test]
+fn test_execute_function_context() {
+    let mut exec = Executor::new();
+    exec.frame.arguments = vec![Value::Number(42.0), Value::String("hello".to_string())];
+    exec.frame.this_value = Some(Value::String("this_value".to_string()));
+    exec.frame
+        .closure_vars
+        .insert("x".to_string(), Value::Number(100.0));
+
+    let bytecode = Bytecode::new(vec![
+        Instruction::LoadArg(0.into()),
+        Instruction::LoadArg(1.into()),
+        Instruction::LoadThis,
+        Instruction::LoadClosureVar("x".to_string()),
+    ]);
+    exec.execute(&bytecode, &[]);
+    assert_eq!(
+        exec.stack.values,
+        vec![
+            Value::Number(42.0),
+            Value::String("hello".to_string()),
+            Value::String("this_value".to_string()),
+            Value::Number(100.0)
+        ]
     );
 }

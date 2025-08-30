@@ -27,7 +27,7 @@ impl SemanticAnalyzer {
             variable_count: VariableCount::new(0),
         };
 
-        analyzer.scope_stack.push(Scope::new());
+        analyzer.scope_stack.push(Scope::new_global());
         analyzer
     }
 }
@@ -735,14 +735,75 @@ impl SemanticAnalyzer {
         &mut self,
         member: &crate::ast::MemberExpression,
     ) -> Result<Type, SemanticError> {
-        let _object_type = self.visit_node(&member.object)?;
+        let object_type = self.visit_node(&member.object)?;
 
         let _property_type = match &*member.property {
             Node::Identifier(_) => Ok(Type::String),
             _ => self.visit_node(&member.property),
         }?;
 
-        Ok(Type::Unknown)
+        // Handle built-in objects and their methods
+        if let Node::Identifier(obj_name) = &*member.object {
+            if obj_name == "Math" {
+                if let Node::Identifier(prop_name) = &*member.property {
+                    // Math methods are functions that return numbers
+                    match prop_name.as_str() {
+                        "pow" | "abs" | "sqrt" | "floor" | "ceil" | "round" | "max" | "min" => {
+                            return Ok(Type::Function {
+                                params: vec![],
+                                return_type: Box::new(Type::Number),
+                            });
+                        }
+                        _ => return Ok(Type::Unknown),
+                    }
+                } else {
+                    return Ok(Type::Unknown);
+                }
+            }
+        }
+
+        // Handle string methods
+        if let Node::Identifier(prop_name) = &*member.property {
+            if object_type == Type::String {
+                // String methods are functions that return strings
+                match prop_name.as_str() {
+                    "toUpperCase" | "toLowerCase" | "trim" => {
+                        return Ok(Type::Function {
+                            params: vec![],
+                            return_type: Box::new(Type::String),
+                        });
+                    }
+                    _ => return Ok(Type::Unknown),
+                }
+            }
+        }
+
+        // Handle array methods
+        if let Node::Identifier(prop_name) = &*member.property {
+            if matches!(object_type, Type::Array(_)) {
+                // Array methods are functions
+                match prop_name.as_str() {
+                    "push" | "pop" => {
+                        return Ok(Type::Function {
+                            params: vec![],
+                            return_type: Box::new(Type::Number),
+                        });
+                    }
+                    "length" => {
+                        return Ok(Type::Number);
+                    }
+                    _ => return Ok(Type::Unknown),
+                }
+            }
+        }
+
+        // For other cases, return the object type or Unknown
+        match object_type {
+            Type::Object => Ok(Type::Unknown),   // Object properties
+            Type::String => Ok(Type::Unknown),   // String properties
+            Type::Array(_) => Ok(Type::Unknown), // Array properties
+            _ => Ok(Type::Unknown),
+        }
     }
 
     fn visit_logical_expression(

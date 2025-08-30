@@ -5,6 +5,7 @@ use crate::parser::Parser;
 use crate::semantic::SemanticAnalyzer;
 use crate::vm::instructions::Instruction;
 
+#[derive(Clone)]
 pub struct Compiler {
     optimize: bool,
 }

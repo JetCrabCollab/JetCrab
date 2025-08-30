@@ -1,178 +1,97 @@
-use jetcrab::vm::{Bytecode, Executor, Instruction, Value};
+use jetcrab::Engine;
 
 fn main() {
-    println!("=== JetCrab VM Demo ===\n");
+    println!("=== JetCrab Engine - Real World Examples ===\n");
 
-    println!("1. Operações Aritméticas:");
-    let mut exec = Executor::new();
-    let bytecode = Bytecode::new(vec![
-        Instruction::PushConst(0.into()),
-        Instruction::PushConst(1.into()),
-        Instruction::Add,
-        Instruction::PushConst(2.into()),
-        Instruction::Mul,
-        Instruction::PushConst(3.into()),
-        Instruction::Div,
-    ]);
-    let constants = vec![
-        Value::Number(10.0),
-        Value::Number(5.0),
-        Value::Number(3.0),
-        Value::Number(9.0),
-    ];
-    exec.execute(&bytecode, &constants);
-    println!("   Resultado: {:?}", exec.stack.values);
+    let mut engine = Engine::new();
+
+    // Example 1: Simple mathematical expressions
+    println!("1. Mathematical Expressions:");
+    evaluate_and_print(&mut engine, "2 + 3 * 4", "Basic arithmetic with precedence");
+    evaluate_and_print(
+        &mut engine,
+        "(10 - 5) / 2 + 3",
+        "Complex expression with parentheses",
+    );
+    evaluate_and_print(&mut engine, "Math.pow(2, 8)", "Built-in function call");
     println!();
 
-    println!("2. Controle de Fluxo:");
-    let mut exec = Executor::new();
-    let bytecode = Bytecode::new(vec![
-        Instruction::PushConst(0.into()),
-        Instruction::PushConst(1.into()),
-        Instruction::JumpIfTrue(5.into()),
-        Instruction::PushConst(2.into()),
-        Instruction::Jump(6.into()),
-        Instruction::PushConst(3.into()),
-        Instruction::PushConst(4.into()),
-    ]);
-    let constants = vec![
-        Value::Number(42.0),
-        Value::Boolean(true),
-        Value::String("skipped".to_string()),
-        Value::String("executed".to_string()),
-        Value::Number(100.0),
-    ];
-    exec.execute(&bytecode, &constants);
-    println!("   Resultado: {:?}", exec.stack.values);
+    // Example 2: String manipulation
+    println!("2. String Operations:");
+    evaluate_and_print(
+        &mut engine,
+        "'Hello' + ' ' + 'World'",
+        "String concatenation",
+    );
+    evaluate_and_print(&mut engine, "'JavaScript'.length", "String property access");
+    evaluate_and_print(
+        &mut engine,
+        "'hello world'.toUpperCase()",
+        "String method call",
+    );
     println!();
 
-    println!("3. Variáveis Locais e Globais:");
-    let mut exec = Executor::new();
-    let bytecode = Bytecode::new(vec![
-        Instruction::PushConst(0.into()),
-        Instruction::StoreLocal(0.into()),
-        Instruction::PushConst(1.into()),
-        Instruction::StoreGlobal(0.into()),
-        Instruction::LoadLocal(0.into()),
-        Instruction::LoadGlobal(0.into()),
-        Instruction::Add,
-    ]);
-    let constants = vec![Value::Number(42.0), Value::Number(100.0)];
-    exec.execute(&bytecode, &constants);
-    println!("   Resultado: {:?}", exec.stack.values);
-    println!("   Global[0]: {:?}", exec.globals[0]);
+    // Example 3: Variable usage and scope
+    println!("3. Variables and Scope:");
+    evaluate_and_print(
+        &mut engine,
+        "let x = 42; x * 2",
+        "Variable declaration and usage",
+    );
+    evaluate_and_print(
+        &mut engine,
+        "const PI = 3.14159; PI * 2",
+        "Constant declaration",
+    );
     println!();
 
-    println!("4. Objetos e Propriedades:");
-    let mut exec = Executor::new();
-    let bytecode = Bytecode::new(vec![
-        Instruction::NewObject,
-        Instruction::Dup,
-        Instruction::PushConst(0.into()),
-        Instruction::PushConst(1.into()),
-        Instruction::SetProperty,
-        Instruction::Dup,
-        Instruction::PushConst(2.into()),
-        Instruction::PushConst(3.into()),
-        Instruction::SetProperty,
-        Instruction::Dup,
-        Instruction::PushConst(0.into()),
-        Instruction::GetProperty,
-        Instruction::Dup,
-        Instruction::PushConst(2.into()),
-        Instruction::GetProperty,
-    ]);
-    let constants = vec![
-        Value::String("name".to_string()),
-        Value::String("John".to_string()),
-        Value::String("age".to_string()),
-        Value::Number(30.0),
-    ];
-    exec.execute(&bytecode, &constants);
-    println!("   Objeto criado com propriedades");
-    println!("   name: {:?}", exec.stack.values[1]);
-    println!("   age: {:?}", exec.stack.values[2]);
+    // Example 4: Object creation and manipulation
+    println!("4. Object Operations:");
+    evaluate_and_print(
+        &mut engine,
+        "let person = { name: 'John', age: 30 }; person.name + ' is ' + person.age + ' years old'",
+        "Object creation and property access",
+    );
     println!();
 
-    println!("5. Arrays:");
-    let mut exec = Executor::new();
-    let bytecode = Bytecode::new(vec![Instruction::NewArray(0.into())]);
-    exec.execute(&bytecode, &[]);
-    println!("   Array criado: {:?}", exec.stack.values[0]);
+    // Example 5: Array operations
+    println!("5. Array Operations:");
+    evaluate_and_print(
+        &mut engine,
+        "let numbers = [1, 2, 3, 4, 5]; numbers.reduce((a, b) => a + b, 0)",
+        "Array creation and reduction",
+    );
     println!();
 
-    println!("6. Concatenação de Strings:");
-    let mut exec = Executor::new();
-    let bytecode = Bytecode::new(vec![
-        Instruction::PushConst(0.into()),
-        Instruction::PushConst(1.into()),
-        Instruction::Add,
-        Instruction::PushConst(2.into()),
-        Instruction::Add,
-        Instruction::PushConst(3.into()),
-        Instruction::Add,
-    ]);
-    let constants = vec![
-        Value::String("Hello".to_string()),
-        Value::String(" ".to_string()),
-        Value::String("World".to_string()),
-        Value::String("!".to_string()),
-    ];
-    exec.execute(&bytecode, &constants);
-    println!("   Resultado: {:?}", exec.stack.values[0]);
+    // Example 6: Function definition and execution
+    println!("6. Function Definition:");
+    evaluate_and_print(
+        &mut engine,
+        "function factorial(n) { return n <= 1 ? 1 : n * factorial(n - 1); } factorial(5)",
+        "Recursive function definition and execution",
+    );
     println!();
 
-    println!("7. Operações de Comparação:");
-    let mut exec = Executor::new();
-    let bytecode = Bytecode::new(vec![
-        Instruction::PushConst(0.into()),
-        Instruction::PushConst(1.into()),
-        Instruction::Gt,
-        Instruction::PushConst(0.into()),
-        Instruction::PushConst(1.into()),
-        Instruction::Lt,
-        Instruction::PushConst(2.into()),
-        Instruction::PushConst(2.into()),
-        Instruction::Eq,
-    ]);
-    let constants = vec![Value::Number(5.0), Value::Number(3.0), Value::Number(5.0)];
-    exec.execute(&bytecode, &constants);
-    println!("   5 > 3: {:?}", exec.stack.values[0]);
-    println!("   5 < 3: {:?}", exec.stack.values[1]);
-    println!("   5 == 5: {:?}", exec.stack.values[2]);
+    // Example 7: Error handling demonstration
+    println!("7. Error Handling:");
+    evaluate_and_print(&mut engine, "1 / 0", "Division by zero error");
+    evaluate_and_print(
+        &mut engine,
+        "undefined.property",
+        "Property access on undefined",
+    );
     println!();
 
-    println!("8. Contexto de Função:");
-    let mut exec = Executor::new();
-    exec.frame.arguments = vec![Value::Number(42.0), Value::String("hello".to_string())];
-    exec.frame.this_value = Some(Value::String("this_value".to_string()));
-    exec.frame
-        .closure_vars
-        .insert("x".to_string(), Value::Number(100.0));
+    println!("=== Examples Complete ===");
+    println!("These examples demonstrate real usage of the JetCrab JavaScript engine");
+    println!("for practical JavaScript evaluation and execution.");
+}
 
-    let bytecode = Bytecode::new(vec![
-        Instruction::LoadArg(0.into()),
-        Instruction::LoadArg(1.into()),
-        Instruction::LoadThis,
-        Instruction::LoadClosureVar("x".to_string()),
-    ]);
-    exec.execute(&bytecode, &[]);
-    println!("   Argumento 0: {:?}", exec.stack.values[0]);
-    println!("   Argumento 1: {:?}", exec.stack.values[1]);
-    println!("   This: {:?}", exec.stack.values[2]);
-    println!("   Closure var x: {:?}", exec.stack.values[3]);
+fn evaluate_and_print(engine: &mut Engine, code: &str, description: &str) {
+    println!("  {}: {}", description, code);
+    match engine.evaluate(code) {
+        Ok(result) => println!("    Result: {}", result),
+        Err(e) => println!("    Error: {}", e),
+    }
     println!();
-
-    println!("=== Demo Concluído! ===");
-    println!("O JetCrab VM agora suporta:");
-    println!("✅ Operações aritméticas completas");
-    println!("✅ Controle de fluxo (jumps condicionais)");
-    println!("✅ Variáveis locais e globais");
-    println!("✅ Sistema de objetos com propriedades");
-    println!("✅ Arrays");
-    println!("✅ Concatenação de strings");
-    println!("✅ Operações de comparação");
-    println!("✅ Contexto de função (arguments, this, closure vars)");
-    println!("✅ Type-safe handles para heap objects");
-    println!("✅ Frame management para chamadas de função");
 }

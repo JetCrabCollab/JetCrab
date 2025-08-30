@@ -212,38 +212,40 @@ impl Parser {
     }
 
     fn parse_for_statement(&mut self) -> ParseResult<Node> {
-        self.advance();
+        self.advance(); // consume 'for'
 
         self.expect(TokenKind::LeftParen)?;
 
-        let init = if !self.check(TokenKind::Semicolon) {
-            Some(Box::new(if self.is_declaration() {
-                self.parse_declaration()?
-            } else {
-                self.parse_expression()?
-            }))
-        } else {
+        // Parse init
+        let init = if self.check(TokenKind::Semicolon) {
             None
+        } else if self.is_declaration() {
+            Some(Box::new(self.parse_variable_declaration_without_semicolon()?))
+        } else {
+            Some(Box::new(self.parse_expression()?))
         };
 
         self.expect(TokenKind::Semicolon)?;
 
-        let test = if !self.check(TokenKind::Semicolon) {
-            Some(Box::new(self.parse_expression()?))
-        } else {
+        // Parse test
+        let test = if self.check(TokenKind::Semicolon) {
             None
+        } else {
+            Some(Box::new(self.parse_expression()?))
         };
 
         self.expect(TokenKind::Semicolon)?;
 
-        let update = if !self.check(TokenKind::RightParen) {
-            Some(Box::new(self.parse_expression()?))
-        } else {
+        // Parse update
+        let update = if self.check(TokenKind::RightParen) {
             None
+        } else {
+            Some(Box::new(self.parse_expression()?))
         };
 
         self.expect(TokenKind::RightParen)?;
 
+        // Parse body
         let body = Box::new(self.parse_statement()?);
 
         let span = self.create_span_from_tokens();

@@ -3,6 +3,7 @@ use crate::vm::instructions::Instruction;
 
 pub trait FunctionGenerator {
     fn generate_function_declaration(&mut self, node: &Node);
+    fn generate_function_expression(&mut self, node: &Node);
 }
 
 pub trait FunctionCore {
@@ -12,17 +13,43 @@ pub trait FunctionCore {
 
 impl<T> FunctionGenerator for T
 where
-    T: FunctionCore,
+    T: FunctionCore + crate::bytecode::scope::constants::ConstantManager,
 {
     fn generate_function_declaration(&mut self, node: &Node) {
         if let Node::FunctionDeclaration(decl) = node {
+            // Store function name as a special constant
             if let Some(id) = &decl.id {
-                self.visit_node(id);
+                if let Node::Identifier(name) = &**id {
+                    // Create a special function identifier
+                    let function_id = self.add_constant(format!("__FUNCTION_{}", name));
+                    self.instructions()
+                        .push(Instruction::PushConst(function_id));
+
+                    // Store the function in global scope (for now, just push it)
+                    // TODO: Implement proper global variable storage
+                    self.instructions().push(Instruction::PushUndefined);
+                }
             }
-            for param in &decl.params {
-                self.visit_node(param);
-            }
+
+            // Generate function body for later execution
             self.visit_node(&decl.body);
+        }
+    }
+
+    fn generate_function_expression(&mut self, node: &Node) {
+        if let Node::FunctionExpression(expr) = node {
+            // Generate function body
+            self.visit_node(&expr.body);
+
+            // Store the function as a callable function
+            // We'll use a special constant to mark this as a function
+            let function_id = format!(
+                "__FUNCTION_EXPR_{}",
+                expr.id.as_ref().map(|_id| "named").unwrap_or("anonymous")
+            );
+            let constant_index = self.add_constant(function_id);
+            self.instructions()
+                .push(Instruction::PushConst(constant_index));
         }
     }
 }

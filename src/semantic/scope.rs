@@ -59,12 +59,17 @@ impl Scope {
     }
 
     pub fn new_global() -> Self {
-        Self {
+        let mut scope = Self {
             variables: HashMap::new(),
             functions: HashMap::new(),
             parent: None,
             scope_type: ScopeType::Global,
-        }
+        };
+        
+        // Pre-declare Math as a global variable
+        scope.declare_variable("Math".to_string(), crate::semantic::types::Type::Object, crate::vm::types::LineNumber::new(0));
+        
+        scope
     }
 
     pub fn with_parent(parent: Scope) -> Self {

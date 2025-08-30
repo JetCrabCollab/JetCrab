@@ -38,9 +38,11 @@ impl Interpreter {
             .collect();
 
         let bytecode = Bytecode::new(self.instructions.clone());
-        executor.execute(&bytecode, &values);
+        executor
+            .execute(&bytecode, &values)
+            .map_err(|e| format!("Execution error: {}", e))?;
 
-        Ok(executor.stack.pop().unwrap_or(Value::Undefined))
+        Ok(executor.stack_mut().pop().unwrap_or(Value::Undefined))
     }
 
     pub fn execute_with_context(
@@ -70,9 +72,11 @@ impl Interpreter {
             .collect();
 
         let bytecode = Bytecode::new(self.instructions.clone());
-        executor.execute(&bytecode, &values);
+        executor
+            .execute(&bytecode, &values)
+            .map_err(|e| format!("Execution error: {}", e))?;
 
-        Ok(executor.stack.pop().unwrap_or(Value::Undefined))
+        Ok(executor.stack_mut().pop().unwrap_or(Value::Undefined))
     }
 
     pub fn get_instructions(&self) -> &[Instruction] {

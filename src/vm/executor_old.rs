@@ -14,6 +14,9 @@ pub struct Executor {
     pub registers: Registers,
     pub heap: Heap,
     pub globals: Vec<Value>,
+    pub locals: Vec<Value>,
+    builtins: crate::runtime::builtins::Builtins,
+    context_cache: crate::runtime::context::Context,
 }
 
 impl Default for Executor {
@@ -30,12 +33,14 @@ impl Executor {
             registers: Registers::new(),
             heap: Heap::new(),
             globals: vec![Value::Undefined; 32],
+            locals: vec![Value::Undefined; 32],
+            builtins: crate::runtime::builtins::Builtins::new(),
+            context_cache: crate::runtime::context::Context::new(),
         }
     }
 
     pub fn execute(&mut self, bytecode: &Bytecode, constants: &[Value]) {
         let mut ip = 0;
-        let mut locals = vec![Value::Undefined; 16];
         let mut call_stack = Vec::new();
 
         while ip < bytecode.instructions.len() {
@@ -228,7 +233,8 @@ impl Executor {
                     }
                 }
                 Instruction::LoadLocal(idx) => {
-                    let value = locals
+                    let value = self
+                        .locals
                         .get(idx.as_usize())
                         .cloned()
                         .unwrap_or(Value::Undefined);
@@ -236,7 +242,7 @@ impl Executor {
                 }
                 Instruction::StoreLocal(idx) => {
                     let value = self.stack.pop().unwrap();
-                    if let Some(slot) = locals.get_mut(idx.as_usize()) {
+                    if let Some(slot) = self.locals.get_mut(idx.as_usize()) {
                         *slot = value;
                     }
                 }
@@ -400,8 +406,30 @@ impl Executor {
                     self.stack
                         .push(Value::Object(ObjectHandle::from(handle.as_usize())));
                 }
-                Instruction::NewArray(_size) => {
+                Instruction::NewArray(size) => {
                     let handle = self.heap.alloc_array();
+                    let size_usize = size.as_usize();
+
+                    // Pre-allocate vector with known capacity
+                    let mut elements = Vec::with_capacity(size_usize);
+
+                    // Pop elements from stack and add them to the array
+                    for _ in 0..size_usize {
+                        if let Some(element) = self.stack.pop() {
+                            elements.push(element);
+                        }
+                    }
+                    elements.reverse(); // Restore original order
+
+                    // Set array elements
+                    for (index, element) in elements.into_iter().enumerate() {
+                        self.heap.set_array_element(
+                            handle,
+                            crate::vm::types::ArraySize::new(index),
+                            element,
+                        );
+                    }
+
                     self.stack
                         .push(Value::Array(ArrayHandle::from(handle.as_usize())));
                 }
@@ -424,15 +452,51 @@ impl Executor {
                 Instruction::GetProperty => {
                     let key = self.stack.pop().unwrap();
                     let obj = self.stack.pop().unwrap();
-                    if let (Value::Object(handle), Value::String(key)) = (obj, key) {
-                        if let Some(val) = self.heap.get_object_property(handle.id(), &key) {
-                            self.stack.push(val.clone());
-                        } else {
-                            self.stack.push(Value::Undefined);
+
+                    let result = match (&obj, &key) {
+                        (Value::String(str_val), Value::String(key_str)) => {
+                            if key_str == "length" {
+                                Value::Number(str_val.len() as f64)
+                            } else {
+                                Value::Undefined
+                            }
                         }
-                    } else {
-                        self.stack.push(Value::Undefined);
-                    }
+                        (Value::Array(handle), Value::String(key_str)) => {
+                            if key_str == "length" {
+                                if let Some(HeapEntry::Array(arr)) = self.heap.get(handle.id()) {
+                                    Value::Number(arr.len() as f64)
+                                } else {
+                                    Value::Undefined
+                                }
+                            } else if key_str == "push" || key_str == "pop" {
+                                Value::String(format!("Array.prototype.{}", key_str))
+                            } else if let Ok(index) = key_str.parse::<usize>() {
+                                if let Some(HeapEntry::Array(arr)) = self.heap.get(handle.id()) {
+                                    arr.get(index).cloned().unwrap_or(Value::Undefined)
+                                } else {
+                                    Value::Undefined
+                                }
+                            } else {
+                                Value::Undefined
+                            }
+                        }
+                        (Value::Array(handle), Value::Number(num)) => {
+                            let index = *num as usize;
+                            if let Some(HeapEntry::Array(arr)) = self.heap.get(handle.id()) {
+                                arr.get(index).cloned().unwrap_or(Value::Undefined)
+                            } else {
+                                Value::Undefined
+                            }
+                        }
+                        (Value::Object(handle), Value::String(key_str)) => self
+                            .heap
+                            .get_object_property(handle.id(), key_str)
+                            .cloned()
+                            .unwrap_or(Value::Undefined),
+                        _ => Value::Undefined,
+                    };
+
+                    self.stack.push(result);
                 }
                 Instruction::LoadArg(idx) => {
                     let value = self
@@ -489,6 +553,28 @@ impl Executor {
                         Value::Function(_) => "function",
                     };
                     self.stack.push(Value::String(type_str.to_string()));
+                }
+                Instruction::CallBuiltin(name, argc) => {
+                    let argc_usize = argc.as_usize();
+
+                    // Pre-allocate args vector with known capacity
+                    let mut args = Vec::with_capacity(argc_usize);
+                    for _ in 0..argc_usize {
+                        args.push(self.stack.pop().unwrap());
+                    }
+                    args.reverse();
+
+                    // Reuse cached context
+                    self.context_cache.set_heap(self.heap.clone());
+
+                    if let Some(builtin_fn) = self.builtins.get_function(name) {
+                        match builtin_fn(&mut self.context_cache, &args) {
+                            Ok(result) => self.stack.push(result),
+                            Err(_) => self.stack.push(Value::Undefined),
+                        }
+                    } else {
+                        self.stack.push(Value::Undefined);
+                    }
                 }
                 _ => todo!("Instruction not implemented yet"),
             }

@@ -1,11 +1,13 @@
 use crate::runtime::object::Object;
 use crate::vm::value::Value;
+use crate::vm::heap::Heap;
 use std::collections::HashMap;
 
 pub struct Context {
     pub global_object: Object,
     pub variables: HashMap<String, Value>,
     pub this_value: Value,
+    pub heap: Option<Heap>,
 }
 
 impl Default for Context {
@@ -22,6 +24,7 @@ impl Context {
             global_object,
             variables: HashMap::new(),
             this_value: Value::Undefined,
+            heap: None,
         }
     }
 
@@ -43,5 +46,13 @@ impl Context {
 
     pub fn get_this(&self) -> &Value {
         &self.this_value
+    }
+
+    pub fn set_heap(&mut self, heap: Heap) {
+        self.heap = Some(heap);
+    }
+
+    pub fn get_heap(&mut self) -> Option<&mut Heap> {
+        self.heap.as_mut()
     }
 }

@@ -17,6 +17,7 @@ pub enum HeapEntry {
     String(String),
 }
 
+#[derive(Clone)]
 pub struct Heap {
     entries: Vec<HeapEntry>,
     next_id: usize,

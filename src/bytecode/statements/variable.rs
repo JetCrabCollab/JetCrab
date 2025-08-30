@@ -23,10 +23,12 @@ where
                         self.visit_node(init);
                         let local_idx = self.get_or_create_local(name);
                         self.instructions().push(Instruction::StoreLocal(local_idx));
+                        self.instructions().push(Instruction::LoadLocal(local_idx));
                     } else {
                         let local_idx = self.get_or_create_local(name);
                         self.instructions().push(Instruction::PushUndefined);
                         self.instructions().push(Instruction::StoreLocal(local_idx));
+                        self.instructions().push(Instruction::LoadLocal(local_idx));
                     }
                 }
             }
