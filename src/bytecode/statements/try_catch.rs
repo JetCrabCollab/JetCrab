@@ -1,6 +1,5 @@
 use crate::ast::Node;
 use crate::vm::instructions::Instruction;
-use crate::vm::types::CodeAddress;
 
 use super::ControlFlowCore;
 

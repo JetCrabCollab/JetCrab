@@ -1,6 +1,6 @@
 use crate::ast::Node;
 use crate::vm::instructions::Instruction;
-use crate::vm::types::{ConstantIndex, LocalIndex};
+use crate::vm::types::ConstantIndex;
 
 pub trait UnaryGenerator {
     fn generate_unary_expression(&mut self, node: &Node);

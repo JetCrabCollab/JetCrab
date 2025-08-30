@@ -1,5 +1,4 @@
 use crate::ast::Node;
-use crate::vm::instructions::Instruction;
 use super::ControlFlowCore;
 
 pub fn generate_import_declaration<T>(this: &mut T, node: &Node)
