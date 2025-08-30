@@ -51,6 +51,7 @@ pub enum Instruction {
     NewObject,
     NewArray(ArraySize),
     SetProperty,
+    SetPropertyAssign,
     GetProperty,
 
     TypeOf,

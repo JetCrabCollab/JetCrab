@@ -642,7 +642,26 @@ where
                     match (obj, key) {
                         (Value::Object(handle), Value::String(key_str)) => {
                             self.heap_manager
-                                .set_object_property(handle.id(), key_str, value);
+                                .set_object_property(handle.id(), key_str, value.clone());
+                            // Push the object back to the stack so it can be used in object literals
+                            self.stack_manager.push(Value::Object(handle));
+                        }
+                        (_obj, _key) => {
+                            // For now, just push undefined on error
+                            self.stack_manager.push(Value::Undefined);
+                        }
+                    }
+                }
+                Instruction::SetPropertyAssign => {
+                    let value = self.stack_manager.pop().unwrap();
+                    let key = self.stack_manager.pop().unwrap();
+                    let obj = self.stack_manager.pop().unwrap();
+                    match (obj, key) {
+                        (Value::Object(handle), Value::String(key_str)) => {
+                            self.heap_manager
+                                .set_object_property(handle.id(), key_str, value.clone());
+                            // Push the assigned value back to the stack (for assignments)
+                            self.stack_manager.push(value);
                         }
                         (_obj, _key) => {
                             // For now, just push undefined on error

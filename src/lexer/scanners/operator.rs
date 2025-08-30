@@ -102,6 +102,71 @@ where
                     self.advance_pos();
                     return Ok(TokenKind::NullishCoalescing);
                 }
+                "+=" => {
+                    self.advance_pos();
+                    self.advance_pos();
+                    return Ok(TokenKind::PlusAssign);
+                }
+                "-=" => {
+                    self.advance_pos();
+                    self.advance_pos();
+                    return Ok(TokenKind::MinusAssign);
+                }
+                "*=" => {
+                    self.advance_pos();
+                    self.advance_pos();
+                    return Ok(TokenKind::StarAssign);
+                }
+                "/=" => {
+                    self.advance_pos();
+                    self.advance_pos();
+                    return Ok(TokenKind::SlashAssign);
+                }
+                "%=" => {
+                    self.advance_pos();
+                    self.advance_pos();
+                    return Ok(TokenKind::PercentAssign);
+                }
+                "**=" => {
+                    self.advance_pos();
+                    self.advance_pos();
+                    self.advance_pos();
+                    return Ok(TokenKind::StarStarAssign);
+                }
+                "<<=" => {
+                    self.advance_pos();
+                    self.advance_pos();
+                    self.advance_pos();
+                    return Ok(TokenKind::LeftShiftAssign);
+                }
+                ">>=" => {
+                    self.advance_pos();
+                    self.advance_pos();
+                    self.advance_pos();
+                    return Ok(TokenKind::RightShiftAssign);
+                }
+                ">>>=" => {
+                    self.advance_pos();
+                    self.advance_pos();
+                    self.advance_pos();
+                    self.advance_pos();
+                    return Ok(TokenKind::UnsignedRightShiftAssign);
+                }
+                "&=" => {
+                    self.advance_pos();
+                    self.advance_pos();
+                    return Ok(TokenKind::BitwiseAndAssign);
+                }
+                "|=" => {
+                    self.advance_pos();
+                    self.advance_pos();
+                    return Ok(TokenKind::BitwiseOrAssign);
+                }
+                "^=" => {
+                    self.advance_pos();
+                    self.advance_pos();
+                    return Ok(TokenKind::BitwiseXorAssign);
+                }
                 _ => {}
             }
         }

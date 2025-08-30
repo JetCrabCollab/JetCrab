@@ -16,6 +16,9 @@ pub trait ControlFlowGenerator {
 pub trait ControlFlowCore {
     fn instructions(&mut self) -> &mut Vec<Instruction>;
     fn visit_node(&mut self, node: &Node);
+    fn push_loop_label(&mut self, break_address: CodeAddress);
+    fn pop_loop_label(&mut self);
+    fn get_current_break_address(&self) -> Option<CodeAddress>;
 }
 
 impl<T> ControlFlowGenerator for T
@@ -75,6 +78,10 @@ where
                 self.instructions()
                     .push(Instruction::JumpIfFalse(CodeAddress::new(0))); // Placeholder
 
+                // Push loop label for break statements
+                let loop_end = self.instructions().len();
+                self.push_loop_label(CodeAddress::new(loop_end));
+
                 // Generate loop body
                 self.visit_node(&stmt.body);
 
@@ -87,10 +94,15 @@ where
                 self.instructions()
                     .push(Instruction::Jump(CodeAddress::new(loop_start)));
 
+                // Mark the end of the loop
+                let loop_end = self.instructions().len();
+                
+                // Pop loop label
+                self.pop_loop_label();
+                
                 // Update jump out address
-                let end_pos = self.instructions().len();
                 self.instructions()[jump_out_pos] =
-                    Instruction::JumpIfFalse(CodeAddress::new(end_pos));
+                    Instruction::JumpIfFalse(CodeAddress::new(loop_end));
             } else {
                 // Infinite loop (no test condition)
                 self.visit_node(&stmt.body);
@@ -120,6 +132,10 @@ where
             self.instructions()
                 .push(Instruction::JumpIfFalse(CodeAddress::new(0))); // Placeholder
 
+            // Push loop label for break statements
+            let loop_end = self.instructions().len();
+            self.push_loop_label(CodeAddress::new(loop_end));
+
             // Generate loop body
             self.visit_node(&stmt.body);
 
@@ -127,9 +143,14 @@ where
             self.instructions()
                 .push(Instruction::Jump(CodeAddress::new(loop_start)));
 
+            // Mark the end of the loop (for break statements)
+            let loop_end = self.instructions().len();
+            
+            // Pop loop label
+            self.pop_loop_label();
+            
             // Update jump out address
-            let end_pos = self.instructions().len();
-            self.instructions()[jump_out_pos] = Instruction::JumpIfFalse(CodeAddress::new(end_pos));
+            self.instructions()[jump_out_pos] = Instruction::JumpIfFalse(CodeAddress::new(loop_end));
         }
     }
 
@@ -141,8 +162,13 @@ where
     }
 
     fn generate_break_statement(&mut self, _node: &Node) {
-        self.instructions()
-            .push(Instruction::Jump(CodeAddress::new(0)));
+        // Get the current loop's break address
+        if let Some(break_address) = self.get_current_break_address() {
+            self.instructions().push(Instruction::Jump(break_address));
+        } else {
+            // If no loop context, push undefined (error case)
+            self.instructions().push(Instruction::PushUndefined);
+        }
     }
 
     fn generate_continue_statement(&mut self, _node: &Node) {

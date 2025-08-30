@@ -21,6 +21,7 @@ pub struct BytecodeGenerator {
     instructions: Vec<Instruction>,
     local_vars: HashMap<String, LocalIndex>,
     next_local: usize,
+    loop_labels: Vec<CodeAddress>,
 }
 
 impl BytecodeGenerator {
@@ -31,6 +32,7 @@ impl BytecodeGenerator {
             instructions: Vec::new(),
             local_vars: HashMap::new(),
             next_local: 0,
+            loop_labels: Vec::new(),
         }
     }
 }
@@ -351,6 +353,18 @@ impl ControlFlowCore for BytecodeGenerator {
 
     fn visit_node(&mut self, node: &Node) {
         BytecodeGenerator::visit_node(self, node)
+    }
+
+    fn push_loop_label(&mut self, break_address: CodeAddress) {
+        self.loop_labels.push(break_address);
+    }
+
+    fn pop_loop_label(&mut self) {
+        self.loop_labels.pop();
+    }
+
+    fn get_current_break_address(&self) -> Option<CodeAddress> {
+        self.loop_labels.last().copied()
     }
 }
 
