@@ -8,6 +8,7 @@ pub enum ExecutionError {
     FunctionNotFound { name: String },
     DivisionByZero,
     InvalidArrayIndex { index: usize, length: usize },
+    RuntimeError(String),
 }
 
 impl std::fmt::Display for ExecutionError {
@@ -27,6 +28,7 @@ impl std::fmt::Display for ExecutionError {
             ExecutionError::InvalidArrayIndex { index, length } => {
                 write!(f, "Invalid array index: {} (length: {})", index, length)
             }
+            ExecutionError::RuntimeError(msg) => write!(f, "Runtime error: {}", msg),
         }
     }
 }
