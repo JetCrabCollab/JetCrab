@@ -1,3 +1,40 @@
+//! # Performance Monitor
+//!
+//! Provides performance monitoring and metrics collection for VM execution.
+//! Tracks various execution statistics including instruction counts, timing,
+//! and memory operation metrics.
+//!
+//! ## Overview
+//!
+//! The performance monitor system consists of:
+//!
+//! - **PerformanceMetrics**: Stores collected performance data
+//! - **PerformanceMonitor**: Trait defining monitoring interface
+//! - **DefaultPerformanceMonitor**: Concrete implementation
+//!
+//! ## Tracked Metrics
+//!
+//! - **Total Instructions**: Number of executed instructions
+//! - **Execution Time**: Duration of execution cycles
+//! - **Memory Allocations**: Count of heap allocations
+//! - **Stack Operations**: Number of stack manipulations
+//! - **Heap Operations**: Number of heap operations
+//!
+//! ## Usage
+//!
+//! ```rust
+//! use jetcrab::vm::executor::performance_monitor::{DefaultPerformanceMonitor, PerformanceMonitor};
+//!
+//! let mut monitor = DefaultPerformanceMonitor::new();
+//! monitor.start_execution();
+//! monitor.record_instruction();
+//! monitor.record_stack_operation();
+//! monitor.end_execution();
+//!
+//! let metrics = monitor.get_metrics();
+//! println!("Executed {} instructions", metrics.total_instructions);
+//! ```
+
 use std::time::{Duration, Instant};
 
 #[derive(Debug, Clone)]

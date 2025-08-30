@@ -1,9 +1,44 @@
+//! # JavaScript Engine API
+//!
+//! Provides the main execution engine for JavaScript code, combining parsing,
+//! semantic analysis, bytecode generation, and VM execution.
+//!
+//! ## Overview
+//!
+//! The Engine is the primary entry point for JavaScript execution:
+//!
+//! - **Source Code Input**: Accepts JavaScript source as strings
+//! - **Complete Pipeline**: Parsing → Analysis → Compilation → Execution
+//! - **Result Output**: Returns computed values or error messages
+//! - **Context Management**: Maintains execution state and context
+//!
+//! ## Execution Flow
+//!
+//! ```text
+//! Source Code → Parser → AST → Semantic Analysis → Bytecode → VM → Result
+//! ```
+//!
+//! ## Usage
+//!
+//! ```rust
+//! use jetcrab::api::Engine;
+//!
+//! let mut engine = Engine::new();
+//! let result = engine.evaluate("2 + 2 * 3")?;
+//! println!("Result: {:?}", result);
+//! ```
+
 use crate::bytecode::BytecodeGenerator;
 use crate::parser::Parser;
 use crate::runtime::Context;
 use crate::semantic::SemanticAnalyzer;
-use crate::vm::{Bytecode, Executor, Value};
+use crate::vm::executor::Executor;
+use crate::vm::{Bytecode, Value};
 
+/// Main JavaScript execution engine
+///
+/// Combines all components needed for JavaScript execution:
+/// parsing, semantic analysis, bytecode generation, and VM execution.
 pub struct Engine {
     context: Context,
     executor: Executor,
@@ -73,7 +108,8 @@ impl Engine {
             .collect();
 
         let bytecode = Bytecode::new(instructions);
-        self.executor.execute(&bytecode, &values)
+        self.executor
+            .execute(&bytecode, &values)
             .map_err(|e| format!("Execution error: {}", e))?;
 
         Ok(self.executor.stack_mut().pop().unwrap_or(Value::Undefined))

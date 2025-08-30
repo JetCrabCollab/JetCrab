@@ -12,7 +12,6 @@ pub mod value;
 
 pub use bytecode::Bytecode;
 pub use error::VmError;
-pub use executor::Executor;
 pub use handle::{ArrayHandle, FunctionHandle, HeapHandleId, ObjectHandle, INVALID_HANDLE};
 pub use instructions::Instruction;
 pub use types::*;

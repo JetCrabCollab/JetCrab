@@ -1,7 +1,58 @@
-use super::{
-    error_handler::{DefaultErrorHandler, ExecutionError},
-    HeapOperations, StackOperations, VariableManager,
-};
+//! # Instruction Executor Implementation
+//!
+//! Provides concrete implementation of the instruction executor that orchestrates
+//! VM execution by managing stack, heap, and variable operations. This is the main
+//! execution engine that processes bytecode instructions.
+//!
+//! ## Architecture
+//!
+//! The executor uses a generic design that accepts different implementations
+//! for stack, heap, and variable management through traits. This allows for
+//! flexible testing and different execution strategies.
+//!
+//! ## Components
+//!
+//! - **Stack Manager**: Handles all stack operations (push, pop, etc.)
+//! - **Heap Manager**: Manages object allocation and garbage collection
+//! - **Variable Manager**: Handles local and global variable storage
+//! - **Frame**: Current execution frame with constants and metadata
+//! - **Registers**: VM registers including instruction pointer
+//! - **Builtins**: Built-in function implementations
+//! - **Context Cache**: Execution context for performance optimization
+//!
+//! ## Execution Model
+//!
+//! The executor processes bytecode instructions sequentially, maintaining
+//! program state through its managed components. Each instruction may:
+//!
+//! - Modify the stack (push/pop values)
+//! - Allocate or access heap objects
+//! - Read/write variables
+//! - Control execution flow (jumps, calls, returns)
+//!
+//! ## Usage
+//!
+//! ```rust
+//! use jetcrab::vm::executor::instruction_executor::InstructionExecutorImpl;
+//! use jetcrab::vm::bytecode::Bytecode;
+//! use jetcrab::vm::value::Value;
+//!
+//! let mut executor = InstructionExecutorImpl::new(
+//!     stack_manager,
+//!     heap_manager,
+//!     variable_manager,
+//! );
+//!
+//! let bytecode = Bytecode::new();
+//! let constants = vec![Value::Number(42.0)];
+//!
+//! match executor.execute(&bytecode, &constants) {
+//!     Ok(()) => println!("Execution completed"),
+//!     Err(e) => eprintln!("Execution failed: {:?}", e),
+//! }
+//! ```
+
+use super::{error_handler::ExecutionError, HeapOperations, StackOperations, VariableManager};
 use crate::runtime::builtins::Builtins;
 use crate::runtime::context::Context;
 use crate::vm::bytecode::Bytecode;
@@ -11,6 +62,28 @@ use crate::vm::instructions::Instruction;
 use crate::vm::registers::Registers;
 use crate::vm::value::Value;
 
+/// Concrete implementation of the instruction executor
+///
+/// Orchestrates VM execution by coordinating between stack, heap, and variable
+/// management systems. Provides the main execution loop that processes bytecode
+/// instructions sequentially.
+///
+/// # Type Parameters
+/// * `S` - Stack operations implementation
+/// * `H` - Heap operations implementation  
+/// * `V` - Variable management implementation
+///
+/// # Examples
+///
+/// ```rust
+/// use jetcrab::vm::executor::instruction_executor::InstructionExecutorImpl;
+///
+/// let executor = InstructionExecutorImpl::new(
+///     my_stack_manager,
+///     my_heap_manager,
+///     my_variable_manager,
+/// );
+/// ```
 pub struct InstructionExecutorImpl<S, H, V>
 where
     S: StackOperations,
@@ -24,7 +97,7 @@ where
     registers: Registers,
     builtins: Builtins,
     context_cache: Context,
-    error_handler: DefaultErrorHandler,
+
 }
 
 impl<S, H, V> InstructionExecutorImpl<S, H, V>
@@ -33,6 +106,29 @@ where
     H: HeapOperations,
     V: VariableManager,
 {
+    /// Creates a new instruction executor with the provided managers
+    ///
+    /// Initializes the executor with concrete implementations for stack, heap,
+    /// and variable management, along with default instances of frame, registers,
+    /// builtins, and context cache.
+    ///
+    /// # Arguments
+    /// * `stack_manager` - Implementation for stack operations
+    /// * `heap_manager` - Implementation for heap operations
+    /// * `variable_manager` - Implementation for variable management
+    ///
+    /// # Returns
+    /// A new instruction executor ready for bytecode execution
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// let executor = InstructionExecutorImpl::new(
+    ///     StackManager::new(),
+    ///     HeapManager::new(),
+    ///     VariableManagerImpl::new(),
+    /// );
+    /// ```
     pub fn new(stack_manager: S, heap_manager: H, variable_manager: V) -> Self {
         Self {
             stack_manager,
@@ -42,30 +138,54 @@ where
             registers: Registers::new(),
             builtins: Builtins::new(),
             context_cache: Context::new(),
-            error_handler: DefaultErrorHandler::new(),
+
         }
     }
 
+    /// Gets a reference to the stack manager
+    ///
+    /// Provides read-only access to the stack manager for inspection
+    /// of stack state without modification.
     pub fn stack_manager(&self) -> &S {
         &self.stack_manager
     }
 
+    /// Gets a mutable reference to the stack manager
+    ///
+    /// Provides write access to the stack manager for stack operations
+    /// like push, pop, and other manipulations.
     pub fn stack_manager_mut(&mut self) -> &mut S {
         &mut self.stack_manager
     }
 
+    /// Gets a reference to the heap manager
+    ///
+    /// Provides read-only access to the heap manager for inspection
+    /// of heap state and object access.
     pub fn heap_manager(&self) -> &H {
         &self.heap_manager
     }
 
+    /// Gets a mutable reference to the heap manager
+    ///
+    /// Provides write access to the heap manager for object allocation,
+    /// deallocation, and garbage collection operations.
     pub fn heap_manager_mut(&mut self) -> &mut H {
         &mut self.heap_manager
     }
 
+    /// Gets a reference to the variable manager
+    ///
+    /// Provides read-only access to the variable manager for variable
+    /// lookups and scope inspection.
     pub fn variable_manager(&self) -> &V {
         &self.variable_manager
     }
 
+    /// Gets a mutable reference to the variable manager
+    ///
+    /// Provides write access to the variable manager for variable
+    /// assignment, scope management, and variable operations.
     pub fn variable_manager_mut(&mut self) -> &mut V {
         &mut self.variable_manager
     }
@@ -77,6 +197,31 @@ where
     H: HeapOperations,
     V: VariableManager,
 {
+    /// Executes bytecode instructions sequentially
+    ///
+    /// Processes bytecode instructions one by one, maintaining VM state
+    /// through the managed components. Handles control flow changes,
+    /// stack operations, heap management, and variable operations.
+    ///
+    /// # Arguments
+    /// * `bytecode` - The bytecode containing instructions to execute
+    /// * `constants` - Array of constant values referenced by instructions
+    ///
+    /// # Returns
+    /// * `Ok(())` - Execution completed successfully
+    /// * `Err(ExecutionError)` - Execution failed with specific error
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// let bytecode = Bytecode::new();
+    /// let constants = vec![Value::Number(42.0)];
+    ///
+    /// match executor.execute(&bytecode, &constants) {
+    ///     Ok(()) => println!("Execution completed"),
+    ///     Err(e) => eprintln!("Error: {:?}", e),
+    /// }
+    /// ```
     fn execute(&mut self, bytecode: &Bytecode, constants: &[Value]) -> Result<(), ExecutionError> {
         let mut ip = 0;
         let _call_stack: Vec<usize> = Vec::new();
@@ -225,17 +370,11 @@ where
                     }
                 }
                 Instruction::Call(_function_index) => {
-                    // Basic function calling implementation
-                    // For now, we'll implement a simple approach where functions
-                    // are stored as strings and executed directly
 
-                    // Get the function name from the stack
                     if let Some(function_name) = self.stack_manager.pop() {
                         match function_name {
                             Value::String(name) => {
-                                // Check if this is a built-in function
                                 if let Some(builtin_fn) = self.builtins.get_function(&name) {
-                                    // Call built-in function
                                     let result = builtin_fn(&mut self.context_cache, &[]);
                                     match result {
                                         Ok(value) => self.stack_manager.push(value),
@@ -319,19 +458,19 @@ where
                                             // Check if this is a local variable that contains a function
                                             // For now, implement specific function behaviors for common names
                                             match name.as_str() {
-                                                                                        "foo" => {
-                                            // Function expression foo = function() { return 100; }
-                                            // This should return a callable function, but for now return the result
-                                            self.stack_manager.push(Value::Number(100.0));
-                                        }
-                                        "__FUNCTION_EXPR_anonymous" => {
-                                            // Anonymous function expression
-                                            self.stack_manager.push(Value::Number(100.0));
-                                        }
-                                        "__FUNCTION_EXPR_foo" => {
-                                            // Named function expression foo
-                                            self.stack_manager.push(Value::Number(100.0));
-                                        }
+                                                "foo" => {
+                                                    // Function expression foo = function() { return 100; }
+                                                    // This should return a callable function, but for now return the result
+                                                    self.stack_manager.push(Value::Number(100.0));
+                                                }
+                                                "__FUNCTION_EXPR_anonymous" => {
+                                                    // Anonymous function expression
+                                                    self.stack_manager.push(Value::Number(100.0));
+                                                }
+                                                "__FUNCTION_EXPR_foo" => {
+                                                    // Named function expression foo
+                                                    self.stack_manager.push(Value::Number(100.0));
+                                                }
                                                 "add5" => {
                                                     // Function expression add5 = function(y) { return 5 + y; }
                                                     // This should return a callable function, but for now return the result
@@ -555,20 +694,30 @@ where
                                                 }
                                                 "repeat" => {
                                                     // String repeat method
-                                                    let count = self.stack_manager.pop().unwrap_or(Value::Number(0.0));
-                                                    let string = self.stack_manager.pop().unwrap_or(Value::String("".to_string()));
-                                                    
+                                                    let count = self
+                                                        .stack_manager
+                                                        .pop()
+                                                        .unwrap_or(Value::Number(0.0));
+                                                    let string = self
+                                                        .stack_manager
+                                                        .pop()
+                                                        .unwrap_or(Value::String("".to_string()));
+
                                                     let count_val = match count {
                                                         Value::Number(n) => n,
-                                                        Value::String(s) => s.parse::<f64>().unwrap_or(0.0),
+                                                        Value::String(s) => {
+                                                            s.parse::<f64>().unwrap_or(0.0)
+                                                        }
                                                         _ => 0.0,
                                                     };
-                                                    
+
                                                     if let Value::String(s) = string {
                                                         let repeated = s.repeat(count_val as usize);
-                                                        self.stack_manager.push(Value::String(repeated));
+                                                        self.stack_manager
+                                                            .push(Value::String(repeated));
                                                     } else {
-                                                        self.stack_manager.push(Value::String("".to_string()));
+                                                        self.stack_manager
+                                                            .push(Value::String("".to_string()));
                                                     }
                                                 }
                                                 _ => {
@@ -641,8 +790,11 @@ where
                     let obj = self.stack_manager.pop().unwrap();
                     match (obj, key) {
                         (Value::Object(handle), Value::String(key_str)) => {
-                            self.heap_manager
-                                .set_object_property(handle.id(), key_str, value.clone());
+                            self.heap_manager.set_object_property(
+                                handle.id(),
+                                key_str,
+                                value.clone(),
+                            );
                             // Push the object back to the stack so it can be used in object literals
                             self.stack_manager.push(Value::Object(handle));
                         }
@@ -658,8 +810,11 @@ where
                     let obj = self.stack_manager.pop().unwrap();
                     match (obj, key) {
                         (Value::Object(handle), Value::String(key_str)) => {
-                            self.heap_manager
-                                .set_object_property(handle.id(), key_str, value.clone());
+                            self.heap_manager.set_object_property(
+                                handle.id(),
+                                key_str,
+                                value.clone(),
+                            );
                             // Push the assigned value back to the stack (for assignments)
                             self.stack_manager.push(value);
                         }

@@ -1,3 +1,45 @@
+//! # Instruction Dispatcher
+//!
+//! Central dispatcher that routes VM instructions to their appropriate handlers.
+//! This module provides the main execution logic that determines which handler
+//! should process each instruction type.
+//!
+//! ## Architecture
+//!
+//! The dispatcher follows a pattern where each instruction type is mapped to
+//! a specific handler:
+//!
+//! - **Stack Operations**: Handled by `StackOpsHandler`
+//! - **Arithmetic Operations**: Handled by `ArithmeticHandler`
+//! - **Comparison Operations**: Handled by `ComparisonHandler`
+//! - **Control Flow Operations**: Handled by `ControlFlowHandler`
+//! - **Heap Operations**: Handled by `HeapOpsHandler`
+//! - **Builtin Calls**: Handled by `BuiltinCallsHandler`
+//!
+//! ## Execution Flow
+//!
+//! 1. Instruction is received with VM state
+//! 2. Dispatcher matches instruction type
+//! 3. Appropriate handler is called
+//! 4. Result is returned (optional new instruction pointer)
+//!
+//! ## Usage
+//!
+//! ```rust
+//! use jetcrab::vm::executor::instruction_dispatcher::InstructionDispatcher;
+//! use jetcrab::vm::instructions::Instruction;
+//!
+//! let result = InstructionDispatcher::execute_instruction(
+//!     &instruction,
+//!     &mut stack,
+//!     &mut heap,
+//!     &mut variables,
+//!     &mut frame,
+//!     &mut registers,
+//!     &mut builtins,
+//! )?;
+//! ```
+
 use crate::vm::executor::error_handler::ExecutionError;
 use crate::vm::executor::instruction_handlers::{
     ArithmeticHandler, BuiltinCallsHandler, ComparisonHandler, ControlFlowHandler, HeapOpsHandler,
@@ -7,12 +49,56 @@ use crate::vm::executor::traits::{HeapOperations, StackOperations, VariableManag
 use crate::vm::frame::Frame;
 use crate::vm::instructions::Instruction;
 use crate::vm::registers::Registers;
-use crate::vm::types::{ArraySize, ConstantIndex, GlobalIndex};
+use crate::vm::types::ArraySize;
 use crate::vm::value::Value;
 
+/// Central instruction dispatcher for the VM
+///
+/// Provides a single entry point for executing all VM instructions by
+/// routing them to specialized handlers based on instruction type.
 pub struct InstructionDispatcher;
 
 impl InstructionDispatcher {
+    /// Executes a single VM instruction
+    ///
+    /// Routes the instruction to the appropriate handler based on its type.
+    /// Some instructions may modify the instruction pointer, in which case
+    /// the new pointer is returned.
+    ///
+    /// # Arguments
+    /// * `instruction` - The instruction to execute
+    /// * `stack` - The VM stack for value operations
+    /// * `heap` - The VM heap for object allocation
+    /// * `variable_manager` - Manages local and global variables
+    /// * `frame` - Current execution frame
+    /// * `registers` - VM registers including instruction pointer
+    /// * `builtins` - Built-in function implementations
+    ///
+    /// # Returns
+    /// * `Ok(None)` - Instruction executed normally, continue to next
+    /// * `Ok(Some(ip))` - Instruction executed with jump, use new IP
+    /// * `Err(ExecutionError)` - Execution failed
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use jetcrab::vm::executor::instruction_dispatcher::InstructionDispatcher;
+    /// use jetcrab::vm::instructions::Instruction;
+    ///
+    /// match InstructionDispatcher::execute_instruction(
+    ///     &Instruction::Add,
+    ///     &mut stack,
+    ///     &mut heap,
+    ///     &mut variables,
+    ///     &mut frame,
+    ///     &mut registers,
+    ///     &mut builtins,
+    /// ) {
+    ///     Ok(None) => println!("Continue to next instruction"),
+    ///     Ok(Some(ip)) => println!("Jump to instruction {}", ip),
+    ///     Err(e) => eprintln!("Execution error: {:?}", e),
+    /// }
+    /// ```
     pub fn execute_instruction<S, H, V>(
         instruction: &Instruction,
         stack: &mut S,
@@ -28,7 +114,6 @@ impl InstructionDispatcher {
         V: VariableManager,
     {
         match instruction {
-            // Stack operations
             Instruction::PushConst(idx) => {
                 let value = frame.get_constant(*idx).unwrap_or(Value::Undefined);
                 stack.push(value);
@@ -42,8 +127,6 @@ impl InstructionDispatcher {
                 StackOpsHandler::dup(stack)?;
                 Ok(None)
             }
-
-            // Arithmetic operations
             Instruction::Add => {
                 ArithmeticHandler::add(stack)?;
                 Ok(None)
@@ -76,8 +159,6 @@ impl InstructionDispatcher {
                 ArithmeticHandler::decrement(stack)?;
                 Ok(None)
             }
-
-            // Logical operations
             Instruction::And => {
                 ComparisonHandler::logical_and(stack)?;
                 Ok(None)
@@ -94,8 +175,6 @@ impl InstructionDispatcher {
                 ComparisonHandler::bitwise_xor(stack)?;
                 Ok(None)
             }
-
-            // Comparison operations
             Instruction::Eq => {
                 ComparisonHandler::equal(stack)?;
                 Ok(None)
@@ -128,8 +207,6 @@ impl InstructionDispatcher {
                 ComparisonHandler::strict_not_equal(stack)?;
                 Ok(None)
             }
-
-            // Variable operations
             Instruction::LoadGlobal(idx) => {
                 let value = variable_manager
                     .get_global((*idx).into())
@@ -185,8 +262,6 @@ impl InstructionDispatcher {
                 stack.push(value);
                 Ok(None)
             }
-
-            // Control flow
             Instruction::Jump(target_ip) => {
                 let new_ip =
                     ControlFlowHandler::jump::<S, V>(stack, registers, (*target_ip).into())?;
@@ -213,7 +288,7 @@ impl InstructionDispatcher {
                     stack,
                     registers,
                     frame,
-                    (*function_index).into(),
+                    (*function_index).as_usize().into(),
                 )?;
                 Ok(None)
             }
@@ -222,13 +297,11 @@ impl InstructionDispatcher {
                     ControlFlowHandler::return_from_function::<S, V>(stack, registers, frame)?;
                 Ok(Some(new_ip))
             }
-
-            // Heap operations
             Instruction::NewObject => {
                 HeapOpsHandler::alloc_object(stack, heap)?;
                 Ok(None)
             }
-            Instruction::NewArray(size) => {
+            Instruction::NewArray(_size) => {
                 HeapOpsHandler::alloc_array(stack, heap)?;
                 Ok(None)
             }
@@ -261,8 +334,6 @@ impl InstructionDispatcher {
                 }
                 Ok(None)
             }
-
-            // Type operations
             Instruction::TypeOf => {
                 let value = stack.peek().ok_or(ExecutionError::StackUnderflow)?;
                 let type_name = match value {
@@ -320,8 +391,6 @@ impl InstructionDispatcher {
                 }
                 Ok(None)
             }
-
-            // Class operations
             Instruction::NewClass => {
                 HeapOpsHandler::alloc_object(stack, heap)?;
                 Ok(None)
@@ -346,8 +415,6 @@ impl InstructionDispatcher {
                 }
                 Ok(None)
             }
-
-            // Async operations
             Instruction::Await => {
                 let value = stack.pop().ok_or(ExecutionError::StackUnderflow)?;
                 stack.push(value);
@@ -358,8 +425,6 @@ impl InstructionDispatcher {
                 stack.push(value);
                 Ok(None)
             }
-
-            // Error handling
             Instruction::Throw => {
                 ControlFlowHandler::throw::<S, V>(stack, registers)?;
                 Ok(None)
@@ -379,8 +444,6 @@ impl InstructionDispatcher {
                 let new_ip = ControlFlowHandler::finally::<S, V>(stack, registers, frame)?;
                 Ok(Some(new_ip))
             }
-
-            // Other operations
             Instruction::Spread => {
                 let value = stack.pop().ok_or(ExecutionError::StackUnderflow)?;
                 stack.push(value);
@@ -400,8 +463,6 @@ impl InstructionDispatcher {
                 stack.push(result);
                 Ok(None)
             }
-
-            // Push constants
             Instruction::PushNull => {
                 stack.push(Value::Null);
                 Ok(None)
@@ -430,9 +491,7 @@ impl InstructionDispatcher {
                 stack.push(bigint);
                 Ok(None)
             }
-
-            // Function calls
-            Instruction::CallFunction(function_index, arg_count) => {
+            Instruction::CallFunction(_function_index, arg_count) => {
                 ControlFlowHandler::call::<S, V>(stack, registers, frame, (*arg_count).into())?;
                 Ok(None)
             }
@@ -446,8 +505,6 @@ impl InstructionDispatcher {
                 )?;
                 Ok(None)
             }
-
-            // Object methods
             Instruction::RemoveObjectProperty => {
                 let property_key = stack.pop().ok_or(ExecutionError::StackUnderflow)?;
                 let object_handle = stack.pop().ok_or(ExecutionError::StackUnderflow)?;
@@ -493,8 +550,6 @@ impl InstructionDispatcher {
                 }
                 Ok(None)
             }
-
-            // Array operations
             Instruction::GetArrayLength => {
                 let array = stack.pop().ok_or(ExecutionError::StackUnderflow)?;
                 if let Value::Array(handle) = array {
@@ -618,7 +673,7 @@ impl InstructionDispatcher {
                 stack.push(Value::Array(result_handle));
                 Ok(None)
             }
-            Instruction::IndexOfArray(target) => {
+            Instruction::IndexOfArray(_target) => {
                 let target_value = stack.pop().ok_or(ExecutionError::StackUnderflow)?;
                 let array = stack.pop().ok_or(ExecutionError::StackUnderflow)?;
 
@@ -641,7 +696,7 @@ impl InstructionDispatcher {
                 }
                 Ok(None)
             }
-            Instruction::IncludesArray(target) => {
+            Instruction::IncludesArray(_target) => {
                 let target_value = stack.pop().ok_or(ExecutionError::StackUnderflow)?;
                 let array = stack.pop().ok_or(ExecutionError::StackUnderflow)?;
 
@@ -664,8 +719,6 @@ impl InstructionDispatcher {
                 }
                 Ok(None)
             }
-
-            // Halt
             Instruction::Halt => Ok(None),
         }
     }

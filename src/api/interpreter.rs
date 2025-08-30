@@ -1,5 +1,6 @@
 use crate::vm::instructions::Instruction;
-use crate::vm::{Bytecode, Executor, Value};
+use crate::vm::{Bytecode, Value};
+use crate::vm::executor::Executor;
 
 pub struct Interpreter {
     instructions: Vec<Instruction>,

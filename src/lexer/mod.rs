@@ -1,3 +1,37 @@
+//! # JavaScript Lexer Module
+//!
+//! Provides lexical analysis (tokenization) of JavaScript source code,
+//! converting raw text into a stream of tokens for the parser.
+//!
+//! ## Overview
+//!
+//! The lexer module implements a scanner that produces:
+//!
+//! - **Tokens**: Keywords, identifiers, literals, and operators
+//! - **Position Information**: Accurate source location tracking
+//! - **Error Handling**: Graceful handling of invalid input
+//! - **Fallback Mode**: Basic tokenization for error recovery
+//!
+//! ## Token Types
+//!
+//! - **Keywords**: Language keywords like `let`, `function`, `if`
+//! - **Identifiers**: Variable and function names
+//! - **Literals**: Numbers, strings, booleans, and null
+//! - **Operators**: Arithmetic, logical, and assignment operators
+//! - **Punctuation**: Brackets, semicolons, and other symbols
+//!
+//! ## Usage
+//!
+//! ```rust
+//! use jetcrab::lexer::{tokenize, tokenize_fallback};
+//!
+//! // Tokenize with error handling
+//! let tokens = tokenize("let x = 42;")?;
+//!
+//! // Fallback tokenization for invalid code
+//! let tokens = tokenize_fallback("let x = ;");
+//! ```
+
 pub mod core;
 pub mod error;
 pub mod scanners;
