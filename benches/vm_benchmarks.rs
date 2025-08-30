@@ -1,5 +1,6 @@
 use criterion::{criterion_group, criterion_main, Criterion};
-use jetcrab::vm::{instructions::Instruction, Bytecode, Executor, Value};
+use jetcrab::vm::{instructions::Instruction, Bytecode, Value};
+use jetcrab::vm::executor::Executor;
 
 fn vm_benchmark(c: &mut Criterion) {
     let instructions = vec![

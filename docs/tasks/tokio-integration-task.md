@@ -44,7 +44,7 @@ gantt
 - **Phase**: Planning and Design
 - **Progress**: 20% complete
 - **Next Milestone**: VM integration design
-- **Estimated Completion**: Q4 2024
+- **Estimated Completion**: Q1 2026
 
 ## Prerequisites
 

@@ -1,7 +1,7 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use jetcrab::api::{Compiler, Engine};
-use jetcrab::ast::visitor::{AstPrinter, NodeCounter, Visitor};
-use jetcrab::semantic::analyzer::SemanticAnalyzer;
+use jetcrab::ast::visitor::{NodeCounter, Visitor};
+use jetcrab::semantic::SemanticAnalyzer;
 
 fn benchmark_template_literals(c: &mut Criterion) {
     let source = r#"
@@ -47,13 +47,6 @@ fn benchmark_visitor_pattern(c: &mut Criterion) {
         b.iter(|| {
             let mut counter = NodeCounter::new();
             counter.visit_node(black_box(&ast))
-        })
-    });
-
-    c.bench_function("ast_printer", |b| {
-        b.iter(|| {
-            let mut printer = AstPrinter::new();
-            printer.visit_node(black_box(&ast))
         })
     });
 }
