@@ -17,6 +17,7 @@ where
 {
     fn generate_function_declaration(&mut self, node: &Node) {
         if let Node::FunctionDeclaration(decl) = node {
+            // For now, implement a simplified version
             // Store function name as a special constant
             if let Some(id) = &decl.id {
                 if let Node::Identifier(name) = &**id {
@@ -38,6 +39,7 @@ where
 
     fn generate_function_expression(&mut self, node: &Node) {
         if let Node::FunctionExpression(expr) = node {
+            // For now, implement a simplified version
             // Generate function body
             self.visit_node(&expr.body);
 

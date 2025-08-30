@@ -22,6 +22,8 @@ pub struct BytecodeGenerator {
     local_vars: HashMap<String, LocalIndex>,
     next_local: usize,
     loop_labels: Vec<CodeAddress>,
+    statement_labels: HashMap<String, CodeAddress>,
+    current_labels: Vec<String>,
 }
 
 impl BytecodeGenerator {
@@ -33,6 +35,8 @@ impl BytecodeGenerator {
             local_vars: HashMap::new(),
             next_local: 0,
             loop_labels: Vec::new(),
+            statement_labels: HashMap::new(),
+            current_labels: Vec::new(),
         }
     }
 }
@@ -69,7 +73,12 @@ impl BytecodeGenerator {
             Node::ClassDeclaration(_decl) => {
                 <Self as ClassGenerator>::generate_class_declaration(self, node);
             }
-            Node::ImportDeclaration(_) | Node::ExportDeclaration(_) => {}
+            Node::ImportDeclaration(_stmt) => {
+                <Self as ControlFlowGenerator>::generate_import_declaration(self, node);
+            }
+            Node::ExportDeclaration(_stmt) => {
+                <Self as ControlFlowGenerator>::generate_export_declaration(self, node);
+            }
             Node::ClassExpression(_expr) => {
                 <Self as ClassGenerator>::generate_class_expression(self, node);
             }
@@ -83,32 +92,14 @@ impl BytecodeGenerator {
                 self.visit_node(&expr.argument);
                 self.instructions.push(Instruction::Await);
             }
-            Node::SwitchStatement(stmt) => {
-                self.visit_node(&stmt.discriminant);
-                for case in &stmt.cases {
-                    if let Some(test) = &case.test {
-                        self.visit_node(test);
-                    }
-                    for cons in &case.consequent {
-                        self.visit_node(cons);
-                    }
-                }
+            Node::SwitchStatement(_stmt) => {
+                <Self as ControlFlowGenerator>::generate_switch_statement(self, node);
             }
-            Node::TryStatement(stmt) => {
-                self.visit_node(&stmt.block);
-                if let Some(handler) = &stmt.handler {
-                    self.visit_node(handler);
-                }
-                if let Some(finalizer) = &stmt.finalizer {
-                    self.visit_node(finalizer);
-                }
-                self.instructions
-                    .push(Instruction::Try(CodeAddress::new(0), CodeAddress::new(0)));
+            Node::TryStatement(_stmt) => {
+                <Self as ControlFlowGenerator>::generate_try_statement(self, node);
             }
-            Node::CatchClause(clause) => {
-                self.visit_node(&clause.param);
-                self.visit_node(&clause.body);
-                self.instructions.push(Instruction::Catch);
+            Node::CatchClause(_clause) => {
+                <Self as ControlFlowGenerator>::generate_catch_clause(self, node);
             }
             Node::ThrowStatement(_stmt) => {
                 <Self as ControlFlowGenerator>::generate_throw_statement(self, node);
@@ -122,9 +113,8 @@ impl BytecodeGenerator {
             Node::ContinueStatement(_) => {
                 <Self as ControlFlowGenerator>::generate_continue_statement(self, node);
             }
-            Node::LabeledStatement(stmt) => {
-                self.visit_node(&stmt.label);
-                self.visit_node(&stmt.body);
+            Node::LabeledStatement(_stmt) => {
+                <Self as ControlFlowGenerator>::generate_labeled_statement(self, node);
             }
             Node::WithStatement(stmt) => {
                 self.visit_node(&stmt.object);
@@ -225,6 +215,12 @@ impl BytecodeGenerator {
             }
             Node::ForStatement(_stmt) => {
                 <Self as ControlFlowGenerator>::generate_for_statement(self, node);
+            }
+            Node::ForInStatement(_stmt) => {
+                <Self as ControlFlowGenerator>::generate_for_in_statement(self, node);
+            }
+            Node::ForOfStatement(_stmt) => {
+                <Self as ControlFlowGenerator>::generate_for_of_statement(self, node);
             }
             Node::WhileStatement(_stmt) => {
                 <Self as ControlFlowGenerator>::generate_while_statement(self, node);
@@ -365,6 +361,36 @@ impl ControlFlowCore for BytecodeGenerator {
 
     fn get_current_break_address(&self) -> Option<CodeAddress> {
         self.loop_labels.last().copied()
+    }
+}
+
+impl crate::bytecode::statements::control_flow::LabelManager for BytecodeGenerator {
+    fn add_label(&mut self, name: String, address: CodeAddress) {
+        self.statement_labels.insert(name, address);
+    }
+
+    fn get_label_address(&self, name: &str) -> Option<CodeAddress> {
+        self.statement_labels.get(name).copied()
+    }
+
+    fn get_label_start_address(&self, label_name: &str) -> Option<CodeAddress> {
+        self.statement_labels.get(&format!("{}_start", label_name)).copied()
+    }
+
+    fn get_label_end_address(&self, label_name: &str) -> Option<CodeAddress> {
+        self.statement_labels.get(&format!("{}_end", label_name)).copied()
+    }
+
+    fn push_current_label(&mut self, name: String) {
+        self.current_labels.push(name);
+    }
+
+    fn pop_current_label(&mut self) {
+        self.current_labels.pop();
+    }
+
+    fn get_current_labels(&self) -> &[String] {
+        &self.current_labels
     }
 }
 

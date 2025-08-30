@@ -1,9 +1,21 @@
 pub mod class;
 pub mod control_flow;
+pub mod control_statements;
 pub mod function;
+pub mod if_statement;
+pub mod loop_statements;
+pub mod modules;
+pub mod switch_statement;
+pub mod try_catch;
 pub mod variable;
 
 pub use class::*;
 pub use control_flow::*;
+pub use control_statements::*;
 pub use function::*;
+pub use if_statement::*;
+pub use loop_statements::*;
+pub use modules::*;
+pub use switch_statement::*;
+pub use try_catch::*;
 pub use variable::*;

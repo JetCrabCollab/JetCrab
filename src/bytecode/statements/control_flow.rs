@@ -7,10 +7,28 @@ pub trait ControlFlowGenerator {
     fn generate_for_statement(&mut self, node: &Node);
     fn generate_while_statement(&mut self, node: &Node);
     fn generate_do_while_statement(&mut self, node: &Node);
+    fn generate_switch_statement(&mut self, node: &Node);
+    fn generate_try_statement(&mut self, node: &Node);
+    fn generate_catch_clause(&mut self, node: &Node);
+    fn generate_labeled_statement(&mut self, node: &Node);
     fn generate_break_statement(&mut self, node: &Node);
     fn generate_continue_statement(&mut self, node: &Node);
     fn generate_return_statement(&mut self, node: &Node);
     fn generate_throw_statement(&mut self, node: &Node);
+    fn generate_for_in_statement(&mut self, node: &Node);
+    fn generate_for_of_statement(&mut self, node: &Node);
+    fn generate_import_declaration(&mut self, node: &Node);
+    fn generate_export_declaration(&mut self, node: &Node);
+}
+
+pub trait LabelManager {
+    fn add_label(&mut self, name: String, address: CodeAddress);
+    fn get_label_address(&self, name: &str) -> Option<CodeAddress>;
+    fn get_label_start_address(&self, label_name: &str) -> Option<CodeAddress>;
+    fn get_label_end_address(&self, label_name: &str) -> Option<CodeAddress>;
+    fn push_current_label(&mut self, name: String);
+    fn pop_current_label(&mut self);
+    fn get_current_labels(&self) -> &[String];
 }
 
 pub trait ControlFlowCore {
@@ -21,174 +39,79 @@ pub trait ControlFlowCore {
     fn get_current_break_address(&self) -> Option<CodeAddress>;
 }
 
+// Import all statement modules
+use super::control_statements;
+use super::if_statement;
+use super::loop_statements::{self, generate_for_in_statement, generate_for_of_statement};
+use super::modules::{generate_export_declaration, generate_import_declaration};
+use super::switch_statement;
+use super::try_catch;
+
 impl<T> ControlFlowGenerator for T
 where
-    T: ControlFlowCore,
+    T: ControlFlowCore + LabelManager,
 {
     fn generate_if_statement(&mut self, node: &Node) {
-        if let Node::IfStatement(stmt) = node {
-            // Generate test condition
-            self.visit_node(&stmt.test);
-
-            // Jump to else block if condition is false
-            let jump_to_else_pos = self.instructions().len();
-            self.instructions()
-                .push(Instruction::JumpIfFalse(CodeAddress::new(0))); // Placeholder
-
-            // Generate consequent block
-            self.visit_node(&stmt.consequent);
-
-            // Jump over else block
-            let jump_over_else_pos = self.instructions().len();
-            self.instructions()
-                .push(Instruction::Jump(CodeAddress::new(0))); // Placeholder
-
-            // Update jump to else address
-            let else_start_pos = self.instructions().len();
-            self.instructions()[jump_to_else_pos] =
-                Instruction::JumpIfFalse(CodeAddress::new(else_start_pos));
-
-            // Generate alternate block (else)
-            if let Some(alt) = &stmt.alternate {
-                self.visit_node(alt);
-            }
-
-            // Update jump over else address
-            let end_pos = self.instructions().len();
-            self.instructions()[jump_over_else_pos] = Instruction::Jump(CodeAddress::new(end_pos));
-        }
+        if_statement::generate_if_statement(self, node);
     }
 
     fn generate_for_statement(&mut self, node: &Node) {
-        if let Node::ForStatement(stmt) = node {
-            // Generate initialization
-            if let Some(init) = &stmt.init {
-                self.visit_node(init);
-            }
-
-            // Mark the start of the loop (test condition)
-            let loop_start = self.instructions().len();
-
-            // Generate test condition
-            if let Some(test) = &stmt.test {
-                self.visit_node(test);
-
-                // Jump out of loop if condition is false
-                let jump_out_pos = self.instructions().len();
-                self.instructions()
-                    .push(Instruction::JumpIfFalse(CodeAddress::new(0))); // Placeholder
-
-                // Push loop label for break statements
-                let loop_end = self.instructions().len();
-                self.push_loop_label(CodeAddress::new(loop_end));
-
-                // Generate loop body
-                self.visit_node(&stmt.body);
-
-                // Generate update
-                if let Some(update) = &stmt.update {
-                    self.visit_node(update);
-                }
-
-                // Jump back to loop start (test condition)
-                self.instructions()
-                    .push(Instruction::Jump(CodeAddress::new(loop_start)));
-
-                // Mark the end of the loop
-                let loop_end = self.instructions().len();
-                
-                // Pop loop label
-                self.pop_loop_label();
-                
-                // Update jump out address
-                self.instructions()[jump_out_pos] =
-                    Instruction::JumpIfFalse(CodeAddress::new(loop_end));
-            } else {
-                // Infinite loop (no test condition)
-                self.visit_node(&stmt.body);
-
-                // Generate update
-                if let Some(update) = &stmt.update {
-                    self.visit_node(update);
-                }
-
-                // Jump back to loop start
-                self.instructions()
-                    .push(Instruction::Jump(CodeAddress::new(loop_start)));
-            }
-        }
+        loop_statements::generate_for_statement(self, node);
     }
 
     fn generate_while_statement(&mut self, node: &Node) {
-        if let Node::WhileStatement(stmt) = node {
-            // Mark the start of the loop
-            let loop_start = self.instructions().len();
-
-            // Generate test condition
-            self.visit_node(&stmt.test);
-
-            // Jump out of loop if condition is false
-            let jump_out_pos = self.instructions().len();
-            self.instructions()
-                .push(Instruction::JumpIfFalse(CodeAddress::new(0))); // Placeholder
-
-            // Push loop label for break statements
-            let loop_end = self.instructions().len();
-            self.push_loop_label(CodeAddress::new(loop_end));
-
-            // Generate loop body
-            self.visit_node(&stmt.body);
-
-            // Jump back to loop start
-            self.instructions()
-                .push(Instruction::Jump(CodeAddress::new(loop_start)));
-
-            // Mark the end of the loop (for break statements)
-            let loop_end = self.instructions().len();
-            
-            // Pop loop label
-            self.pop_loop_label();
-            
-            // Update jump out address
-            self.instructions()[jump_out_pos] = Instruction::JumpIfFalse(CodeAddress::new(loop_end));
-        }
+        loop_statements::generate_while_statement(self, node);
     }
 
     fn generate_do_while_statement(&mut self, node: &Node) {
-        if let Node::DoWhileStatement(stmt) = node {
-            self.visit_node(&stmt.body);
-            self.visit_node(&stmt.test);
-        }
+        loop_statements::generate_do_while_statement(self, node);
     }
 
-    fn generate_break_statement(&mut self, _node: &Node) {
-        // Get the current loop's break address
-        if let Some(break_address) = self.get_current_break_address() {
-            self.instructions().push(Instruction::Jump(break_address));
-        } else {
-            // If no loop context, push undefined (error case)
-            self.instructions().push(Instruction::PushUndefined);
-        }
+    fn generate_switch_statement(&mut self, node: &Node) {
+        switch_statement::generate_switch_statement(self, node);
     }
 
-    fn generate_continue_statement(&mut self, _node: &Node) {
-        self.instructions()
-            .push(Instruction::Jump(CodeAddress::new(0)));
+    fn generate_try_statement(&mut self, node: &Node) {
+        try_catch::generate_try_statement(self, node);
+    }
+
+    fn generate_catch_clause(&mut self, node: &Node) {
+        try_catch::generate_catch_clause(self, node);
+    }
+
+    fn generate_labeled_statement(&mut self, node: &Node) {
+        control_statements::generate_labeled_statement(self, node);
+    }
+
+    fn generate_break_statement(&mut self, node: &Node) {
+        control_statements::generate_break_statement(self, node);
+    }
+
+    fn generate_continue_statement(&mut self, node: &Node) {
+        control_statements::generate_continue_statement(self, node);
     }
 
     fn generate_return_statement(&mut self, node: &Node) {
-        if let Node::ReturnStatement(stmt) = node {
-            if let Some(arg) = &stmt.argument {
-                self.visit_node(arg);
-            }
-            self.instructions().push(Instruction::Return);
-        }
+        control_statements::generate_return_statement(self, node);
     }
 
     fn generate_throw_statement(&mut self, node: &Node) {
-        if let Node::ThrowStatement(stmt) = node {
-            self.visit_node(&stmt.argument);
-            self.instructions().push(Instruction::Throw);
-        }
+        try_catch::generate_throw_statement(self, node);
+    }
+
+    fn generate_for_in_statement(&mut self, node: &Node) {
+        generate_for_in_statement(self, node);
+    }
+
+    fn generate_for_of_statement(&mut self, node: &Node) {
+        generate_for_of_statement(self, node);
+    }
+
+    fn generate_import_declaration(&mut self, node: &Node) {
+        generate_import_declaration(self, node);
+    }
+
+    fn generate_export_declaration(&mut self, node: &Node) {
+        generate_export_declaration(self, node);
     }
 }

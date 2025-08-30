@@ -1,4 +1,5 @@
 use crate::ast::{Node, *};
+use crate::ast::statements::control_flow::{ForInStatement, ForOfStatement};
 use crate::vm::types::{IndentLevel, NodeCount};
 
 pub trait Visitor {
@@ -22,6 +23,8 @@ pub trait Visitor {
             Node::BlockStatement(stmt) => self.visit_block_statement(stmt),
             Node::IfStatement(stmt) => self.visit_if_statement(stmt),
             Node::ForStatement(stmt) => self.visit_for_statement(stmt),
+            Node::ForInStatement(stmt) => self.visit_for_in_statement(stmt),
+            Node::ForOfStatement(stmt) => self.visit_for_of_statement(stmt),
             Node::WhileStatement(stmt) => self.visit_while_statement(stmt),
             Node::DoWhileStatement(stmt) => self.visit_do_while_statement(stmt),
             Node::SwitchStatement(stmt) => self.visit_switch_statement(stmt),
@@ -196,6 +199,20 @@ pub trait Visitor {
         if let Some(update) = &stmt.update {
             self.visit_node(update);
         }
+        self.visit_node(&stmt.body);
+        self.default_output()
+    }
+
+    fn visit_for_in_statement(&mut self, stmt: &ForInStatement) -> Self::Output {
+        self.visit_node(&stmt.left);
+        self.visit_node(&stmt.right);
+        self.visit_node(&stmt.body);
+        self.default_output()
+    }
+
+    fn visit_for_of_statement(&mut self, stmt: &ForOfStatement) -> Self::Output {
+        self.visit_node(&stmt.left);
+        self.visit_node(&stmt.right);
         self.visit_node(&stmt.body);
         self.default_output()
     }
@@ -712,6 +729,16 @@ impl Visitor for AstPrinter {
             Node::Property(prop) => {
                 self.visit_node(&prop.key);
                 self.visit_node(&prop.value);
+            }
+            Node::ForInStatement(stmt) => {
+                self.visit_node(&stmt.left);
+                self.visit_node(&stmt.right);
+                self.visit_node(&stmt.body);
+            }
+            Node::ForOfStatement(stmt) => {
+                self.visit_node(&stmt.left);
+                self.visit_node(&stmt.right);
+                self.visit_node(&stmt.body);
             }
             _ => {}
         }
