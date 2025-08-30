@@ -13,11 +13,34 @@ A modern JavaScript engine written in Rust, designed for performance, safety, an
 
 - **Lexical Analysis**: Fast tokenization with error recovery
 - **Parsing**: Robust AST generation with syntax error handling
-- **Semantic Analysis**: Type checking and scope management
-- **Bytecode Generation**: Optimized instruction generation
+- **Semantic Analysis**: Basic type checking and scope management
+- **Bytecode Generation**: Instruction generation and optimization
 - **Virtual Machine**: Stack-based execution engine
-- **Memory Management**: Garbage collection and memory allocation
+- **Memory Management**: Basic memory allocation and management
 - **Runtime Environment**: Object system and built-in functions
+
+## Current Status
+
+**JetCrab is currently in active development with core functionality working:**
+
+✅ **Working Features:**
+- Basic JavaScript execution (arithmetic, strings, variables, objects, arrays)
+- Function definitions and calls
+- Object and array operations
+- Basic error handling
+- Math functions (Math.pow, etc.)
+
+🔄 **In Development:**
+- Advanced semantic analysis
+- Complete test suite
+- Performance optimizations
+- Advanced memory management
+
+❌ **Not Yet Implemented:**
+- Full ECMAScript compliance
+- Advanced debugging tools
+- Production deployment features
+- Comprehensive error recovery
 
 ## Architecture
 
@@ -28,11 +51,11 @@ src/
 ├── lexer/          # Tokenization and lexical analysis
 ├── ast/            # Abstract Syntax Tree representation
 ├── parser/         # Syntax analysis and AST construction
-├── semantic/       # Type checking and semantic analysis
+├── semantic/       # Basic type checking and validation
 ├── bytecode/       # Code generation and optimization
 ├── vm/             # Virtual machine and execution
 ├── runtime/        # Runtime environment and objects
-├── memory/         # Memory management and garbage collection
+├── memory/         # Basic memory management
 └── api/            # Public API and engine interface
 ```
 
@@ -74,6 +97,8 @@ cargo run --example basic_usage
 ```bash
 cargo test
 ```
+
+**Note:** Some tests may currently fail due to ongoing refactoring.
 
 ## Development
 
@@ -143,31 +168,6 @@ make doc           # Generate documentation
 make run-examples  # Run all examples
 ```
 
-#### Branch Protection
-
-The main branch is protected and requires all checks to pass before merging:
-
-- **CI**: All tests, build, clippy, and format checks must pass
-- **Security**: No security vulnerabilities
-- **Coverage**: Must maintain minimum coverage threshold
-- **Documentation**: Documentation must be valid
-
-To set up branch protection:
-
-1. Go to Settings > Branches in your GitHub repository
-2. Add rule for `main` branch
-3. Enable "Require status checks to pass before merging"
-4. Add all required status checks:
-   - `CI`
-   - `Security`
-   - `Coverage`
-   - `Documentation`
-5. Enable "Require branches to be up to date before merging"
-6. Enable "Require pull request reviews before merging"
-7. Save changes
-
-Alternatively, run the "Setup Branch Protection" workflow manually.
-
 ## Contributing
 
 1. Fork the repository
@@ -182,6 +182,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Roadmap
 
+- [ ] Fix failing tests and stabilize API
+- [ ] Complete semantic analysis implementation
+- [ ] Improve error handling and recovery
 - [ ] ECMAScript 2024 compliance
 - [ ] JIT compilation
 - [ ] WebAssembly support

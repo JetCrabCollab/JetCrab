@@ -1,118 +1,124 @@
-# Architecture
+# JetCrab Architecture Documentation
 
-This directory contains detailed technical architecture documentation for JetCrab.
+Welcome to the JetCrab architecture documentation! This directory contains detailed information about the system design, module organization, and architectural decisions.
 
-## Overview
+## 📚 **Architecture Documents**
 
-JetCrab follows a modular architecture with clear separation of concerns. Each component handles a specific aspect of JavaScript engine functionality, from lexical analysis to bytecode execution.
+### **System Overview**
+- **[Engine Overview](./engine-overview.md)** - High-level system architecture and design principles
+- **[Module Architecture](./module-architecture.md)** - **MAIN DOCUMENT** - Detailed module organization and responsibilities
 
-## Architecture Documents
+## 🏗️ **Architecture Overview**
 
-### **System Architecture**
-- **[Engine Overview](./engine-overview.md)** - High-level system architecture
-  - Complete pipeline from source code to execution
-  - Component relationships and data flow
-  - Design principles and performance characteristics
+**JetCrab is designed as a single Rust crate with multiple modules, each handling a specific aspect of JavaScript engine functionality.**
 
-- **[Crate Architecture](./crate-architecture.md)** - Individual component details
-  - Detailed breakdown of each module
-  - Public APIs and dependencies
-  - Implementation specifics
+### **Key Design Principles**
+- **Single Crate**: All functionality is contained within one `jetcrab` crate
+- **Modular Design**: Clear separation of concerns through Rust modules
+- **Layered Architecture**: Compilation pipeline with well-defined stages
+- **Performance Focus**: Optimized for speed and memory efficiency
 
-### **Data Flow and Design**
-- **[Data Flow](./data-flow.md)** - How data moves through the system
-  - Source code processing pipeline
-  - Memory management and garbage collection
-  - Performance optimization strategies
+### **Module Organization**
+```
+src/
+├── lib.rs          # Public API and module declarations
+├── lexer/          # Tokenization and lexical analysis
+├── ast/            # Abstract Syntax Tree representation
+├── parser/         # Syntax analysis and AST construction
+├── semantic/       # Type checking and semantic validation
+├── bytecode/       # Code generation and optimization
+├── vm/             # Virtual machine and execution
+├── runtime/        # Runtime environment and built-ins
+├── memory/         # Memory management and garbage collection
+└── api/            # Public API and integration interface
+```
 
-- **[Memory Management](./memory-management.md)** - Heap and GC design
-  - Memory allocation strategies
-  - Garbage collection algorithms
-  - Performance considerations
-
-### **Future Planning**
-- **[Crate Consolidation Plan](./crate-consolidation-plan.md)** - Migration strategy
-  - Current multi-crate structure
-  - Consolidation benefits and timeline
-  - Migration steps and considerations
-
-- **[Ideal Project Structure](./ideal-new-project-structure.md)** - Long-term vision
-  - Target architecture design
-  - Scalability considerations
-  - Implementation roadmap
-
-## Architecture Principles
-
-### 1. **Modularity**
-- Each component has clear responsibilities
-- Loose coupling between components
-- Well-defined interfaces
-
-### 2. **Performance**
-- Efficient data structures and algorithms
-- Optimized bytecode instruction set
-- Memory-conscious design
-
-### 3. **Standards Compliance**
-- ECMAScript specification adherence
-- V8 engine compatibility where applicable
-- Modern JavaScript feature support
-
-### 4. **Extensibility**
-- Plugin-based architecture potential
-- Visitor pattern for AST traversal
-- Configurable components
-
-### 5. **Reliability**
-- Comprehensive error handling
-- Robust error recovery mechanisms
-- Memory safety through Rust
-
-## Component Architecture
+## 🔄 **Data Flow Architecture**
 
 ```mermaid
-graph TB
-    subgraph "JetCrab Architecture"
-        A[Source Code] --> B[Lexer]
-        B --> C[Parser]
-        C --> D[AST]
-        D --> E[Semantic Analyzer]
-        E --> F[Bytecode Generator]
-        F --> G[Virtual Machine]
-        G --> H[Runtime Environment]
-        
-        I[Memory Management] -.-> G
-        I -.-> H
-    end
+graph LR
+    A[Source Code] --> B[Lexer]
+    B --> C[Parser]
+    C --> D[AST]
+    D --> E[Semantic Analysis]
+    E --> F[Bytecode Generation]
+    F --> G[VM Execution]
+    G --> H[Runtime Output]
+    
+    I[Memory Management] -.-> G
+    I -.-> H
     
     style A fill:#e1f5fe
     style H fill:#c8e6c9
 ```
 
-## Performance Characteristics
+## 🎯 **Module Responsibilities**
 
-- **Lexical Analysis**: O(n) where n is source length
-- **Parsing**: O(n) with error recovery
-- **Bytecode Generation**: O(n) where n is AST nodes
-- **VM Execution**: Optimized for common JavaScript patterns
+### **Core Pipeline Modules**
+- **lexer**: Converts source code to tokens
+- **parser**: Builds AST from tokens
+- **semantic**: Validates AST semantics
+- **bytecode**: Generates executable code
+- **vm**: Executes bytecode
 
-## Integration Points
+### **Support Modules**
+- **runtime**: Provides execution environment
+- **memory**: Manages memory allocation
+- **api**: Exposes public interface
 
-### **External APIs**
-- **Embedding**: Public API for application integration
-- **Tooling**: AST serialization for development tools
-- **Debugging**: Source mapping and position tracking
-- **Profiling**: Performance measurement and analysis
+## 🚀 **Getting Started with Architecture**
 
-### **Internal Interfaces**
-- **Component Communication**: Well-defined interfaces
-- **Data Flow**: Structured data passing between components
-- **Error Handling**: Consistent error propagation
-- **Configuration**: Flexible engine configuration
+### **For New Contributors**
+1. Start with [Engine Overview](./engine-overview.md) for high-level understanding
+2. Review [Module Architecture](./module-architecture.md) for detailed module information
+3. Explore the actual source code in `src/` directory
 
-## Related Documentation
+### **For Developers**
+1. Understand the module dependencies and data flow
+2. Identify which module to modify for your changes
+3. Follow the established patterns and interfaces
 
+### **For Maintainers**
+1. Ensure module boundaries remain clear
+2. Maintain consistent module structure
+3. Document architectural decisions and changes
+
+## 📝 **Architecture Guidelines**
+
+### **Module Design Principles**
+- **Single Responsibility**: Each module has one clear purpose
+- **Minimal Coupling**: Modules depend only on what they need
+- **Clear Interfaces**: Well-defined public APIs between modules
+- **Consistent Structure**: Similar organization across all modules
+
+### **Performance Considerations**
+- **Efficient Data Flow**: Minimize data copying between modules
+- **Memory Management**: Shared memory where appropriate
+- **Optimization Passes**: Multiple optimization opportunities in the pipeline
+
+### **Extensibility**
+- **Plugin System**: Easy to add new functionality
+- **Module Independence**: New modules can be added without affecting existing ones
+- **Interface Stability**: Public APIs remain stable across versions
+
+## 🔗 **Related Documentation**
+
+### **Implementation Details**
 - **[Implementation Status](../implementation/)** - Current implementation progress
-- **[Getting Started](../getting-started/)** - Quick start guides
-- **[API Documentation](../api/)** - Integration details
-- **[Development Guides](../development/)** - Contribution guidelines 
+- **[Getting Started](../getting-started/)** - Setup and first steps
+- **[API Documentation](../api/)** - Public interface details
+
+### **Development Guides**
+- **[Contributing Guidelines](../CONTRIBUTING.md)** - How to contribute
+- **[Code of Conduct](../CODE_OF_CONDUCT.md)** - Community standards
+
+## 📊 **Current Architecture Status**
+
+- **Design**: ✅ Well-defined and documented
+- **Implementation**: 🔄 Basic structure complete, some modules need completion
+- **Documentation**: ✅ Architecture well documented
+- **Testing**: ❌ Some architectural assumptions need validation
+
+---
+
+**Note**: This architecture documentation reflects the current single-crate, multi-module design of JetCrab. The project uses Rust modules for organization, not separate crates. 

@@ -1,130 +1,120 @@
-# Documentation Structure Proposal
+# JetCrab Documentation Structure Proposal
 
-## Current Issues
-- Files scattered in root directory
-- Empty `api/` directory
-- Inconsistent naming conventions
-- Unclear hierarchy for some documents
+## Overview
 
-## Proposed New Structure
+This document proposes a comprehensive documentation structure for the JetCrab JavaScript engine project. The structure is designed to be intuitive, maintainable, and scalable as the project grows.
+
+## Proposed Structure
 
 ```
 docs/
-├── README.md                                    # Main documentation index
-├── getting-started/
-│   ├── README.md                               # Getting started overview
-│   ├── installation.md                         # Installation guide
-│   ├── first-steps.md                          # First steps tutorial
-│   └── examples.md                             # Basic examples
-├── architecture/
-│   ├── README.md                               # Architecture overview
-│   ├── engine-overview.md                      # High-level engine architecture
-│   ├── crate-architecture.md                   # Individual crate responsibilities
-│   ├── data-flow.md                            # How data flows through the engine
-│   └── memory-management.md                    # Heap and GC design
-├── implementation/
-│   ├── README.md                               # Implementation status overview
-│   ├── main-checklist.md                       # Overall implementation checklist
-│   ├── vm-checklist.md                         # Virtual Machine implementation
-│   ├── gc-checklist.md                         # Garbage Collection implementation
-│   ├── jit-checklist.md                        # JIT implementation checklist
-│   └── ecmascript-compliance.md                # ECMAScript 2024 compliance status
-├── development/
-│   ├── README.md                               # Development guide overview
-│   ├── contributing.md                         # Contribution guidelines
-│   ├── testing.md                              # Testing strategies
-│   ├── debugging.md                            # Debugging techniques
-│   └── performance.md                          # Performance optimization
-├── api/
-│   ├── README.md                               # API documentation overview
-│   ├── lexer-api.md                            # Lexer API reference
-│   ├── parser-api.md                           # Parser API reference
-│   ├── vm-api.md                               # Virtual Machine API
-│   └── runtime-api.md                          # Runtime environment API
-├── guides/
-│   ├── README.md                               # Guides overview
-│   ├── beginners-guide.md                      # Complete guide for beginners
-│   ├── compiler-theory.md                      # Compiler theory explanation
-│   └── javascript-engine-basics.md             # JavaScript engine fundamentals
-├── roadmap/
-│   ├── README.md                               # Roadmap overview
-│   ├── short-term.md                           # Next 3 months
-│   ├── medium-term.md                          # Next 6 months
-│   └── long-term.md                            # Next 12+ months
-└── tasks/
-    ├── README.md                               # Tasks overview
-    ├── tokio-integration.md                    # Tokio integration task
-    ├── performance-optimization.md             # Performance optimization tasks
-    └── feature-implementation.md               # Feature implementation tasks
+├── README.md                                       # Main documentation index
+├── STATUS_SUMMARY.md                               # Current project status overview
+├── STRUCTURE_PROPOSAL.md                           # This document
+│
+├── getting-started/                                # New user onboarding
+│   ├── README.md                                   # Getting started overview
+│   ├── installation.md                             # Setup and installation
+│   ├── first-steps.md                              # First project creation
+│   └── examples.md                                 # Basic usage examples
+│
+├── architecture/                                    # System design and architecture
+│   ├── README.md                                   # Architecture overview
+│   ├── engine-overview.md                          # High-level system design
+│   ├── module-architecture.md                      # **UPDATED** - Module organization and responsibilities
+│   └── ideal-new-project-structure.md              # Future architecture plans
+│
+├── implementation/                                  # Implementation status and progress
+│   ├── README.md                                   # Implementation overview
+│   ├── implementation-status.md                    # **CONSOLIDATED** - Status, checklist, and tasks
+│   └── technical-roadmap.md                        # Future development plans
+│
+├── guides/                                         # Comprehensive guides
+│   ├── README.md                                   # Guides overview
+│   ├── beginners-guide.md                          # Complete beginner introduction
+│   ├── compiler-theory.md                          # Compiler concepts explained
+│   └── javascript-engine-basics.md                 # Engine fundamentals
+│
+├── api/                                            # API reference documentation
+│   ├── README.md                                   # API overview
+│   ├── lexer-api.md                                # Lexer API reference
+│   ├── parser-api.md                               # Parser API reference
+│   ├── vm-api.md                                   # VM API reference
+│   └── runtime-api.md                              # Runtime API reference
+│
+├── development/                                     # Development and contribution
+│   ├── README.md                                   # Development overview
+│   ├── contributing.md                             # Contribution guidelines
+│   ├── testing.md                                  # Testing strategies
+│   ├── debugging.md                                # Debugging techniques
+│   └── performance.md                              # Performance optimization
+│
+├── deployment/                                      # **REMOVED** - Not yet implemented
+│   ├── server-architecture.md                      # **REMOVED**
+│   ├── usage-examples.md                           # **REMOVED**
+│   └── v8-comparison.md                            # **REMOVED**
+│
+├── tasks/                                          # **REMOVED** - Not yet implemented
+│   └── tokio-integration-task.md                   # **REMOVED**
+│
+└── roadmap/                                        # **REMOVED** - Not yet implemented
+    ├── short-term.md                               # **REMOVED**
+    ├── medium-term.md                              # **REMOVED**
+    └── long-term.md                                # **REMOVED**
 ```
 
-## Benefits of New Structure
+## Key Changes Made
 
-### 1. **Clear Hierarchy**
-- Each directory has a clear purpose
-- Logical grouping of related documents
-- Easy navigation for different user types
+### **Removed Unnecessary Documentation**
+- **deployment/**: Features not yet implemented
+- **tasks/**: Not relevant for current status
+- **roadmap/**: Too detailed for current phase
 
-### 2. **Better Organization**
-- No files scattered in root
-- Consistent naming conventions
-- Proper subcategorization
+### **Consolidated Implementation Docs**
+- **implementation-status.md**: Combines status, checklist, and tasks
+- Removed redundant files: current-status.md, main-checklist.md, pending-tasks.md
 
-### 3. **Improved User Experience**
-- New users start with `getting-started/`
-- Developers find implementation details in `implementation/`
-- Contributors use `development/` guides
-- API users go to `api/` documentation
+### **Updated Architecture**
+- **crate-architecture.md** → **module-architecture.md**: Reflects actual single-crate design
+- Focus on modules, not separate crates
 
-### 4. **Scalability**
-- Easy to add new documents in appropriate categories
-- Clear structure for future documentation
-- Maintainable organization
+### **Simplified Structure**
+- Fewer directories for easier navigation
+- Clear separation of concerns
+- Focus on what's actually implemented
 
-## Migration Plan
+## Benefits of This Structure
 
-### Phase 1: Create New Structure
-1. Create new directories
-2. Move existing files to appropriate locations
-3. Update all internal links
+### **Clarity**
+- Clear distinction between what exists and what doesn't
+- Focus on current implementation status
+- Easier to find relevant information
 
-### Phase 2: Create Missing Documents
-1. Add README files to each directory
-2. Create missing API documentation
-3. Add development guides
+### **Maintainability**
+- Fewer files to keep updated
+- Clear ownership of documentation
+- Consistent organization patterns
 
-### Phase 3: Update References
-1. Update main README.md
-2. Fix all cross-references
-3. Update external links
+### **User Experience**
+- New users can quickly understand project status
+- Contributors know where to find relevant information
+- Maintainers have clear documentation responsibilities
 
-## File Naming Conventions
+## Implementation Status
 
-### Rules
-- Use kebab-case for all filenames
-- Use descriptive names
-- Include file type in name when appropriate
-- Keep names short but clear
+- ✅ **Structure created**: New organization implemented
+- ✅ **Files consolidated**: Implementation docs merged
+- ✅ **Unnecessary docs removed**: Cleaned up premature documentation
+- ✅ **Architecture updated**: Reflects actual module design
+- 🔄 **Content updates**: Some files still need content updates
 
-### Examples
-- `getting-started.md`
-- `vm-checklist.md`
-- `api-reference.md`
-- `VM_Checklist.md`
-- `gettingStarted.md`
+## Next Steps
 
-## Content Guidelines
+1. **Complete content updates**: Ensure all files reflect current status
+2. **Validate links**: Check all internal references work correctly
+3. **User testing**: Get feedback on new structure
+4. **Iterate**: Improve based on user feedback
 
-### README Files
-Each directory should have a README.md that:
-- Explains the purpose of the directory
-- Lists all files with brief descriptions
-- Provides navigation guidance
-- Links to related sections
+---
 
-### Document Standards
-- All content in English
-- Consistent formatting
-- Clear headings and structure
-- Include Mermaid diagrams where helpful
-- Regular updates with codebase changes 
+**Note**: This structure reflects the current reality of the JetCrab project - a single crate with multiple modules, basic functionality working, and focus on stabilization rather than advanced features. 
