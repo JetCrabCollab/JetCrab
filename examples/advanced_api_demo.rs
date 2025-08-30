@@ -1,9 +1,8 @@
-use jetcrab::{
-    EngineConfig, OptimizationLevel, SecurityLevel, ModuleSystem,
-    Inspector, EventManager, CallbackRegistry,
-    ModuleRegistry, ModuleInfo,
-};
 use jetcrab::api::FileSystemModuleProvider;
+use jetcrab::{
+    CallbackRegistry, EngineConfig, EventManager, Inspector, ModuleInfo, ModuleRegistry,
+    ModuleSystem, OptimizationLevel, SecurityLevel,
+};
 use serde_json::json;
 use std::path::PathBuf;
 use std::time::Duration;
@@ -35,10 +34,10 @@ fn main() {
     // 2. Debugging and Profiling
     println!("2. Debugging and Profiling:");
     let mut inspector = Inspector::new();
-    
+
     // Start inspection
     inspector.start_inspection();
-    
+
     // Add breakpoints
     {
         let debugger = inspector.get_debugger();
@@ -46,48 +45,54 @@ fn main() {
         debugger.add_breakpoint(breakpoint);
         println!("  ✅ Breakpoint added");
     }
-    
+
     // Start profiling
     {
         let profiler = inspector.get_profiler();
         profiler.start_profiling();
         println!("  ✅ Profiling started");
     }
-    
+
     println!("  ✅ Debugging and profiling started");
     println!();
 
     // 3. Event System
     println!("3. Event System:");
     let mut event_manager = EventManager::new();
-    
+
     // Add event listeners
     event_manager.get_emitter().on("code_executed", |event| {
         println!("    📡 Event: {} - {}", event.event_type, event.data);
     });
-    
+
     event_manager.get_emitter().on("error_occurred", |event| {
         println!("    🚨 Error: {}", event.data);
     });
-    
+
     // Emit events
-    event_manager.get_emitter().emit("code_executed", json!({
-        "source": "main.js",
-        "line": 42,
-        "result": "success"
-    }));
-    
-    event_manager.get_emitter().emit("error_occurred", json!({
-        "type": "syntax_error",
-        "message": "Unexpected token",
-        "line": 15
-    }));
+    event_manager.get_emitter().emit(
+        "code_executed",
+        json!({
+            "source": "main.js",
+            "line": 42,
+            "result": "success"
+        }),
+    );
+
+    event_manager.get_emitter().emit(
+        "error_occurred",
+        json!({
+            "type": "syntax_error",
+            "message": "Unexpected token",
+            "line": 15
+        }),
+    );
     println!();
 
     // 4. Callback Registry
     println!("4. Callback Registry:");
     let mut callback_registry = CallbackRegistry::new();
-    
+
     // Register callbacks
     callback_registry.register("validate_input", "Validates user input", |data| {
         let input = data.as_str().unwrap_or("");
@@ -97,47 +102,65 @@ fn main() {
             Ok(json!({ "valid": true, "length": input.len() }))
         }
     });
-    
+
     callback_registry.register("format_output", "Formats output data", |data| {
         Ok(json!({ "formatted": format!("Processed: {}", data) }))
     });
-    
+
     // Use callbacks
-    let validation_result = callback_registry.call("validate_input", json!("Hello World")).unwrap();
-    let formatting_result = callback_registry.call("format_output", json!("test data")).unwrap();
-    
+    let validation_result = callback_registry
+        .call("validate_input", json!("Hello World"))
+        .unwrap();
+    let formatting_result = callback_registry
+        .call("format_output", json!("test data"))
+        .unwrap();
+
     println!("  ✅ Validation result: {}", validation_result);
     println!("  ✅ Formatting result: {}", formatting_result);
-    println!("  Registered callbacks: {}", callback_registry.list_callbacks().len());
+    println!(
+        "  Registered callbacks: {}",
+        callback_registry.list_callbacks().len()
+    );
     println!();
 
     // 5. Module System
     println!("5. Module System:");
     let mut module_registry = ModuleRegistry::new();
-    
+
     // Create a file system provider
     let mut fs_provider = FileSystemModuleProvider::new(PathBuf::from("./modules"));
-    
+
     // Add some modules
-    let math_module = ModuleInfo::new("math".to_string(), r#"
+    let math_module = ModuleInfo::new(
+        "math".to_string(),
+        r#"
         export function add(a, b) { return a + b; }
         export function multiply(a, b) { return a * b; }
         export const PI = 3.14159;
-    "#.to_string());
-    
-    let utils_module = ModuleInfo::new("utils".to_string(), r#"
+    "#
+        .to_string(),
+    );
+
+    let utils_module = ModuleInfo::new(
+        "utils".to_string(),
+        r#"
         export function formatDate(date) { return date.toISOString(); }
         export function generateId() { return Math.random().toString(36).substr(2, 9); }
-    "#.to_string());
-    
+    "#
+        .to_string(),
+    );
+
     fs_provider.add_module(math_module);
     fs_provider.add_module(utils_module);
-    
+
     // Register the provider
     module_registry.register_provider("file".to_string(), Box::new(fs_provider));
-    
+
     println!("  ✅ Module system initialized");
-    println!("  Providers registered: {}", module_registry.get_provider("file").is_some() as usize);
+    println!(
+        "  Providers registered: {}",
+        module_registry.get_provider("file").is_some() as usize
+    );
     println!();
 
     // 6. Event Chains
@@ -148,27 +171,27 @@ fn main() {
         "processing_started".to_string(),
         "processing_completed".to_string(),
     ];
-    
+
     // Add listeners for chain events first
     event_manager.get_emitter().on("validation_started", |_| {
         println!("    🔄 Validation started");
     });
-    
+
     event_manager.get_emitter().on("validation_completed", |_| {
         println!("    ✅ Validation completed");
     });
-    
+
     event_manager.get_emitter().on("processing_started", |_| {
         println!("    ⚙️  Processing started");
     });
-    
+
     event_manager.get_emitter().on("processing_completed", |_| {
         println!("    🎉 Processing completed");
     });
-    
+
     // Now create and execute the chain
     let mut chain = event_manager.create_event_chain(events);
-    
+
     // Execute the chain
     println!("  Executing event chain:");
     while !chain.is_complete() {
@@ -189,10 +212,16 @@ fn main() {
         .with_debugging(false)
         .with_profiling(false)
         .with_optimization(OptimizationLevel::Aggressive);
-    
-    println!("  Production ready: {}", production_config.is_production_ready());
+
+    println!(
+        "  Production ready: {}",
+        production_config.is_production_ready()
+    );
     println!("  Security level: {:?}", production_config.security_level);
-    println!("  Debugging enabled: {}", production_config.enable_debugging);
+    println!(
+        "  Debugging enabled: {}",
+        production_config.enable_debugging
+    );
     println!();
 
     println!("=== Advanced API Demo Complete ===");

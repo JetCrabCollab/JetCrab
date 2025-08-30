@@ -97,7 +97,6 @@ where
     registers: Registers,
     builtins: Builtins,
     context_cache: Context,
-
 }
 
 impl<S, H, V> InstructionExecutorImpl<S, H, V>
@@ -138,7 +137,6 @@ where
             registers: Registers::new(),
             builtins: Builtins::new(),
             context_cache: Context::new(),
-
         }
     }
 
@@ -370,7 +368,6 @@ where
                     }
                 }
                 Instruction::Call(_function_index) => {
-
                     if let Some(function_name) = self.stack_manager.pop() {
                         match function_name {
                             Value::String(name) => {

@@ -10,11 +10,14 @@ fn main() {
     println!("   Result: {:?}", result1);
 
     println!("\n2. Testing nested function calls:");
-    let result2 = engine.evaluate("function outer() { function inner() { return 100; } return inner(); } outer()");
+    let result2 = engine
+        .evaluate("function outer() { function inner() { return 100; } return inner(); } outer()");
     println!("   Result: {:?}", result2);
 
     println!("\n3. Testing recursive function:");
-    let result3 = engine.evaluate("function countdown(n) { if (n <= 0) return 0; return n + countdown(n - 1); } countdown(5)");
+    let result3 = engine.evaluate(
+        "function countdown(n) { if (n <= 0) return 0; return n + countdown(n - 1); } countdown(5)",
+    );
     println!("   Result: {:?}", result3);
 
     println!("\n4. Testing multiple function calls:");
@@ -22,7 +25,8 @@ fn main() {
     println!("   Result: {:?}", result4);
 
     println!("\n5. Testing function with local variables:");
-    let result5 = engine.evaluate("function testLocal() { let x = 10; let y = 20; return x + y; } testLocal()");
+    let result5 = engine
+        .evaluate("function testLocal() { let x = 10; let y = 20; return x + y; } testLocal()");
     println!("   Result: {:?}", result5);
 
     println!("\n=== Test Complete ===");

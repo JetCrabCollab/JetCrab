@@ -1,5 +1,5 @@
-use crate::ast::*;
 use crate::ast::statements::control_flow::{ForInStatement, ForOfStatement};
+use crate::ast::*;
 
 pub mod default_visitor;
 pub use default_visitor::{DefaultVisitor, NodeCounter};
@@ -116,7 +116,8 @@ pub trait Visitor {
     fn visit_spread_element(&mut self, elem: &SpreadElement) -> Self::Output;
     fn visit_rest_element(&mut self, elem: &RestElement) -> Self::Output;
     fn visit_template_literal(&mut self, lit: &TemplateLiteral) -> Self::Output;
-    fn visit_tagged_template_expression(&mut self, expr: &TaggedTemplateExpression) -> Self::Output;
+    fn visit_tagged_template_expression(&mut self, expr: &TaggedTemplateExpression)
+        -> Self::Output;
     fn visit_import_declaration(&mut self, decl: &ImportDeclaration) -> Self::Output;
     fn visit_export_declaration(&mut self, decl: &ExportDeclaration) -> Self::Output;
     fn visit_labeled_statement(&mut self, stmt: &LabeledStatement) -> Self::Output;

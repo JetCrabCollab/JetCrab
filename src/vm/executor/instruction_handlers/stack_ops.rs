@@ -33,8 +33,8 @@
 
 use crate::vm::executor::error_handler::ExecutionError;
 use crate::vm::executor::traits::StackOperations;
-use crate::vm::value::Value;
 use crate::vm::types::indices::StackIndex;
+use crate::vm::value::Value;
 
 /// Handles stack operations for the VM
 pub struct StackOpsHandler;
@@ -267,7 +267,10 @@ impl StackOpsHandler {
         }
 
         let values = stack.stack_mut();
-        let second_value = values.get(StackIndex::new(values.size() - 2)).unwrap().clone();
+        let second_value = values
+            .get(StackIndex::new(values.size() - 2))
+            .unwrap()
+            .clone();
         stack.push(second_value);
 
         Ok(())

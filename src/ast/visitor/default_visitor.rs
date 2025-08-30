@@ -1,5 +1,5 @@
-use crate::ast::*;
 use crate::ast::statements::control_flow::{ForInStatement, ForOfStatement};
+use crate::ast::*;
 use crate::vm::types::NodeCount;
 
 pub struct DefaultVisitor;
@@ -274,7 +274,10 @@ impl Visitor for DefaultVisitor {
         }
     }
 
-    fn visit_tagged_template_expression(&mut self, expr: &TaggedTemplateExpression) -> Self::Output {
+    fn visit_tagged_template_expression(
+        &mut self,
+        expr: &TaggedTemplateExpression,
+    ) -> Self::Output {
         self.visit_node(&expr.tag);
         self.visit_node(&expr.quasi);
     }
@@ -664,7 +667,10 @@ impl Visitor for NodeCounter {
         }
     }
 
-    fn visit_tagged_template_expression(&mut self, expr: &TaggedTemplateExpression) -> Self::Output {
+    fn visit_tagged_template_expression(
+        &mut self,
+        expr: &TaggedTemplateExpression,
+    ) -> Self::Output {
         self.visit_node(&expr.tag);
         self.visit_node(&expr.quasi);
     }

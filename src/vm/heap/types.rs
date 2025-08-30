@@ -25,7 +25,13 @@ impl HeapStats {
         }
     }
 
-    pub fn update_counts(&mut self, object_count: usize, array_count: usize, function_count: usize, string_count: usize) {
+    pub fn update_counts(
+        &mut self,
+        object_count: usize,
+        array_count: usize,
+        function_count: usize,
+        string_count: usize,
+    ) {
         self.object_count = object_count;
         self.array_count = array_count;
         self.function_count = function_count;

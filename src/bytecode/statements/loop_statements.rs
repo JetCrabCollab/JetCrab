@@ -69,7 +69,8 @@ where
             for i in loop_start..loop_end {
                 if let Instruction::Jump(addr) = &this.instructions()[i] {
                     if addr.as_usize() == 8888 {
-                        this.instructions()[i] = Instruction::Jump(CodeAddress::new(continue_target));
+                        this.instructions()[i] =
+                            Instruction::Jump(CodeAddress::new(continue_target));
                     }
                 }
             }
@@ -126,8 +127,7 @@ where
 
         // Update jump out address if we have one
         if let Some(jump_pos) = jump_out_pos {
-            this.instructions()[jump_pos] =
-                Instruction::JumpIfFalse(CodeAddress::new(loop_end));
+            this.instructions()[jump_pos] = Instruction::JumpIfFalse(CodeAddress::new(loop_end));
         }
 
         // Patch all break statements (Jump to 9999) in this loop

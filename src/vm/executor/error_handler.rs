@@ -48,61 +48,58 @@ use std::fmt;
 pub enum ExecutionError {
     /// Stack is empty when trying to pop a value
     StackUnderflow,
-    
+
     /// Stack is full when trying to push a value
     StackOverflow,
-    
+
     /// Invalid type conversion or operation
     TypeError(String),
-    
+
     /// General runtime execution error
     RuntimeError(String),
-    
+
     /// Invalid memory access or allocation failure
     MemoryError(String),
-    
+
     /// Invalid instruction or bytecode
     InvalidInstruction(String),
-    
+
     /// Function call or return error
     FunctionError(String),
-    
+
     /// Variable access or assignment error
     VariableError(String),
-    
+
     /// Heap allocation or garbage collection error
     HeapError(String),
-    
+
     /// Control flow error (invalid jumps, etc.)
     ControlFlowError(String),
-    
+
     /// Built-in function error
     BuiltinError(String),
-    
+
     /// Division by zero
     DivisionByZero,
-    
+
     /// Invalid array index
     InvalidIndex(usize),
-    
+
     /// Property not found on object
     PropertyNotFound(String),
-    
+
     /// Method not found on object
     MethodNotFound(String),
-    
+
     /// Invalid argument count for function call
-    InvalidArgumentCount {
-        expected: usize,
-        received: usize,
-    },
-    
+    InvalidArgumentCount { expected: usize, received: usize },
+
     /// Recursion limit exceeded
     RecursionLimitExceeded(usize),
-    
+
     /// Timeout during execution
     ExecutionTimeout,
-    
+
     /// Unsupported operation
     UnsupportedOperation(String),
 }
@@ -126,7 +123,11 @@ impl fmt::Display for ExecutionError {
             ExecutionError::PropertyNotFound(prop) => write!(f, "Property not found: {}", prop),
             ExecutionError::MethodNotFound(method) => write!(f, "Method not found: {}", method),
             ExecutionError::InvalidArgumentCount { expected, received } => {
-                write!(f, "Invalid argument count: expected {}, received {}", expected, received)
+                write!(
+                    f,
+                    "Invalid argument count: expected {}, received {}",
+                    expected, received
+                )
             }
             ExecutionError::RecursionLimitExceeded(limit) => {
                 write!(f, "Recursion limit exceeded: {}", limit)
@@ -391,7 +392,10 @@ impl ExecutionError {
             ExecutionError::PropertyNotFound(prop) => format!("Property not found: '{}'", prop),
             ExecutionError::MethodNotFound(method) => format!("Method not found: '{}'", method),
             ExecutionError::InvalidArgumentCount { expected, received } => {
-                format!("Invalid argument count: expected {}, received {}", expected, received)
+                format!(
+                    "Invalid argument count: expected {}, received {}",
+                    expected, received
+                )
             }
             ExecutionError::RecursionLimitExceeded(limit) => {
                 format!("Recursion limit exceeded: {}", limit)

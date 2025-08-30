@@ -18,7 +18,9 @@ fn main() {
     println!("   Result: {:?}", result3);
 
     println!("\n4. Testing nested object cleanup:");
-    let result4 = engine.evaluate("let parent = { child: { grandchild: { data: 'deep' } } }; parent = null; 'nested cleaned'");
+    let result4 = engine.evaluate(
+        "let parent = { child: { grandchild: { data: 'deep' } } }; parent = null; 'nested cleaned'",
+    );
     println!("   Result: {:?}", result4);
 
     println!("\n5. Testing memory leak prevention:");

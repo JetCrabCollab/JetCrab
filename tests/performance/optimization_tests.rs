@@ -8,7 +8,8 @@ fn main() {
 
     println!("\n1. Testing loop performance:");
     let start1 = Instant::now();
-    let result1 = engine.evaluate("let sum = 0; for (let i = 0; i < 1000; i++) { sum = sum + i; } sum");
+    let result1 =
+        engine.evaluate("let sum = 0; for (let i = 0; i < 1000; i++) { sum = sum + i; } sum");
     let duration1 = start1.elapsed();
     println!("   Result: {:?} (Time: {:?})", result1, duration1);
 
@@ -20,7 +21,8 @@ fn main() {
 
     println!("\n3. Testing array operation performance:");
     let start3 = Instant::now();
-    let result3 = engine.evaluate("let arr = []; for (let i = 0; i < 100; i++) { arr.push(i); } arr.length");
+    let result3 =
+        engine.evaluate("let arr = []; for (let i = 0; i < 100; i++) { arr.push(i); } arr.length");
     let duration3 = start3.elapsed();
     println!("   Result: {:?} (Time: {:?})", result3, duration3);
 

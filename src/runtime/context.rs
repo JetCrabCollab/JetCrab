@@ -1,6 +1,6 @@
 use crate::runtime::object::Object;
-use crate::vm::value::Value;
 use crate::vm::heap::Heap;
+use crate::vm::value::Value;
 use std::collections::HashMap;
 
 pub struct Context {

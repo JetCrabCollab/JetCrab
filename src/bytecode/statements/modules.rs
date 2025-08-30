@@ -1,5 +1,5 @@
-use crate::ast::Node;
 use super::ControlFlowCore;
+use crate::ast::Node;
 
 pub fn generate_import_declaration<T>(this: &mut T, node: &Node)
 where

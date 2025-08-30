@@ -328,10 +328,6 @@ impl VariableCore for BytecodeGenerator {
     }
 }
 
-
-
-
-
 impl ClassCore for BytecodeGenerator {
     fn instructions(&mut self) -> &mut Vec<Instruction> {
         &mut self.instructions
@@ -374,11 +370,15 @@ impl crate::bytecode::statements::control_flow::LabelManager for BytecodeGenerat
     }
 
     fn get_label_start_address(&self, label_name: &str) -> Option<CodeAddress> {
-        self.statement_labels.get(&format!("{}_start", label_name)).copied()
+        self.statement_labels
+            .get(&format!("{}_start", label_name))
+            .copied()
     }
 
     fn get_label_end_address(&self, label_name: &str) -> Option<CodeAddress> {
-        self.statement_labels.get(&format!("{}_end", label_name)).copied()
+        self.statement_labels
+            .get(&format!("{}_end", label_name))
+            .copied()
     }
 
     fn push_current_label(&mut self, name: String) {

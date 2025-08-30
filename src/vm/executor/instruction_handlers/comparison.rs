@@ -376,10 +376,12 @@ impl ComparisonHandler {
         let a = stack.pop().ok_or(ExecutionError::StackUnderflow)?;
 
         let result = match (a, b) {
-            (Value::Number(a), Value::Number(b)) => {
-                Value::Number((a as i64 & b as i64) as f64)
+            (Value::Number(a), Value::Number(b)) => Value::Number((a as i64 & b as i64) as f64),
+            _ => {
+                return Err(ExecutionError::TypeError(
+                    "Cannot perform bitwise AND on non-numeric values".to_string(),
+                ))
             }
-            _ => return Err(ExecutionError::TypeError("Cannot perform bitwise AND on non-numeric values".to_string())),
         };
 
         stack.push(result);
@@ -405,10 +407,12 @@ impl ComparisonHandler {
         let a = stack.pop().ok_or(ExecutionError::StackUnderflow)?;
 
         let result = match (a, b) {
-            (Value::Number(a), Value::Number(b)) => {
-                Value::Number((a as i64 | b as i64) as f64)
+            (Value::Number(a), Value::Number(b)) => Value::Number((a as i64 | b as i64) as f64),
+            _ => {
+                return Err(ExecutionError::TypeError(
+                    "Cannot perform bitwise OR on non-numeric values".to_string(),
+                ))
             }
-            _ => return Err(ExecutionError::TypeError("Cannot perform bitwise OR on non-numeric values".to_string())),
         };
 
         stack.push(result);
@@ -434,10 +438,12 @@ impl ComparisonHandler {
         let a = stack.pop().ok_or(ExecutionError::StackUnderflow)?;
 
         let result = match (a, b) {
-            (Value::Number(a), Value::Number(b)) => {
-                Value::Number((a as i64 ^ b as i64) as f64)
+            (Value::Number(a), Value::Number(b)) => Value::Number((a as i64 ^ b as i64) as f64),
+            _ => {
+                return Err(ExecutionError::TypeError(
+                    "Cannot perform bitwise XOR on non-numeric values".to_string(),
+                ))
             }
-            _ => return Err(ExecutionError::TypeError("Cannot perform bitwise XOR on non-numeric values".to_string())),
         };
 
         stack.push(result);
@@ -463,7 +469,11 @@ impl ComparisonHandler {
 
         let result = match value {
             Value::Number(n) => Value::Number(!(n as i64) as f64),
-            _ => return Err(ExecutionError::TypeError("Cannot perform bitwise NOT on non-numeric value".to_string())),
+            _ => {
+                return Err(ExecutionError::TypeError(
+                    "Cannot perform bitwise NOT on non-numeric value".to_string(),
+                ))
+            }
         };
 
         stack.push(result);

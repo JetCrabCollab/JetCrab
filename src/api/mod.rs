@@ -42,9 +42,13 @@ pub mod modules;
 
 pub use compiler::Compiler;
 pub use config::{EngineConfig, MemoryConfig, ModuleSystem, OptimizationLevel, SecurityLevel};
-pub use debug::{Breakpoint, CallFrame, DebugInfo, Debugger, Inspector, Profiler, ProfilingMetrics};
+pub use debug::{
+    Breakpoint, CallFrame, DebugInfo, Debugger, Inspector, Profiler, ProfilingMetrics,
+};
 pub use engine::Engine;
 pub use error::ApiError;
-pub use events::{CallbackRegistry, EventData, EventEmitter, EventManager, EventChain};
+pub use events::{CallbackRegistry, EventChain, EventData, EventEmitter, EventManager};
 pub use interpreter::Interpreter;
-pub use modules::{ModuleInfo, ModuleLoader, ModuleProvider, ModuleRegistry, FileSystemModuleProvider};
+pub use modules::{
+    FileSystemModuleProvider, ModuleInfo, ModuleLoader, ModuleProvider, ModuleRegistry,
+};

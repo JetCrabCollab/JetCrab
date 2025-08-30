@@ -6,7 +6,8 @@ fn main() {
     let mut engine = Engine::new();
 
     println!("\n1. Testing nested function calls:");
-    let result1 = engine.evaluate("function outer() { function inner() { return 42; } return inner(); } outer()");
+    let result1 = engine
+        .evaluate("function outer() { function inner() { return 42; } return inner(); } outer()");
     println!("   Result: {:?}", result1);
 
     println!("\n2. Testing function call depth:");
@@ -14,7 +15,9 @@ fn main() {
     println!("   Result: {:?}", result2);
 
     println!("\n3. Testing recursive calls with state:");
-    let result3 = engine.evaluate("function counter(n) { if (n <= 0) return 0; return 1 + counter(n - 1); } counter(5)");
+    let result3 = engine.evaluate(
+        "function counter(n) { if (n <= 0) return 0; return 1 + counter(n - 1); } counter(5)",
+    );
     println!("   Result: {:?}", result3);
 
     println!("\n4. Testing mutual recursion:");

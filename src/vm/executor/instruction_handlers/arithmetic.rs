@@ -71,7 +71,11 @@ impl ArithmeticHandler {
             (Value::String(a), Value::String(b)) => Value::String(a + &b),
             (Value::String(a), Value::Number(b)) => Value::String(a + &b.to_string()),
             (Value::Number(a), Value::String(b)) => Value::String(a.to_string() + &b),
-            _ => return Err(ExecutionError::TypeError("Cannot add non-numeric values".to_string())),
+            _ => {
+                return Err(ExecutionError::TypeError(
+                    "Cannot add non-numeric values".to_string(),
+                ))
+            }
         };
 
         stack.push(result);
@@ -98,7 +102,11 @@ impl ArithmeticHandler {
 
         let result = match (a, b) {
             (Value::Number(a), Value::Number(b)) => Value::Number(a - b),
-            _ => return Err(ExecutionError::TypeError("Cannot subtract non-numeric values".to_string())),
+            _ => {
+                return Err(ExecutionError::TypeError(
+                    "Cannot subtract non-numeric values".to_string(),
+                ))
+            }
         };
 
         stack.push(result);
@@ -124,7 +132,11 @@ impl ArithmeticHandler {
 
         let result = match (a, b) {
             (Value::Number(a), Value::Number(b)) => Value::Number(a * b),
-            _ => return Err(ExecutionError::TypeError("Cannot multiply non-numeric values".to_string())),
+            _ => {
+                return Err(ExecutionError::TypeError(
+                    "Cannot multiply non-numeric values".to_string(),
+                ))
+            }
         };
 
         stack.push(result);
@@ -157,7 +169,11 @@ impl ArithmeticHandler {
                 }
                 Value::Number(a / b)
             }
-            _ => return Err(ExecutionError::TypeError("Cannot divide non-numeric values".to_string())),
+            _ => {
+                return Err(ExecutionError::TypeError(
+                    "Cannot divide non-numeric values".to_string(),
+                ))
+            }
         };
 
         stack.push(result);
@@ -189,7 +205,11 @@ impl ArithmeticHandler {
                 }
                 Value::Number(a % b)
             }
-            _ => return Err(ExecutionError::TypeError("Cannot compute modulo of non-numeric values".to_string())),
+            _ => {
+                return Err(ExecutionError::TypeError(
+                    "Cannot compute modulo of non-numeric values".to_string(),
+                ))
+            }
         };
 
         stack.push(result);
@@ -215,7 +235,11 @@ impl ArithmeticHandler {
 
         let result = match (a, b) {
             (Value::Number(a), Value::Number(b)) => Value::Number(a.powf(b)),
-            _ => return Err(ExecutionError::TypeError("Cannot compute power of non-numeric values".to_string())),
+            _ => {
+                return Err(ExecutionError::TypeError(
+                    "Cannot compute power of non-numeric values".to_string(),
+                ))
+            }
         };
 
         stack.push(result);
@@ -240,7 +264,11 @@ impl ArithmeticHandler {
 
         let result = match value {
             Value::Number(n) => Value::Number(-n),
-            _ => return Err(ExecutionError::TypeError("Cannot negate non-numeric value".to_string())),
+            _ => {
+                return Err(ExecutionError::TypeError(
+                    "Cannot negate non-numeric value".to_string(),
+                ))
+            }
         };
 
         stack.push(result);
@@ -265,7 +293,11 @@ impl ArithmeticHandler {
 
         let result = match value {
             Value::Number(n) => Value::Number(n + 1.0),
-            _ => return Err(ExecutionError::TypeError("Cannot increment non-numeric value".to_string())),
+            _ => {
+                return Err(ExecutionError::TypeError(
+                    "Cannot increment non-numeric value".to_string(),
+                ))
+            }
         };
 
         stack.push(result);
@@ -290,7 +322,11 @@ impl ArithmeticHandler {
 
         let result = match value {
             Value::Number(n) => Value::Number(n - 1.0),
-            _ => return Err(ExecutionError::TypeError("Cannot decrement non-numeric value".to_string())),
+            _ => {
+                return Err(ExecutionError::TypeError(
+                    "Cannot decrement non-numeric value".to_string(),
+                ))
+            }
         };
 
         stack.push(result);

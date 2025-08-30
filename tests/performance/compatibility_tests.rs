@@ -10,11 +10,14 @@ fn main() {
     println!("   Result: {:?}", result1);
 
     println!("\n2. Testing string operations:");
-    let result2 = engine.evaluate("let str1 = 'Hello'; let str2 = 'World'; str1 + ' ' + str2 + '!'.repeat(3)");
+    let result2 = engine
+        .evaluate("let str1 = 'Hello'; let str2 = 'World'; str1 + ' ' + str2 + '!'.repeat(3)");
     println!("   Result: {:?}", result2);
 
     println!("\n3. Testing array operations:");
-    let result3 = engine.evaluate("let arr = [1, 2, 3]; arr.push(4); arr.push(5); arr.length + arr[0] + arr[arr.length - 1]");
+    let result3 = engine.evaluate(
+        "let arr = [1, 2, 3]; arr.push(4); arr.push(5); arr.length + arr[0] + arr[arr.length - 1]",
+    );
     println!("   Result: {:?}", result3);
 
     println!("\n4. Testing object operations:");

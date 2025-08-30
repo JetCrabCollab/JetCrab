@@ -1,6 +1,6 @@
 use jetcrab::vm::executor::*;
-use jetcrab::vm::value::Value;
 use jetcrab::vm::types::*;
+use jetcrab::vm::value::Value;
 
 fn main() {
     println!("🧪 Testing Complete Modularized VM Architecture");
@@ -96,17 +96,25 @@ fn test_control_flow_operations() {
 
     // Test local variable operations
     stack.push(Value::Number(42.0));
-    control_flow.execute_store_local(&mut stack, &mut vars, 0).unwrap();
-    
-    control_flow.execute_load_local(&mut stack, &vars, 0).unwrap();
+    control_flow
+        .execute_store_local(&mut stack, &mut vars, 0)
+        .unwrap();
+
+    control_flow
+        .execute_load_local(&mut stack, &vars, 0)
+        .unwrap();
     let result = stack.pop().unwrap();
     println!("   Store/Load local: {}", result);
 
     // Test global variable operations
     stack.push(Value::String("Global Value".to_string()));
-    control_flow.execute_store_global(&mut stack, &mut vars, 0).unwrap();
-    
-    control_flow.execute_load_global(&mut stack, &vars, 0).unwrap();
+    control_flow
+        .execute_store_global(&mut stack, &mut vars, 0)
+        .unwrap();
+
+    control_flow
+        .execute_load_global(&mut stack, &vars, 0)
+        .unwrap();
     let result = stack.pop().unwrap();
     println!("   Store/Load global: {}", result);
 
@@ -117,7 +125,9 @@ fn test_control_flow_operations() {
 
     // Test conditional jump
     stack.push(Value::Boolean(true));
-    control_flow.execute_jump_if_true(&mut stack, &mut ip, 200).unwrap();
+    control_flow
+        .execute_jump_if_true(&mut stack, &mut ip, 200)
+        .unwrap();
     println!("   Jump if true to address: {}", ip);
 }
 

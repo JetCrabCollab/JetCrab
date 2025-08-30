@@ -27,7 +27,11 @@ impl EventData {
 }
 
 pub type EventCallback = Box<dyn FnMut(&EventData) + Send + Sync>;
-pub type AsyncEventCallback = Box<dyn Fn(EventData) -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send>> + Send + Sync>;
+pub type AsyncEventCallback = Box<
+    dyn Fn(EventData) -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send>>
+        + Send
+        + Sync,
+>;
 
 pub struct EventEmitter {
     listeners: HashMap<String, Vec<EventCallback>>,
@@ -58,7 +62,10 @@ impl EventEmitter {
 
     pub fn on_async<F>(&mut self, event: &str, callback: F)
     where
-        F: Fn(EventData) -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send>> + Send + Sync + 'static,
+        F: Fn(EventData) -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send>>
+            + Send
+            + Sync
+            + 'static,
     {
         self.async_listeners
             .entry(event.to_string())
@@ -68,7 +75,7 @@ impl EventEmitter {
 
     pub fn emit(&mut self, event: &str, data: serde_json::Value) {
         let event_data = EventData::new(event.to_string(), data);
-        
+
         // Store in history
         self.event_history.push(event_data.clone());
         if self.event_history.len() > self.max_history_size {
@@ -93,7 +100,7 @@ impl EventEmitter {
 
     pub fn emit_with_source(&mut self, event: &str, data: serde_json::Value, source: String) {
         let event_data = EventData::new(event.to_string(), data).with_source(source);
-        
+
         self.event_history.push(event_data.clone());
         if self.event_history.len() > self.max_history_size {
             self.event_history.remove(0);
@@ -151,7 +158,14 @@ impl Default for EventEmitter {
 }
 
 pub struct CallbackRegistry {
-    callbacks: HashMap<String, std::sync::Arc<std::sync::Mutex<Box<dyn Fn(serde_json::Value) -> Result<serde_json::Value, ApiError> + Send + Sync>>>>,
+    callbacks: HashMap<
+        String,
+        std::sync::Arc<
+            std::sync::Mutex<
+                Box<dyn Fn(serde_json::Value) -> Result<serde_json::Value, ApiError> + Send + Sync>,
+            >,
+        >,
+    >,
     metadata: HashMap<String, CallbackMetadata>,
 }
 
@@ -186,7 +200,10 @@ impl CallbackRegistry {
             call_count: 0,
         };
 
-        self.callbacks.insert(name.to_string(), std::sync::Arc::new(std::sync::Mutex::new(Box::new(callback))));
+        self.callbacks.insert(
+            name.to_string(),
+            std::sync::Arc::new(std::sync::Mutex::new(Box::new(callback))),
+        );
         self.metadata.insert(name.to_string(), metadata);
     }
 
@@ -194,22 +211,29 @@ impl CallbackRegistry {
     where
         F: Fn(serde_json::Value) -> Result<serde_json::Value, ApiError> + Send + Sync + 'static,
     {
-        self.callbacks.insert(name.to_string(), std::sync::Arc::new(std::sync::Mutex::new(Box::new(callback))));
+        self.callbacks.insert(
+            name.to_string(),
+            std::sync::Arc::new(std::sync::Mutex::new(Box::new(callback))),
+        );
         self.metadata.insert(name.to_string(), metadata);
     }
 
-    pub fn call(&mut self, name: &str, data: serde_json::Value) -> Result<serde_json::Value, ApiError> {
+    pub fn call(
+        &mut self,
+        name: &str,
+        data: serde_json::Value,
+    ) -> Result<serde_json::Value, ApiError> {
         if let Some(callback) = self.callbacks.get(name) {
             if let Some(metadata) = self.metadata.get_mut(name) {
                 metadata.call_count += 1;
             }
-            
+
             let callback_guard = callback.lock().map_err(|_| ApiError::InvalidInput {
                 message: "Failed to acquire callback lock".to_string(),
                 input: "".to_string(),
                 position: None,
             })?;
-            
+
             callback_guard(data)
         } else {
             Err(ApiError::InvalidInput {
@@ -282,7 +306,7 @@ impl EventManager {
 
     pub fn emit_filtered(&mut self, event: &str, data: serde_json::Value) {
         let event_data = EventData::new(event.to_string(), data);
-        
+
         // Check if event should be filtered
         if let Some(filters) = self.event_filters.get(event) {
             let should_emit = filters.iter().all(|filter| filter(&event_data));
@@ -354,13 +378,13 @@ mod tests {
         let mut emitter = EventEmitter::new();
         let received = Arc::new(Mutex::new(false));
         let received_clone = Arc::clone(&received);
-        
+
         emitter.on("test", move |_| {
             *received_clone.lock().unwrap() = true;
         });
-        
+
         emitter.emit("test", json!("data"));
-        
+
         let is_received = *received.lock().unwrap();
         assert!(is_received);
     }
@@ -368,11 +392,11 @@ mod tests {
     #[test]
     fn test_callback_registry() {
         let mut registry = CallbackRegistry::new();
-        
+
         registry.register("test", "Test callback", |data| {
             Ok(json!({ "result": data }))
         });
-        
+
         let result = registry.call("test", json!("input")).unwrap();
         assert_eq!(result["result"], "input");
     }
@@ -382,13 +406,13 @@ mod tests {
         let mut manager = EventManager::new();
         let received = Arc::new(Mutex::new(false));
         let received_clone = Arc::clone(&received);
-        
+
         manager.get_emitter().on("test", move |_| {
             *received_clone.lock().unwrap() = true;
         });
-        
+
         manager.emit_filtered("test", json!("data"));
-        
+
         let is_received = *received.lock().unwrap();
         assert!(is_received);
     }
@@ -397,15 +421,15 @@ mod tests {
     fn test_event_chain() {
         let mut manager = EventManager::new();
         let events = vec!["step1".to_string(), "step2".to_string()];
-        
+
         // Add listener first
         manager.get_emitter().on("step1", move |_| {
             // This will be called when the event is emitted
         });
-        
+
         // Then create and execute the chain
         let mut chain = manager.create_event_chain(events);
-        
+
         assert!(!chain.is_complete());
         chain.trigger_next(json!("data")).unwrap();
         assert!(!chain.is_complete());

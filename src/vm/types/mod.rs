@@ -5,7 +5,6 @@ pub mod sizes;
 
 // Re-export all types for easy access
 
-
 // Re-export commonly used types directly
 pub use addresses::{CharOffset, CodeAddress, ColumnNumber, LineNumber, SourcePosition};
 pub use indices::{

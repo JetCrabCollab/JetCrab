@@ -32,8 +32,8 @@
 //! let value = var_manager.get_local(0);
 //! ```
 
-use crate::vm::value::Value;
 use super::VariableManager;
+use crate::vm::value::Value;
 
 /// Concrete implementation of variable management for the VM
 ///

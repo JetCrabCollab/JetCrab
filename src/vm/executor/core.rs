@@ -35,15 +35,12 @@
 //! }
 //! ```
 
+use super::{
+    heap_manager::HeapManager, instruction_executor::InstructionExecutorImpl,
+    stack_manager::StackManager, variable_manager::VariableManagerImpl, InstructionExecutor,
+};
 use crate::vm::bytecode::Bytecode;
 use crate::vm::value::Value;
-use super::{
-    InstructionExecutor,
-    stack_manager::StackManager,
-    heap_manager::HeapManager,
-    variable_manager::VariableManagerImpl,
-    instruction_executor::InstructionExecutorImpl,
-};
 
 /// Main VM executor that combines all execution components
 ///
@@ -81,12 +78,9 @@ impl Executor {
         let stack_manager = StackManager::new();
         let heap_manager = HeapManager::new();
         let variable_manager = VariableManagerImpl::new();
-        
-        let instruction_executor = InstructionExecutorImpl::new(
-            stack_manager,
-            heap_manager,
-            variable_manager,
-        );
+
+        let instruction_executor =
+            InstructionExecutorImpl::new(stack_manager, heap_manager, variable_manager);
 
         Self {
             instruction_executor,
@@ -113,7 +107,11 @@ impl Executor {
     /// let constants = vec![Value::Number(42.0)];
     /// executor.execute(&bytecode, &constants)?;
     /// ```
-    pub fn execute(&mut self, bytecode: &Bytecode, constants: &[Value]) -> Result<(), crate::vm::executor::error_handler::ExecutionError> {
+    pub fn execute(
+        &mut self,
+        bytecode: &Bytecode,
+        constants: &[Value],
+    ) -> Result<(), crate::vm::executor::error_handler::ExecutionError> {
         self.instruction_executor.execute(bytecode, constants)
     }
 

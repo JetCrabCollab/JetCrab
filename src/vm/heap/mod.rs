@@ -7,5 +7,5 @@ pub mod types;
 pub use allocation::HeapAllocatorImpl;
 pub use entries::HeapEntry;
 pub use garbage_collection::GarbageCollectorImpl;
-pub use management::{Heap, HeapAllocator, GarbageCollector, HeapManager, HeapOperations};
-pub use types::{HeapStats, HeapMetrics};
+pub use management::{GarbageCollector, Heap, HeapAllocator, HeapManager, HeapOperations};
+pub use types::{HeapMetrics, HeapStats};

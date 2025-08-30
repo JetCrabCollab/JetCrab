@@ -19,10 +19,10 @@ fn main() {
     println!("\n3. Testing comparison operators:");
     let result = engine.evaluate("let a = 10; let b = 20; a < b");
     println!("   a < b = {:?}", result);
-    
+
     let result = engine.evaluate("a == 10");
     println!("   a == 10 = {:?}", result);
-    
+
     let result = engine.evaluate("b != 10");
     println!("   b != 10 = {:?}", result);
 
@@ -30,10 +30,10 @@ fn main() {
     println!("\n4. Testing boolean operations:");
     let result = engine.evaluate("true");
     println!("   true = {:?}", result);
-    
+
     let result = engine.evaluate("false");
     println!("   false = {:?}", result);
-    
+
     let result = engine.evaluate("!false");
     println!("   !false = {:?}", result);
 

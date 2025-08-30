@@ -31,12 +31,12 @@
 //! ```
 
 pub mod error_handler;
-pub mod instruction_dispatcher;
-pub mod instruction_handlers;
-pub mod instruction_executor;
-pub mod traits;
-pub mod stack_manager;
 pub mod heap_manager;
+pub mod instruction_dispatcher;
+pub mod instruction_executor;
+pub mod instruction_handlers;
+pub mod stack_manager;
+pub mod traits;
 pub mod variable_manager;
 
 pub use error_handler::ExecutionError;

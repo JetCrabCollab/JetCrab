@@ -36,7 +36,7 @@ use crate::vm::executor::error_handler::ExecutionError;
 use crate::vm::executor::traits::{StackOperations, VariableManager};
 use crate::vm::frame::Frame;
 use crate::vm::registers::Registers;
-use crate::vm::types::{CodeAddress, ArgIndex};
+use crate::vm::types::{ArgIndex, CodeAddress};
 use crate::vm::value::Value;
 
 /// Handles control flow operations for the VM
@@ -102,7 +102,7 @@ impl ControlFlowHandler {
         V: VariableManager,
     {
         let condition = stack.pop().ok_or(ExecutionError::StackUnderflow)?;
-        
+
         let should_jump = match condition {
             Value::Boolean(b) => b,
             Value::Number(n) => n != 0.0 && !n.is_nan(),
@@ -142,7 +142,7 @@ impl ControlFlowHandler {
         V: VariableManager,
     {
         let condition = stack.pop().ok_or(ExecutionError::StackUnderflow)?;
-        
+
         let should_jump = match condition {
             Value::Boolean(b) => !b,
             Value::Number(n) => n == 0.0 || n.is_nan(),
@@ -183,7 +183,7 @@ impl ControlFlowHandler {
         V: VariableManager,
     {
         let function_value = stack.pop().ok_or(ExecutionError::StackUnderflow)?;
-        
+
         match function_value {
             Value::Function(function_handle) => {
                 let mut args = Vec::new();
@@ -191,12 +191,14 @@ impl ControlFlowHandler {
                     args.push(stack.pop().ok_or(ExecutionError::StackUnderflow)?);
                 }
                 args.reverse();
-                
+
                 frame.arguments = args;
                 frame.function_handle = Some(function_handle);
                 Ok(())
             }
-            _ => Err(ExecutionError::RuntimeError("Cannot call non-function value".to_string())),
+            _ => Err(ExecutionError::RuntimeError(
+                "Cannot call non-function value".to_string(),
+            )),
         }
     }
 
@@ -282,7 +284,10 @@ impl ControlFlowHandler {
         V: VariableManager,
     {
         let exception = stack.pop().ok_or(ExecutionError::StackUnderflow)?;
-        Err(ExecutionError::RuntimeError(format!("Exception thrown: {:?}", exception)))
+        Err(ExecutionError::RuntimeError(format!(
+            "Exception thrown: {:?}",
+            exception
+        )))
     }
 
     /// Sets up a try-catch block

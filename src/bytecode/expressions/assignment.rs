@@ -17,7 +17,9 @@ pub trait AssignmentCore {
 
 impl<T> AssignmentGenerator for T
 where
-    T: AssignmentCore + crate::bytecode::scope::constants::ConstantCore + crate::bytecode::scope::local_vars::ScopeManager,
+    T: AssignmentCore
+        + crate::bytecode::scope::constants::ConstantCore
+        + crate::bytecode::scope::local_vars::ScopeManager,
 {
     fn generate_assignment_expression(&mut self, node: &Node) {
         if let Node::AssignmentExpression(expr) = node {
@@ -33,28 +35,30 @@ where
                         }
                         Node::MemberExpression(member) => {
                             // Property assignment: obj.prop = value or obj[prop] = value
-                            self.visit_node(&member.object);  // Push object
-                            
+                            self.visit_node(&member.object); // Push object
+
                             // Handle property names correctly
                             match &*member.property {
                                 Node::Identifier(name) if !member.computed => {
                                     // obj.prop = value (dot notation)
                                     let constant_id = <Self as crate::bytecode::scope::constants::ConstantManager>::add_constant(self, name.clone());
-                                    self.instructions().push(Instruction::PushConst(constant_id));
+                                    self.instructions()
+                                        .push(Instruction::PushConst(constant_id));
                                 }
                                 _ => {
                                     // obj[prop] = value (bracket notation)
                                     self.visit_node(&member.property);
                                 }
                             }
-                            
-                            self.visit_node(&expr.right);  // Push value
+
+                            self.visit_node(&expr.right); // Push value
                             self.instructions().push(Instruction::SetPropertyAssign);
                         }
                         _ => {
                             // Fallback for other types
                             self.visit_node(&expr.right);
-                            self.instructions().push(Instruction::StoreLocal(LocalIndex::new(0)));
+                            self.instructions()
+                                .push(Instruction::StoreLocal(LocalIndex::new(0)));
                         }
                     }
                 }
@@ -62,16 +66,16 @@ where
                     // Compound assignment: a += b is equivalent to a = a + b
                     if let Node::Identifier(ident) = &*expr.left {
                         let local_idx = self.get_or_create_local(ident);
-                        
+
                         // Load the current value of the variable
                         self.instructions().push(Instruction::LoadLocal(local_idx));
-                        
+
                         // Generate the right-hand side expression
                         self.visit_node(&expr.right);
-                        
+
                         // Add the values
                         self.instructions().push(Instruction::Add);
-                        
+
                         // Store the result back
                         self.instructions().push(Instruction::StoreLocal(local_idx));
                     } else {
@@ -82,16 +86,16 @@ where
                     // Compound assignment: a -= b is equivalent to a = a - b
                     if let Node::Identifier(ident) = &*expr.left {
                         let local_idx = self.get_or_create_local(ident);
-                        
+
                         // Load the current value of the variable
                         self.instructions().push(Instruction::LoadLocal(local_idx));
-                        
+
                         // Generate the right-hand side expression
                         self.visit_node(&expr.right);
-                        
+
                         // Subtract the values
                         self.instructions().push(Instruction::Sub);
-                        
+
                         // Store the result back
                         self.instructions().push(Instruction::StoreLocal(local_idx));
                     } else {
@@ -102,16 +106,16 @@ where
                     // Compound assignment: a *= b is equivalent to a = a * b
                     if let Node::Identifier(ident) = &*expr.left {
                         let local_idx = self.get_or_create_local(ident);
-                        
+
                         // Load the current value of the variable
                         self.instructions().push(Instruction::LoadLocal(local_idx));
-                        
+
                         // Generate the right-hand side expression
                         self.visit_node(&expr.right);
-                        
+
                         // Multiply the values
                         self.instructions().push(Instruction::Mul);
-                        
+
                         // Store the result back
                         self.instructions().push(Instruction::StoreLocal(local_idx));
                     } else {
@@ -122,16 +126,16 @@ where
                     // Compound assignment: a /= b is equivalent to a = a / b
                     if let Node::Identifier(ident) = &*expr.left {
                         let local_idx = self.get_or_create_local(ident);
-                        
+
                         // Load the current value of the variable
                         self.instructions().push(Instruction::LoadLocal(local_idx));
-                        
+
                         // Generate the right-hand side expression
                         self.visit_node(&expr.right);
-                        
+
                         // Divide the values
                         self.instructions().push(Instruction::Div);
-                        
+
                         // Store the result back
                         self.instructions().push(Instruction::StoreLocal(local_idx));
                     } else {
@@ -141,12 +145,13 @@ where
                 _ => {
                     // Unsupported operator, fallback to simple assignment
                     self.visit_node(&expr.right);
-                    
+
                     if let Node::Identifier(ident) = &*expr.left {
                         let local_idx = self.get_or_create_local(ident);
                         self.instructions().push(Instruction::StoreLocal(local_idx));
                     } else {
-                        self.instructions().push(Instruction::StoreLocal(LocalIndex::new(0)));
+                        self.instructions()
+                            .push(Instruction::StoreLocal(LocalIndex::new(0)));
                     }
                 }
             }
@@ -182,9 +187,9 @@ where
         if let Node::CallExpression(expr) = node {
             // Check if this is a built-in function call
             if let Node::MemberExpression(member) = &*expr.callee {
-                if let (Node::Identifier(obj_name), Node::Identifier(prop_name)) = 
-                    (&*member.object, &*member.property) {
-                    
+                if let (Node::Identifier(obj_name), Node::Identifier(prop_name)) =
+                    (&*member.object, &*member.property)
+                {
                     // Check for Math functions
                     if obj_name == "Math" {
                         let builtin_name = format!("Math.{}", prop_name);
@@ -195,11 +200,11 @@ where
                         // Call built-in
                         self.instructions().push(Instruction::CallBuiltin(
                             builtin_name,
-                            crate::vm::types::ArgIndex::new(expr.arguments.len())
+                            crate::vm::types::ArgIndex::new(expr.arguments.len()),
                         ));
                         return;
                     }
-                    
+
                     // Check for String prototype methods
                     if let Node::String(_) = &*member.object {
                         let builtin_name = format!("String.prototype.{}", prop_name);
@@ -211,14 +216,16 @@ where
                         // Call built-in
                         self.instructions().push(Instruction::CallBuiltin(
                             builtin_name,
-                            crate::vm::types::ArgIndex::new(expr.arguments.len() + 1)
+                            crate::vm::types::ArgIndex::new(expr.arguments.len() + 1),
                         ));
                         return;
                     }
-                    
+
                     // Check for Array prototype methods
                     if let Node::Identifier(obj_name) = &*member.object {
-                        if self.is_array_variable(obj_name) && (prop_name == "push" || prop_name == "pop") {
+                        if self.is_array_variable(obj_name)
+                            && (prop_name == "push" || prop_name == "pop")
+                        {
                             let builtin_name = format!("Array.prototype.{}", prop_name);
                             // Push the array first, then arguments
                             self.visit_node(&*member.object);
@@ -228,14 +235,14 @@ where
                             // Call built-in
                             self.instructions().push(Instruction::CallBuiltin(
                                 builtin_name,
-                                crate::vm::types::ArgIndex::new(expr.arguments.len() + 1)
+                                crate::vm::types::ArgIndex::new(expr.arguments.len() + 1),
                             ));
                             return;
                         }
                     }
                 }
             }
-            
+
             // Default call expression handling
             for arg in &expr.arguments {
                 self.visit_node(arg);
@@ -261,20 +268,25 @@ where
     fn generate_member_expression(&mut self, node: &Node) {
         if let Node::MemberExpression(expr) = node {
             self.visit_node(&expr.object);
-            
+
             // Handle property names correctly
             match &*expr.property {
                 Node::Identifier(name) => {
                     // Push the string value directly for property names
-                    let constant_id = <Self as crate::bytecode::scope::constants::ConstantManager>::add_constant(self, name.clone());
-                    self.instructions().push(Instruction::PushConst(constant_id));
+                    let constant_id =
+                        <Self as crate::bytecode::scope::constants::ConstantManager>::add_constant(
+                            self,
+                            name.clone(),
+                        );
+                    self.instructions()
+                        .push(Instruction::PushConst(constant_id));
                 }
                 _ => {
                     // For other property types, visit normally
                     self.visit_node(&expr.property);
                 }
             }
-            
+
             self.instructions().push(Instruction::GetProperty);
         }
     }

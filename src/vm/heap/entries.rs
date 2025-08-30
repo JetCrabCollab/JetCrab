@@ -42,8 +42,13 @@ impl HeapEntry {
                 }
                 size
             }
-            HeapEntry::Function { bytecode, closure_vars, .. } => {
-                let mut size = bytecode.instructions.len() * std::mem::size_of::<crate::vm::instructions::Instruction>();
+            HeapEntry::Function {
+                bytecode,
+                closure_vars,
+                ..
+            } => {
+                let mut size = bytecode.instructions.len()
+                    * std::mem::size_of::<crate::vm::instructions::Instruction>();
                 for (key, value) in closure_vars {
                     size += key.len() + std::mem::size_of_val(value);
                 }
@@ -97,11 +102,16 @@ impl HeapEntry {
         }
     }
 
-    pub fn as_function(&self) -> Option<(&Bytecode, &ArgIndex, &LocalIndex, &HashMap<String, Value>)> {
+    pub fn as_function(
+        &self,
+    ) -> Option<(&Bytecode, &ArgIndex, &LocalIndex, &HashMap<String, Value>)> {
         match self {
-            HeapEntry::Function { bytecode, arg_count, local_count, closure_vars } => {
-                Some((bytecode, arg_count, local_count, closure_vars))
-            }
+            HeapEntry::Function {
+                bytecode,
+                arg_count,
+                local_count,
+                closure_vars,
+            } => Some((bytecode, arg_count, local_count, closure_vars)),
             _ => None,
         }
     }

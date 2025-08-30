@@ -220,7 +220,9 @@ impl Parser {
         let init = if self.check(TokenKind::Semicolon) {
             None
         } else if self.is_declaration() {
-            Some(Box::new(self.parse_variable_declaration_without_semicolon()?))
+            Some(Box::new(
+                self.parse_variable_declaration_without_semicolon()?,
+            ))
         } else {
             Some(Box::new(self.parse_expression()?))
         };

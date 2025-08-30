@@ -1,5 +1,5 @@
-use jetcrab::ast::*;
 use jetcrab::ast::visitor::*;
+use jetcrab::ast::*;
 
 fn main() {
     println!("🧪 Testing Modularized Visitor System");
@@ -10,13 +10,11 @@ fn main() {
         body: vec![
             Node::VariableDeclaration(VariableDeclaration {
                 kind: "let".to_string(),
-                declarations: vec![
-                    VariableDeclarator {
-                        id: Box::new(Node::Identifier("x".to_string())),
-                        init: Some(Box::new(Node::Number(42.0))),
-                        span: None,
-                    }
-                ],
+                declarations: vec![VariableDeclarator {
+                    id: Box::new(Node::Identifier("x".to_string())),
+                    init: Some(Box::new(Node::Number(42.0))),
+                    span: None,
+                }],
                 span: None,
             }),
             Node::ExpressionStatement(ExpressionStatement {

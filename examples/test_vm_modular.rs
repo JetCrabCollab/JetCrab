@@ -1,6 +1,6 @@
 use jetcrab::vm::executor::*;
-use jetcrab::vm::value::Value;
 use jetcrab::vm::types::*;
+use jetcrab::vm::value::Value;
 
 fn main() {
     println!("🧪 Testing Modularized VM Architecture");
