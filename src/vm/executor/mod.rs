@@ -31,7 +31,6 @@
 //! ```
 
 pub mod error_handler;
-pub mod heap_manager;
 pub mod instruction_dispatcher;
 pub mod instruction_executor;
 pub mod instruction_handlers;

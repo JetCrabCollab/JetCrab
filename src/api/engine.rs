@@ -28,10 +28,10 @@
 //! println!("Result: {:?}", result);
 //! ```
 
-use crate::bytecode::BytecodeGenerator;
+use crate::vm::compiler::generator::BytecodeGenerator;
 use crate::parser::Parser;
-use crate::runtime::Context;
 use crate::semantic::SemanticAnalyzer;
+use crate::vm::runtime::Context;
 use crate::vm::executor::Executor;
 use crate::vm::{Bytecode, Value};
 

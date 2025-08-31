@@ -48,7 +48,7 @@ impl Interpreter {
 
     pub fn execute_with_context(
         &self,
-        _context: &mut crate::runtime::Context,
+        _context: &mut crate::vm::runtime::Context,
     ) -> Result<Value, String> {
         let mut executor = Executor::new();
 

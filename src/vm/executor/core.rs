@@ -36,10 +36,11 @@
 //! ```
 
 use super::{
-    heap_manager::HeapManager, instruction_executor::InstructionExecutorImpl,
-    stack_manager::StackManager, variable_manager::VariableManagerImpl, InstructionExecutor,
+    instruction_executor::InstructionExecutorImpl, stack_manager::StackManager,
+    traits::HeapOperations, variable_manager::VariableManagerImpl, InstructionExecutor,
 };
-use crate::vm::bytecode::Bytecode;
+use crate::vm::compiler::Bytecode;
+use crate::vm::memory::heap::Heap;
 use crate::vm::value::Value;
 
 /// Main VM executor that combines all execution components
@@ -48,7 +49,7 @@ use crate::vm::value::Value;
 /// stack management, heap management, variable management, and instruction
 /// execution into a single, cohesive system.
 pub struct Executor {
-    instruction_executor: InstructionExecutorImpl<StackManager, HeapManager, VariableManagerImpl>,
+    instruction_executor: InstructionExecutorImpl<StackManager, Heap, VariableManagerImpl>,
 }
 
 impl Default for Executor {
@@ -76,7 +77,7 @@ impl Executor {
     /// ```
     pub fn new() -> Self {
         let stack_manager = StackManager::new();
-        let heap_manager = HeapManager::new();
+        let heap_manager = Heap::new();
         let variable_manager = VariableManagerImpl::new();
 
         let instruction_executor =
@@ -119,7 +120,7 @@ impl Executor {
     ///
     /// Provides access to the current state of the execution stack
     /// for inspection and debugging purposes.
-    pub fn stack(&self) -> &crate::vm::stack::Stack {
+    pub fn stack(&self) -> &crate::vm::memory::stack::Stack {
         self.instruction_executor.stack_manager().stack()
     }
 
@@ -127,7 +128,7 @@ impl Executor {
     ///
     /// Provides write access to the execution stack for direct
     /// manipulation and testing purposes.
-    pub fn stack_mut(&mut self) -> &mut crate::vm::stack::Stack {
+    pub fn stack_mut(&mut self) -> &mut crate::vm::memory::stack::Stack {
         self.instruction_executor.stack_manager_mut().stack_mut()
     }
 
@@ -135,15 +136,15 @@ impl Executor {
     ///
     /// Provides access to the current state of the execution heap
     /// for inspection and debugging purposes.
-    pub fn heap(&self) -> &crate::vm::heap::Heap {
-        self.instruction_executor.heap_manager().heap()
+    pub fn heap(&self) -> &crate::vm::memory::heap::Heap {
+        self.instruction_executor.heap_manager().get_heap()
     }
 
     /// Gets mutable access to the VM heap
     ///
     /// Provides write access to the execution heap for direct
     /// manipulation and testing purposes.
-    pub fn heap_mut(&mut self) -> &mut crate::vm::heap::Heap {
-        self.instruction_executor.heap_manager_mut().heap_mut()
+    pub fn heap_mut(&mut self) -> &crate::vm::memory::heap::Heap {
+        self.instruction_executor.heap_manager_mut().get_heap()
     }
 }

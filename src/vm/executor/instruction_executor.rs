@@ -53,12 +53,12 @@
 //! ```
 
 use super::{error_handler::ExecutionError, HeapOperations, StackOperations, VariableManager};
-use crate::runtime::builtins::Builtins;
-use crate::runtime::context::Context;
-use crate::vm::bytecode::Bytecode;
+use crate::vm::runtime::Builtins;
+use crate::vm::runtime::Context;
+use crate::vm::compiler::Bytecode;
 use crate::vm::frame::Frame;
-use crate::vm::heap::HeapEntry;
 use crate::vm::instructions::Instruction;
+use crate::vm::memory::heap::HeapEntry;
 use crate::vm::registers::Registers;
 use crate::vm::value::Value;
 
@@ -234,25 +234,9 @@ where
                     self.stack_manager.push(value);
                 }
                 Instruction::Add => {
-                    let b = self
-                        .stack_manager
-                        .pop()
-                        .ok_or_else(|| ExecutionError::StackUnderflow)?;
-                    let a = self
-                        .stack_manager
-                        .pop()
-                        .ok_or_else(|| ExecutionError::StackUnderflow)?;
-                    match (a.clone(), b.clone()) {
-                        (Value::Number(a), Value::Number(b)) => {
-                            self.stack_manager.push(Value::Number(a + b));
-                        }
-                        _ => {
-                            let a_str = a.to_string();
-                            let b_str = b.to_string();
-                            self.stack_manager
-                                .push(Value::String(format!("{a_str}{b_str}")));
-                        }
-                    }
+                    crate::vm::executor::instruction_handlers::ArithmeticHandler::add(
+                        &mut self.stack_manager,
+                    )?;
                 }
                 Instruction::LoadLocal(idx) => {
                     let value = self
@@ -292,59 +276,10 @@ where
                         )));
                 }
                 Instruction::GetProperty => {
-                    let key = self.stack_manager.pop().unwrap();
-                    let obj = self.stack_manager.pop().unwrap();
-
-                    let result = match (&obj, &key) {
-                        (Value::String(str_val), Value::String(key_str)) => {
-                            if key_str == "length" {
-                                Value::Number(str_val.len() as f64)
-                            } else {
-                                Value::Undefined
-                            }
-                        }
-                        (Value::Array(handle), Value::String(key_str)) => {
-                            if key_str == "length" {
-                                if let Some(HeapEntry::Array(arr)) =
-                                    self.heap_manager.get_heap().get(handle.id())
-                                {
-                                    Value::Number(arr.len() as f64)
-                                } else {
-                                    Value::Undefined
-                                }
-                            } else if key_str == "push" || key_str == "pop" {
-                                Value::String(format!("Array.prototype.{}", key_str))
-                            } else if let Ok(index) = key_str.parse::<usize>() {
-                                if let Some(HeapEntry::Array(arr)) =
-                                    self.heap_manager.get_heap().get(handle.id())
-                                {
-                                    arr.get(index).cloned().unwrap_or(Value::Undefined)
-                                } else {
-                                    Value::Undefined
-                                }
-                            } else {
-                                Value::Undefined
-                            }
-                        }
-                        (Value::Array(handle), Value::Number(num)) => {
-                            let index = *num as usize;
-                            if let Some(HeapEntry::Array(arr)) =
-                                self.heap_manager.get_heap().get(handle.id())
-                            {
-                                arr.get(index).cloned().unwrap_or(Value::Undefined)
-                            } else {
-                                Value::Undefined
-                            }
-                        }
-                        (Value::Object(handle), Value::String(key_str)) => self
-                            .heap_manager
-                            .get_object_property(handle.id(), key_str)
-                            .cloned()
-                            .unwrap_or(Value::Undefined),
-                        _ => Value::Undefined,
-                    };
-
-                    self.stack_manager.push(result);
+                    crate::vm::executor::instruction_handlers::ObjectHandler::get_property(
+                        &mut self.stack_manager,
+                        &mut self.heap_manager,
+                    )?;
                 }
                 Instruction::CallBuiltin(name, argc) => {
                     let argc_usize = argc.as_usize();
@@ -736,31 +671,19 @@ where
                     }
                 }
                 Instruction::Sub => {
-                    let b = self.stack_manager.pop().unwrap();
-                    let a = self.stack_manager.pop().unwrap();
-                    if let (Value::Number(a), Value::Number(b)) = (a, b) {
-                        self.stack_manager.push(Value::Number(a - b));
-                    } else {
-                        self.stack_manager.push(Value::Number(f64::NAN));
-                    }
+                    crate::vm::executor::instruction_handlers::ArithmeticHandler::subtract(
+                        &mut self.stack_manager,
+                    )?;
                 }
                 Instruction::Mul => {
-                    let b = self.stack_manager.pop().unwrap();
-                    let a = self.stack_manager.pop().unwrap();
-                    if let (Value::Number(a), Value::Number(b)) = (a, b) {
-                        self.stack_manager.push(Value::Number(a * b));
-                    } else {
-                        self.stack_manager.push(Value::Number(f64::NAN));
-                    }
+                    crate::vm::executor::instruction_handlers::ArithmeticHandler::multiply(
+                        &mut self.stack_manager,
+                    )?;
                 }
                 Instruction::Div => {
-                    let b = self.stack_manager.pop().unwrap();
-                    let a = self.stack_manager.pop().unwrap();
-                    if let (Value::Number(a), Value::Number(b)) = (a, b) {
-                        self.stack_manager.push(Value::Number(a / b));
-                    } else {
-                        self.stack_manager.push(Value::Number(f64::NAN));
-                    }
+                    crate::vm::executor::instruction_handlers::ArithmeticHandler::divide(
+                        &mut self.stack_manager,
+                    )?;
                 }
                 Instruction::LoadGlobal(idx) => {
                     let value = self
@@ -775,51 +698,28 @@ where
                     self.variable_manager.set_global(idx.as_usize(), value);
                 }
                 Instruction::NewObject => {
-                    let handle = self.heap_manager.alloc_object();
-                    self.stack_manager
-                        .push(Value::Object(crate::vm::handle::ObjectHandle::from(
-                            handle.as_usize(),
-                        )));
+                    crate::vm::executor::instruction_handlers::ObjectHandler::new_object(
+                        &mut self.stack_manager,
+                        &mut self.heap_manager,
+                    )?;
+                }
+                Instruction::NewClass => {
+                    crate::vm::executor::instruction_handlers::ObjectHandler::new_class(
+                        &mut self.stack_manager,
+                        &mut self.heap_manager,
+                    )?;
                 }
                 Instruction::SetProperty => {
-                    let value = self.stack_manager.pop().unwrap();
-                    let key = self.stack_manager.pop().unwrap();
-                    let obj = self.stack_manager.pop().unwrap();
-                    match (obj, key) {
-                        (Value::Object(handle), Value::String(key_str)) => {
-                            self.heap_manager.set_object_property(
-                                handle.id(),
-                                key_str,
-                                value.clone(),
-                            );
-                            // Push the object back to the stack so it can be used in object literals
-                            self.stack_manager.push(Value::Object(handle));
-                        }
-                        (_obj, _key) => {
-                            // For now, just push undefined on error
-                            self.stack_manager.push(Value::Undefined);
-                        }
-                    }
+                    crate::vm::executor::instruction_handlers::ObjectHandler::set_property(
+                        &mut self.stack_manager,
+                        &mut self.heap_manager,
+                    )?;
                 }
                 Instruction::SetPropertyAssign => {
-                    let value = self.stack_manager.pop().unwrap();
-                    let key = self.stack_manager.pop().unwrap();
-                    let obj = self.stack_manager.pop().unwrap();
-                    match (obj, key) {
-                        (Value::Object(handle), Value::String(key_str)) => {
-                            self.heap_manager.set_object_property(
-                                handle.id(),
-                                key_str,
-                                value.clone(),
-                            );
-                            // Push the assigned value back to the stack (for assignments)
-                            self.stack_manager.push(value);
-                        }
-                        (_obj, _key) => {
-                            // For now, just push undefined on error
-                            self.stack_manager.push(Value::Undefined);
-                        }
-                    }
+                    crate::vm::executor::instruction_handlers::ObjectHandler::set_property_assign(
+                        &mut self.stack_manager,
+                        &mut self.heap_manager,
+                    )?;
                 }
                 Instruction::TypeOf => {
                     let value = self.stack_manager.pop().unwrap();

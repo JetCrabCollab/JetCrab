@@ -1,5 +1,5 @@
-use jetcrab::memory::allocator::MemoryAllocator;
-use jetcrab::memory::*;
+use jetcrab::vm::memory::allocator::MemoryAllocator;
+use jetcrab::vm::memory::*;
 use jetcrab::vm::types::*;
 use jetcrab::vm::value::Value;
 use jetcrab::vm::HeapHandleId;

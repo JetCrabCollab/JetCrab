@@ -1,5 +1,5 @@
-use crate::bytecode::optimizer::BytecodeOptimizer;
-use crate::bytecode::BytecodeGenerator;
+use crate::vm::compiler::optimizer::BytecodeOptimizer;
+use crate::vm::compiler::generator::BytecodeGenerator;
 
 use crate::parser::Parser;
 use crate::semantic::SemanticAnalyzer;

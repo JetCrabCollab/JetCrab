@@ -26,7 +26,7 @@
 //! ```
 
 use super::StackOperations;
-use crate::vm::stack::Stack;
+use crate::vm::memory::stack::Stack;
 use crate::vm::value::Value;
 
 /// Concrete implementation of stack operations for the VM
@@ -90,7 +90,7 @@ impl StackOperations for StackManager {
         self.stack.values.is_empty()
     }
 
-    fn stack_mut(&mut self) -> &mut crate::vm::stack::Stack {
+    fn stack_mut(&mut self) -> &mut crate::vm::memory::stack::Stack {
         &mut self.stack
     }
 }

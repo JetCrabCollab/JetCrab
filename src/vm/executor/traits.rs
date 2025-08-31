@@ -37,7 +37,7 @@
 //! }
 //! ```
 
-use crate::vm::bytecode::Bytecode;
+use crate::vm::compiler::Bytecode;
 use crate::vm::handle::HeapHandleId;
 use crate::vm::types::{ArgIndex, ArraySize, LocalIndex};
 use crate::vm::value::Value;
@@ -90,7 +90,7 @@ pub trait StackOperations {
     ///
     /// # Returns
     /// * A mutable reference to the underlying stack
-    fn stack_mut(&mut self) -> &mut crate::vm::stack::Stack;
+    fn stack_mut(&mut self) -> &mut crate::vm::memory::stack::Stack;
 
     /// Gets the current size of the stack
     ///
@@ -170,7 +170,7 @@ pub trait HeapOperations {
     ///
     /// # Returns
     /// * A reference to the underlying heap
-    fn get_heap(&self) -> &crate::vm::heap::Heap;
+    fn get_heap(&self) -> &crate::vm::memory::heap::Heap;
 
     /// Gets an element from an array
     ///

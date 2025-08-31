@@ -36,6 +36,7 @@ pub mod builtin_calls;
 pub mod comparison;
 pub mod control_flow;
 pub mod heap_ops;
+pub mod object;
 pub mod stack_ops;
 
 pub use arithmetic::ArithmeticHandler;
@@ -43,6 +44,7 @@ pub use builtin_calls::BuiltinCallsHandler;
 pub use comparison::ComparisonHandler;
 pub use control_flow::ControlFlowHandler;
 pub use heap_ops::HeapOpsHandler;
+pub use object::ObjectHandler;
 pub use stack_ops::StackOpsHandler;
 
 /// Unified instruction handler that provides access to all instruction handlers
@@ -77,5 +79,10 @@ impl InstructionHandlers {
     /// Get a reference to the builtin calls handler
     pub fn builtin_calls() -> &'static BuiltinCallsHandler {
         &BuiltinCallsHandler
+    }
+
+    /// Get a reference to the object handler
+    pub fn object() -> &'static ObjectHandler {
+        &ObjectHandler
     }
 }

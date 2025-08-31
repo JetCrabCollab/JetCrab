@@ -31,7 +31,7 @@
 //! // Stack now contains: [ObjectHandle]
 //! ```
 
-use crate::vm::bytecode::Bytecode;
+use crate::vm::compiler::Bytecode;
 use crate::vm::executor::error_handler::ExecutionError;
 use crate::vm::executor::traits::{HeapOperations, StackOperations};
 use crate::vm::handle::{ArrayEntry, FunctionEntry, HeapHandle, ObjectEntry};

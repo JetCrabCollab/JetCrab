@@ -106,7 +106,7 @@ impl InstructionDispatcher {
         variable_manager: &mut V,
         frame: &mut Frame,
         registers: &mut Registers,
-        builtins: &mut crate::runtime::builtins::Builtins,
+        builtins: &mut crate::vm::runtime::Builtins,
     ) -> Result<Option<usize>, ExecutionError>
     where
         S: StackOperations,

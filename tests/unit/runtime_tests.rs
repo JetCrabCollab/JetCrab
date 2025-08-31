@@ -1,5 +1,5 @@
-use jetcrab::runtime::function::NativeFunction;
-use jetcrab::runtime::*;
+use jetcrab::vm::function::NativeFunction;
+use jetcrab::vm::*;
 use jetcrab::vm::value::Value;
 use jetcrab::vm::HeapHandleId;
 

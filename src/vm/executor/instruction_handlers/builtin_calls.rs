@@ -37,7 +37,7 @@
 //! BuiltinCallsHandler::call_parse_int(&mut stack, &mut variables, 1)?;
 //! ```
 
-use crate::runtime::builtins::Builtins;
+use crate::vm::runtime::Builtins;
 use crate::vm::executor::error_handler::ExecutionError;
 use crate::vm::executor::traits::{StackOperations, VariableManager};
 use crate::vm::value::Value;
