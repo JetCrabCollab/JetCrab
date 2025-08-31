@@ -1,12 +1,14 @@
 pub mod allocation;
 pub mod generational;
-pub mod types;
 pub mod object_shapes;
+pub mod string_interning;
+pub mod types;
 
 pub use allocation::*;
 pub use generational::GenerationalHeap;
-pub use types::*;
 pub use object_shapes::*;
+pub use string_interning::*;
+pub use types::*;
 
 use crate::vm::handle::HeapHandleId;
 use crate::vm::types::MemorySize;

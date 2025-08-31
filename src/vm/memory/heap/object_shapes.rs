@@ -381,14 +381,15 @@ impl ShapeTransitionManager {
             .get(&base_shape)
             .ok_or_else(|| format!("Base shape {} not found", base_shape.value()))?;
 
-        // Create new properties list with the new property
+        // Extract all necessary data before creating the new shape
+        let base_id = base_shape_data.id;
         let mut new_properties = base_shape_data.properties.clone();
         let offset = base_shape_data.object_size;
         let descriptor = PropertyDescriptor::new(name.clone(), offset, property_type.clone());
         new_properties.push(descriptor);
 
-        // Create new shape
-        let new_shape = ObjectShape::with_parent(base_shape_data.id, new_properties);
+        // Create new shape after extracting all data
+        let new_shape = ObjectShape::with_parent(base_id, new_properties);
         let new_shape_id = new_shape.id;
 
         // Register the new shape
@@ -396,7 +397,7 @@ impl ShapeTransitionManager {
 
         // Cache the transition
         self.transition_cache
-            .insert((base_shape_data.id, name, property_type), new_shape_id);
+            .insert((base_id, name, property_type), new_shape_id);
 
         Ok(new_shape_id)
     }

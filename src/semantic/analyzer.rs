@@ -35,16 +35,12 @@ impl SemanticAnalyzer {
             }
             Node::VariableDeclaration(decl) => {
                 for declarator in &decl.declarations {
-                    if let Node::VariableDeclarator(var_decl) = declarator {
-                        if let Some(id) = &var_decl.id {
-                            if let Node::Identifier(name) = &**id {
-                                if let Err(e) = self.current_scope.declare_variable(
-                                    name.clone(), 
-                                    None
-                                ) {
-                                    self.errors.push(e);
-                                }
-                            }
+                    if let Node::Identifier(name) = &*declarator.id {
+                        if let Err(e) = self.current_scope.declare_variable(
+                            name.clone(), 
+                            None
+                        ) {
+                            self.errors.push(e);
                         }
                     }
                 }

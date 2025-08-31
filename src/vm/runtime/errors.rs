@@ -167,7 +167,10 @@ impl RuntimeError {
 
     /// Convert to VmError
     pub fn into_vm_error(self) -> VmError {
-        VmError::RuntimeError(self)
+        VmError::RuntimeError {
+            message: self.message().to_string(),
+            position: None,
+        }
     }
 }
 

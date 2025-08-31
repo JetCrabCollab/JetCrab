@@ -5,6 +5,12 @@ use crate::parser::Parser;
 use crate::semantic::SemanticAnalyzer;
 use crate::vm::instructions::Instruction;
 
+// Helper function to format semantic errors
+fn format_semantic_errors(errors: &[crate::semantic::SemanticError]) -> String {
+    let errors: Vec<String> = errors.iter().map(|e| e.to_string()).collect();
+    errors.join("; ")
+}
+
 #[derive(Clone)]
 pub struct Compiler {
     optimize: bool,
@@ -33,7 +39,7 @@ impl Compiler {
         let mut analyzer = SemanticAnalyzer::new();
         analyzer
             .analyze(&ast)
-            .map_err(|e| format!("Semantic error: {e}"))?;
+            .map_err(|e| format!("Semantic error: {}", format_semantic_errors(&e)))?;
 
         let mut generator = BytecodeGenerator::new();
         let mut instructions = generator.generate(&ast);
@@ -55,7 +61,7 @@ impl Compiler {
         let mut analyzer = SemanticAnalyzer::new();
         analyzer
             .analyze(&ast)
-            .map_err(|e| format!("Semantic error: {e}"))?;
+            .map_err(|e| format!("Semantic error: {}", format_semantic_errors(&e)))?;
 
         let mut generator = BytecodeGenerator::new();
         let mut instructions = generator.generate(&ast);

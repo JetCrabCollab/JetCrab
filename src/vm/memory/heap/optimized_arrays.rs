@@ -397,8 +397,8 @@ impl OptimizedArray {
         max_value
     }
 
-    /// Get typed element from raw data
-    fn get_typed_element(&self, index: usize, element_type: &ElementType, data: &[u8]) -> Option<&Value> {
+    /// Get typed element from raw data (static method)
+    fn get_typed_element_static(index: usize, element_type: &ElementType, data: &[u8]) -> Option<Value> {
         let element_size = element_type.size();
         let start = index * element_size;
         let end = start + element_size;
@@ -408,7 +408,50 @@ impl OptimizedArray {
         }
 
         let element_data = &data[start..end];
-        Some(&self.deserialize_typed_element(element_data, element_type))
+        Some(Self::deserialize_typed_element_static(element_data, element_type))
+    }
+
+    /// Deserialize typed data to value (static method)
+    fn deserialize_typed_element_static(data: &[u8], element_type: &ElementType) -> Value {
+        match element_type {
+            ElementType::Int8 => Value::Number(data[0] as i8 as f64),
+            ElementType::Int16 => {
+                let bytes: [u8; 2] = [data[0], data[1]];
+                Value::Number(i16::from_le_bytes(bytes) as f64)
+            }
+            ElementType::Int32 => {
+                let bytes: [u8; 4] = [data[0], data[1], data[2], data[3]];
+                Value::Number(i32::from_le_bytes(bytes) as f64)
+            }
+            ElementType::Int64 => {
+                let bytes: [u8; 8] = [data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]];
+                Value::Number(i64::from_le_bytes(bytes) as f64)
+            }
+            ElementType::Float32 => {
+                let bytes: [u8; 4] = [data[0], data[1], data[2], data[3]];
+                Value::Number(f32::from_le_bytes(bytes) as f64)
+            }
+            ElementType::Float64 => {
+                let bytes: [u8; 8] = [data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]];
+                Value::Number(f64::from_le_bytes(bytes))
+            }
+            ElementType::Boolean => Value::Boolean(data[0] != 0),
+            _ => Value::Undefined,
+        }
+    }
+
+    /// Get typed element from raw data
+    fn get_typed_element(&self, index: usize, element_type: &ElementType, data: &[u8]) -> Option<Value> {
+        let element_size = element_type.size();
+        let start = index * element_size;
+        let end = start + element_size;
+        
+        if end > data.len() {
+            return None;
+        }
+
+        let element_data = &data[start..end];
+        Some(self.deserialize_typed_element(element_data, element_type))
     }
 
     /// Set typed element in raw data
@@ -559,14 +602,14 @@ impl From<OptimizedArray> for Vec<Value> {
             ArrayRepresentation::Sparse { elements, length, .. } => {
                 let mut result = Vec::with_capacity(length);
                 for i in 0..length {
-                    result.push(elements.get(&i).cloned().unwrap_or(Value::Undefined));
+                    result.push(elements.get(&i).unwrap_or(&Value::Undefined).clone());
                 }
                 result
             }
             ArrayRepresentation::Typed { element_type, data, length, .. } => {
                 let mut result = Vec::with_capacity(length);
                 for i in 0..length {
-                    result.push(array.get_typed_element(i, &element_type, &data).cloned().unwrap_or(Value::Undefined));
+                    result.push(array.get_typed_element(i, &element_type, &data).unwrap_or(Value::Undefined));
                 }
                 result
             }
