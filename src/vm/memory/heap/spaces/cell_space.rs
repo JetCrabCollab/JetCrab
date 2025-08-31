@@ -11,12 +11,12 @@
 //! - **Memory efficient**: Minimal overhead per object
 //! - **Perfect for small objects**: Strings, numbers, booleans, etc.
 
-use super::{MemorySpace, SpaceType, SpaceStats};
+use super::{MemorySpace, SpaceStats, SpaceType};
 use crate::vm::handle::HeapHandleId;
+use crate::vm::memory::heap::allocation::{CellAllocator, CellInfo, CompactionStats};
+use crate::vm::memory::heap::spaces::{DefragmentationStats, GcStats};
 use crate::vm::types::MemorySize;
 use crate::vm::value::Value;
-use crate::vm::memory::heap::allocation::{CellAllocator, CellInfo, CompactionStats};
-use crate::vm::memory::heap::spaces::{GcStats, DefragmentationStats};
 
 /// Cell space for small objects
 pub struct CellSpace {
@@ -70,7 +70,7 @@ impl CellSpace {
     /// Create a new cell space with the specified number of cells
     pub fn new(cell_count: usize) -> Self {
         let total_size = cell_count * 16; // 16 bytes per cell
-        
+
         Self {
             allocator: CellAllocator::new(cell_count),
             total_size,
@@ -88,20 +88,20 @@ impl CellSpace {
             metrics: CellMetrics::default(),
         }
     }
-    
+
     /// Get cell information
     pub fn cell_info(&self) -> CellInfo {
         self.allocator.cell_info()
     }
-    
+
     /// Get object type information
     pub fn object_type_info(&self) -> ObjectTypeInfo {
         let mut type_counts = std::collections::HashMap::new();
-        
+
         for object_type in self.object_types.values() {
             *type_counts.entry(object_type.clone()).or_insert(0) += 1;
         }
-        
+
         ObjectTypeInfo {
             total_objects: self.object_types.len(),
             type_distribution: type_counts,
@@ -111,61 +111,61 @@ impl CellSpace {
                 .map(|(object_type, _)| object_type.clone()),
         }
     }
-    
+
     /// Get performance metrics
     pub fn performance_metrics(&self) -> &CellMetrics {
         &self.metrics
     }
-    
+
     /// Get space efficiency
     pub fn efficiency(&self) -> f64 {
         let used_cells = self.allocator.allocated_cells();
         let total_cells = self.allocator.total_cells();
         (used_cells as f64 / total_cells as f64) * 100.0
     }
-    
+
     /// Get memory density
     pub fn memory_density(&self) -> f64 {
         let used_memory = self.allocator.total_allocated().as_usize();
         let total_memory = self.total_size;
         (used_memory as f64 / total_memory as f64) * 100.0
     }
-    
+
     /// Check if compaction is needed
     pub fn should_compact(&self) -> bool {
         let fragmentation = self.allocator.fragmentation();
         let efficiency = self.efficiency();
-        
+
         // Compact if fragmentation is high or efficiency is low
         fragmentation > 25.0 || efficiency < 50.0
     }
-    
+
     /// Get space health score
     pub fn health_score(&self) -> f64 {
         let efficiency = self.efficiency();
         let density = self.memory_density();
         let fragmentation = self.allocator.fragmentation();
-        
+
         // Higher efficiency, density, and lower fragmentation = better health
         let efficiency_score = efficiency / 100.0;
         let density_score = density / 100.0;
         let fragmentation_score = 1.0 - (fragmentation / 100.0);
-        
+
         (efficiency_score + density_score + fragmentation_score) / 3.0 * 100.0
     }
-    
+
     /// Perform garbage collection
     pub fn collect(&mut self) -> GcStats {
         let start_time = std::time::Instant::now();
-        
+
         // Get current usage before collection
         let before_usage = self.allocator.total_allocated().as_usize();
         let before_objects = self.object_types.len();
-        
+
         // Simple collection simulation
         // In a real implementation, this would mark live objects
         let mut objects_to_remove = Vec::new();
-        
+
         // Simulate some objects becoming unreachable
         for (&handle, object_type) in &self.object_types {
             // Simulate collection based on object type
@@ -175,70 +175,71 @@ impl CellSpace {
                     objects_to_remove.push(handle);
                 }
                 SmallObjectType::Boolean => {
-                    // Booleans have 50% chance of being collected
-                    if rand::random::<bool>() {
+                    // Booleans have 50% chance of being collected (deterministic)
+                    if (handle.as_usize() % 2) == 0 {
                         objects_to_remove.push(handle);
                     }
                 }
                 _ => {
-                    // Other types have 10% chance of being collected
-                    if rand::random::<f32>() < 0.1 {
+                    // Other types have 10% chance of being collected (deterministic)
+                    if (handle.as_usize() % 10) == 0 {
                         objects_to_remove.push(handle);
                     }
                 }
             }
         }
-        
+
         // Remove dead objects
         for handle in &objects_to_remove {
             if self.allocator.deallocate(*handle) {
                 self.object_types.remove(handle);
             }
         }
-        
+
         // Calculate collection statistics
         let objects_collected = before_objects - self.object_types.len();
         let bytes_freed = before_usage - self.allocator.total_allocated().as_usize();
-        
+
         let end_time = std::time::Instant::now();
         let collection_time = end_time.duration_since(start_time).as_micros() as u64;
-        
+
         // Update statistics
         self.stats.object_count = self.object_types.len();
         self.stats.allocated_size = self.allocator.total_allocated().as_usize();
         self.stats.free_size = self.allocator.total_free().as_usize();
         self.stats.fragmentation_percentage = self.allocator.fragmentation();
-        
+
         GcStats {
             objects_collected,
             bytes_freed,
             collection_time,
         }
     }
-    
+
     /// Compact the space
     pub fn compact(&mut self) -> CompactionStats {
         let start_time = std::time::Instant::now();
-        
+
         // Perform compaction
         let stats = self.allocator.compact();
-        
+
         // Update metrics
         let end_time = std::time::Instant::now();
         let compaction_time = end_time.duration_since(start_time).as_nanos() as u64;
-        
+
         self.metrics.compaction_time_ns = compaction_time;
         self.metrics.total_operations += 1;
-        self.metrics.average_operation_time_ns = 
-            (self.metrics.allocation_time_ns + self.metrics.deallocation_time_ns + self.metrics.compaction_time_ns) / 
-            self.metrics.total_operations as u64;
-        
+        self.metrics.average_operation_time_ns = (self.metrics.allocation_time_ns
+            + self.metrics.deallocation_time_ns
+            + self.metrics.compaction_time_ns)
+            / self.metrics.total_operations as u64;
+
         // Update statistics
         self.stats.fragmentation_percentage = self.allocator.fragmentation();
-        
+
         stats
     }
-    
+
     /// Get detailed space information
     pub fn detailed_info(&self) -> CellSpaceInfo {
         CellSpaceInfo {
@@ -256,7 +257,7 @@ impl CellSpace {
 impl MemorySpace for CellSpace {
     fn allocate(&mut self, size: MemorySize) -> Option<HeapHandleId> {
         let start_time = std::time::Instant::now();
-        
+
         if let Some(handle) = self.allocator.allocate(size) {
             // Determine object type based on size and context
             let object_type = if size.as_usize() <= 8 {
@@ -266,77 +267,79 @@ impl MemorySpace for CellSpace {
             } else {
                 SmallObjectType::Other
             };
-            
+
             // Track object type
             self.object_types.insert(handle, object_type);
-            
+
             // Update statistics
             self.stats.allocated_size += size.as_usize();
             self.stats.object_count += 1;
             self.stats.allocation_count += 1;
             self.stats.free_size = self.allocator.total_free().as_usize();
-            
+
             // Update metrics
             let end_time = std::time::Instant::now();
             let allocation_time = end_time.duration_since(start_time).as_nanos() as u64;
-            
+
             self.metrics.allocation_time_ns += allocation_time;
             self.metrics.total_operations += 1;
-            self.metrics.average_operation_time_ns = 
-                (self.metrics.allocation_time_ns + self.metrics.deallocation_time_ns + self.metrics.compaction_time_ns) / 
-                self.metrics.total_operations as u64;
-            
+            self.metrics.average_operation_time_ns = (self.metrics.allocation_time_ns
+                + self.metrics.deallocation_time_ns
+                + self.metrics.compaction_time_ns)
+                / self.metrics.total_operations as u64;
+
             Some(handle)
         } else {
             None
         }
     }
-    
+
     fn deallocate(&mut self, handle: HeapHandleId) -> bool {
         let start_time = std::time::Instant::now();
-        
+
         if self.allocator.deallocate(handle) {
             // Remove type tracking
             self.object_types.remove(&handle);
-            
+
             // Update statistics
             self.stats.object_count = self.object_types.len();
             self.stats.allocated_size = self.allocator.total_allocated().as_usize();
             self.stats.free_size = self.allocator.total_free().as_usize();
             self.stats.deallocation_count += 1;
-            
+
             // Update metrics
             let end_time = std::time::Instant::now();
             let deallocation_time = end_time.duration_since(start_time).as_nanos() as u64;
-            
+
             self.metrics.deallocation_time_ns += deallocation_time;
             self.metrics.total_operations += 1;
-            self.metrics.average_operation_time_ns = 
-                (self.metrics.allocation_time_ns + self.metrics.deallocation_time_ns + self.metrics.compaction_time_ns) / 
-                self.metrics.total_operations as u64;
-            
+            self.metrics.average_operation_time_ns = (self.metrics.allocation_time_ns
+                + self.metrics.deallocation_time_ns
+                + self.metrics.compaction_time_ns)
+                / self.metrics.total_operations as u64;
+
             true
         } else {
             false
         }
     }
-    
+
     fn can_allocate(&self, size: MemorySize) -> bool {
         self.allocator.can_allocate(size)
     }
-    
+
     fn total_allocated(&self) -> MemorySize {
         self.allocator.total_allocated()
     }
-    
+
     fn total_free(&self) -> MemorySize {
         self.allocator.total_free()
     }
-    
+
     fn stats(&self) -> SpaceStats {
         self.stats.clone()
     }
-    
+
     fn space_type(&self) -> SpaceType {
         SpaceType::CellSpace
     }
@@ -371,7 +374,7 @@ impl Default for CellSpace {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_cell_space_new() {
         let cell_space = CellSpace::new(100);
@@ -380,87 +383,90 @@ mod tests {
         assert_eq!(cell_space.total_free().as_usize(), 100 * 16);
         assert_eq!(cell_space.stats.object_count, 0);
     }
-    
+
     #[test]
     fn test_cell_space_allocate() {
         let mut cell_space = CellSpace::new(100);
-        
+
         let handle = cell_space.allocate(MemorySize::new(8));
         assert!(handle.is_some());
         assert_eq!(cell_space.total_allocated().as_usize(), 16); // Cell size
         assert_eq!(cell_space.stats.object_count, 1);
         assert_eq!(cell_space.stats.allocation_count, 1);
-        
+
         // Check object type tracking
-        assert_eq!(cell_space.object_types.get(&handle.unwrap()), Some(&SmallObjectType::Number));
+        assert_eq!(
+            cell_space.object_types.get(&handle.unwrap()),
+            Some(&SmallObjectType::Number)
+        );
     }
-    
+
     #[test]
     fn test_cell_space_deallocate() {
         let mut cell_space = CellSpace::new(100);
-        
+
         let handle = cell_space.allocate(MemorySize::new(8)).unwrap();
         assert_eq!(cell_space.stats.object_count, 1);
-        
+
         assert!(cell_space.deallocate(handle));
         assert_eq!(cell_space.stats.object_count, 0);
         assert_eq!(cell_space.stats.deallocation_count, 1);
-        
+
         // Type tracking should be removed
         assert!(cell_space.object_types.is_empty());
     }
-    
+
     #[test]
     fn test_cell_space_efficiency() {
         let mut cell_space = CellSpace::new(100);
-        
+
         // Allocate 50 cells
         for _ in 0..50 {
             cell_space.allocate(MemorySize::new(8));
         }
-        
+
         let efficiency = cell_space.efficiency();
         assert_eq!(efficiency, 50.0); // 50/100 = 50%
-        
+
         let density = cell_space.memory_density();
         assert_eq!(density, 50.0); // 50*16/100*16 = 50%
     }
-    
+
     #[test]
     fn test_cell_space_compact() {
         let mut cell_space = CellSpace::new(100);
-        
+
         // Allocate some cells
         let handles: Vec<HeapHandleId> = (0..20)
             .map(|_| cell_space.allocate(MemorySize::new(8)).unwrap())
             .collect();
-        
+
         // Deallocate some cells to create fragmentation
         cell_space.deallocate(handles[5]);
         cell_space.deallocate(handles[10]);
         cell_space.deallocate(handles[15]);
-        
+
         let initial_fragmentation = cell_space.allocator.fragmentation();
-        
+
         // Compact
         let stats = cell_space.compact();
         assert!(stats.final_fragmentation < stats.initial_fragmentation);
         assert!(stats.cells_moved > 0);
     }
-    
+
     #[test]
     fn test_cell_space_health_score() {
         let mut cell_space = CellSpace::new(100);
-        
+
         // Empty space should have good health
         let health = cell_space.health_score();
         assert!(health > 80.0);
-        
+
         // Allocate some cells
         for _ in 0..50 {
             cell_space.allocate(MemorySize::new(8));
         }
-        
+
         // Space with 50% usage should have good health
         let health = cell_space.health_score();
         assert!(health > 60.0);

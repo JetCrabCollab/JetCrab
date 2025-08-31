@@ -16,3 +16,6 @@ pub use sizes::{
     AllocationCount, ErrorCount, IndentLevel, MemorySize, NodeCount, ObjectCount, ObjectSize,
     ScopeDepth, VariableCount,
 };
+
+// Re-export handle types
+pub use crate::vm::handle::HeapHandleId;

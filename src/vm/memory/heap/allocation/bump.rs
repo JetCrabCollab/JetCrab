@@ -11,12 +11,13 @@
 //! - **No deallocation**: Memory is freed by copying GC
 //! - **Perfect for young generation**: Short-lived objects
 
-use super::alignment::{align_up, ALIGN_8};
-use super::{AllocationError, AllocationStats, Allocator};
-use crate::vm::handle::HeapHandleId;
+use crate::vm::memory::heap::allocation::{AllocationError, AllocationStats, Allocator};
 use crate::vm::types::MemorySize;
 
-/// Bump allocator for extremely fast allocation
+/// Bump allocator for fast, simple memory allocation
+///
+/// This allocator is very fast but doesn't support deallocation.
+/// It's ideal for temporary allocations or when all memory is freed at once.
 pub struct BumpAllocator {
     /// Start of the memory region
     start: *mut u8,
@@ -24,16 +25,17 @@ pub struct BumpAllocator {
     current: *mut u8,
     /// End of the memory region
     end: *mut u8,
-    /// Total size of the memory region
-    total_size: usize,
-    /// Statistics
-    stats: AllocationStats,
+    /// Total allocated memory
+    total_allocated: MemorySize,
+    /// Peak memory usage
+    peak_usage: MemorySize,
 }
 
 impl BumpAllocator {
     /// Create a new bump allocator with the specified size
-    pub fn new(size: usize) -> Self {
-        let layout = std::alloc::Layout::from_size_align(size, ALIGN_8).expect("Invalid layout");
+    pub fn new(size: MemorySize) -> Self {
+        let size_bytes = size.bytes();
+        let layout = std::alloc::Layout::from_size_align(size_bytes, 8).expect("Invalid layout");
 
         let ptr = unsafe { std::alloc::alloc_zeroed(layout) };
         if ptr.is_null() {
@@ -42,39 +44,21 @@ impl BumpAllocator {
 
         let start = ptr;
         let current = ptr;
-        let end = unsafe { ptr.add(size) };
+        let end = unsafe { ptr.add(size_bytes) };
 
         Self {
             start,
             current,
             end,
-            total_size: size,
-            stats: AllocationStats::default(),
+            total_allocated: MemorySize::new(0),
+            peak_usage: MemorySize::new(0),
         }
     }
 
-    /// Create a new bump allocator with existing memory
-    pub fn with_memory(memory: &mut [u8]) -> Self {
-        let start = memory.as_mut_ptr();
-        let current = start;
-        let end = unsafe { start.add(memory.len()) };
-        let total_size = memory.len();
-
-        Self {
-            start,
-            current,
-            end,
-            total_size,
-            stats: AllocationStats::default(),
-        }
-    }
-
-    /// Reset the allocator (used after garbage collection)
+    /// Reset the allocator to free all memory
     pub fn reset(&mut self) {
         self.current = self.start;
-        self.stats.current_allocations = 0;
-        self.stats.total_allocated_bytes = 0;
-        self.stats.fragmentation_percentage = 0.0;
+        self.total_allocated = MemorySize::new(0);
     }
 
     /// Get the current allocation pointer
@@ -82,130 +66,74 @@ impl BumpAllocator {
         self.current
     }
 
-    /// Get the remaining free space
-    pub fn remaining_space(&self) -> usize {
-        unsafe { self.end.offset_from(self.current) as usize }
-    }
-
-    /// Check if the allocator is empty
-    pub fn is_empty(&self) -> bool {
-        self.current == self.start
-    }
-
-    /// Check if the allocator is full
-    pub fn is_full(&self) -> bool {
-        self.current >= self.end
-    }
-
-    /// Get memory usage percentage
-    pub fn usage_percentage(&self) -> f64 {
+    /// Get the remaining free memory
+    pub fn remaining(&self) -> MemorySize {
         let used = unsafe { self.current.offset_from(self.start) as usize };
-        (used as f64 / self.total_size as f64) * 100.0
-    }
-
-    /// Get memory layout information
-    pub fn layout_info(&self) -> LayoutInfo {
-        let used = unsafe { self.current.offset_from(self.start) as usize };
-        let free = self.total_size - used;
-
-        LayoutInfo {
-            total_size: self.total_size,
-            used_size: used,
-            free_size: free,
-            usage_percentage: (used as f64 / self.total_size as f64) * 100.0,
-            fragmentation_percentage: 0.0, // Bump allocator has no fragmentation
-        }
+        let total = unsafe { self.end.offset_from(self.start) as usize };
+        MemorySize::new(total.saturating_sub(used))
     }
 }
 
 impl Allocator for BumpAllocator {
-    fn allocate(&mut self, size: MemorySize) -> Option<HeapHandleId> {
-        let aligned_size = align_up(size.as_usize(), ALIGN_8);
-
-        if !self.can_allocate(aligned_size) {
+    fn allocate(&mut self, size: MemorySize) -> Option<usize> {
+        if !self.can_allocate(size) {
             return None;
         }
 
-        // Calculate handle based on offset from start
-        let offset = unsafe { self.current.offset_from(self.start) as usize };
-        let handle = HeapHandleId::new(offset);
+        let aligned_size = align_up(size.bytes(), 8);
+        let address = self.current as usize;
 
-        // Update current pointer
-        self.current = unsafe { self.current.add(aligned_size) };
-
-        // Update statistics
-        self.stats.total_allocations += 1;
-        self.stats.current_allocations += 1;
-        self.stats.total_allocated_bytes += aligned_size;
-
-        if self.stats.total_allocated_bytes > self.stats.peak_allocated_bytes {
-            self.stats.peak_allocated_bytes = self.stats.total_allocated_bytes;
+        unsafe {
+            self.current = self.current.add(aligned_size);
         }
 
-        // Update average allocation size
-        self.stats.average_allocation_size =
-            self.stats.total_allocated_bytes as f64 / self.stats.total_allocations as f64;
+        self.total_allocated = MemorySize::new(self.total_allocated.bytes() + aligned_size);
 
-        Some(handle)
+        if self.total_allocated.bytes() > self.peak_usage.bytes() {
+            self.peak_usage = self.total_allocated;
+        }
+
+        Some(address)
     }
 
-    fn deallocate(&mut self, _handle: HeapHandleId) -> bool {
+    fn deallocate(&mut self, _address: usize, _size: MemorySize) -> bool {
         // Bump allocator doesn't support deallocation
-        // Memory is freed by copying garbage collection
         false
     }
 
-    fn can_allocate(&self, size: usize) -> bool {
-        let aligned_size = align_up(size, ALIGN_8);
+    fn can_allocate(&self, size: MemorySize) -> bool {
+        let aligned_size = align_up(size.bytes(), 8);
         unsafe { self.current.add(aligned_size) <= self.end }
     }
 
     fn total_allocated(&self) -> MemorySize {
-        let used = unsafe { self.current.offset_from(self.start) as usize };
-        MemorySize::new(used)
+        self.total_allocated
     }
 
     fn total_free(&self) -> MemorySize {
-        let used = unsafe { self.current.offset_from(self.start) as usize };
-        MemorySize::new(self.total_size - used)
+        self.remaining()
     }
 
     fn fragmentation(&self) -> f64 {
         // Bump allocator has no fragmentation
         0.0
     }
-
-    fn stats(&self) -> AllocationStats {
-        self.stats.clone()
-    }
-}
-
-/// Memory layout information
-#[derive(Debug, Clone)]
-pub struct LayoutInfo {
-    pub total_size: usize,
-    pub used_size: usize,
-    pub free_size: usize,
-    pub usage_percentage: f64,
-    pub fragmentation_percentage: f64,
-}
-
-impl Default for BumpAllocator {
-    fn default() -> Self {
-        Self::new(1024 * 1024) // 1MB default
-    }
 }
 
 impl Drop for BumpAllocator {
     fn drop(&mut self) {
-        if !self.start.is_null() {
-            let layout = std::alloc::Layout::from_size_align(self.total_size, ALIGN_8)
-                .expect("Invalid layout");
-            unsafe {
-                std::alloc::dealloc(self.start, layout);
-            }
+        let size = unsafe { self.end.offset_from(self.start) as usize };
+        let layout = std::alloc::Layout::from_size_align(size, 8).expect("Invalid layout");
+
+        unsafe {
+            std::alloc::dealloc(self.start, layout);
         }
     }
+}
+
+/// Align a size to the specified alignment
+fn align_up(size: usize, alignment: usize) -> usize {
+    (size + alignment - 1) & !(alignment - 1)
 }
 
 #[cfg(test)]
@@ -213,76 +141,33 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_bump_allocator_new() {
-        let mut allocator = BumpAllocator::new(1024);
-        assert_eq!(allocator.total_size, 1024);
-        assert_eq!(allocator.remaining_space(), 1024);
-        assert!(allocator.is_empty());
-        assert!(!allocator.is_full());
+    fn test_bump_allocator_creation() {
+        let allocator = BumpAllocator::new(MemorySize::new(1024));
+        assert_eq!(allocator.remaining().bytes(), 1024);
     }
 
     #[test]
-    fn test_bump_allocator_allocate() {
-        let mut allocator = BumpAllocator::new(1024);
+    fn test_bump_allocator_allocation() {
+        let mut allocator = BumpAllocator::new(MemorySize::new(1024));
 
-        let handle1 = allocator.allocate(MemorySize::new(64));
-        assert!(handle1.is_some());
-        assert_eq!(allocator.remaining_space(), 1024 - 64);
-        assert_eq!(allocator.total_allocated().as_usize(), 64);
+        let addr1 = allocator.allocate(MemorySize::new(64));
+        assert!(addr1.is_some());
+        assert_eq!(allocator.total_allocated().bytes(), 64);
 
-        let handle2 = allocator.allocate(MemorySize::new(128));
-        assert!(handle2.is_some());
-        assert_eq!(allocator.remaining_space(), 1024 - 64 - 128);
-        assert_eq!(allocator.total_allocated().as_usize(), 64 + 128);
-    }
-
-    #[test]
-    fn test_bump_allocator_alignment() {
-        let mut allocator = BumpAllocator::new(1024);
-
-        // Allocate 7 bytes (should be aligned to 8)
-        let handle = allocator.allocate(MemorySize::new(7));
-        assert!(handle.is_some());
-        assert_eq!(allocator.total_allocated().as_usize(), 8); // Aligned to 8
+        let addr2 = allocator.allocate(MemorySize::new(128));
+        assert!(addr2.is_some());
+        assert_eq!(allocator.total_allocated().bytes(), 192);
     }
 
     #[test]
     fn test_bump_allocator_reset() {
-        let mut allocator = BumpAllocator::new(1024);
+        let mut allocator = BumpAllocator::new(MemorySize::new(1024));
 
-        allocator.allocate(MemorySize::new(64));
-        assert_eq!(allocator.total_allocated().as_usize(), 64);
+        allocator.allocate(MemorySize::new(256));
+        assert_eq!(allocator.total_allocated().bytes(), 256);
 
         allocator.reset();
-        assert_eq!(allocator.total_allocated().as_usize(), 0);
-        assert_eq!(allocator.remaining_space(), 1024);
-        assert!(allocator.is_empty());
-    }
-
-    #[test]
-    fn test_bump_allocator_out_of_memory() {
-        let mut allocator = BumpAllocator::new(64);
-
-        // First allocation should succeed
-        let handle1 = allocator.allocate(MemorySize::new(32));
-        assert!(handle1.is_some());
-
-        // Second allocation should fail (not enough space)
-        let handle2 = allocator.allocate(MemorySize::new(64));
-        assert!(handle2.is_none());
-    }
-
-    #[test]
-    fn test_bump_allocator_stats() {
-        let mut allocator = BumpAllocator::new(1024);
-
-        allocator.allocate(MemorySize::new(64));
-        allocator.allocate(MemorySize::new(128));
-
-        let stats = allocator.stats();
-        assert_eq!(stats.total_allocations, 2);
-        assert_eq!(stats.current_allocations, 2);
-        assert_eq!(stats.total_allocated_bytes, 64 + 128);
-        assert_eq!(stats.fragmentation_percentage, 0.0);
+        assert_eq!(allocator.total_allocated().bytes(), 0);
+        assert_eq!(allocator.remaining().bytes(), 1024);
     }
 }

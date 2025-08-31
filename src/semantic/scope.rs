@@ -1,13 +1,13 @@
 use crate::semantic::error::SemanticError;
 use std::collections::HashMap;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Scope {
     pub variables: HashMap<String, VariableInfo>,
     pub parent: Option<Box<Scope>>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct VariableInfo {
     pub name: String,
     pub declared: bool,
@@ -30,7 +30,11 @@ impl Scope {
         }
     }
 
-    pub fn declare_variable(&mut self, name: String, position: Option<(u32, u32)>) -> Result<(), SemanticError> {
+    pub fn declare_variable(
+        &mut self,
+        name: String,
+        position: Option<(u32, u32)>,
+    ) -> Result<(), SemanticError> {
         if self.variables.contains_key(&name) {
             return Err(SemanticError {
                 message: format!("Variable '{}' already declared in this scope", name),
@@ -38,12 +42,15 @@ impl Scope {
             });
         }
 
-        self.variables.insert(name.clone(), VariableInfo {
-            name,
-            declared: true,
-            used: false,
-            position,
-        });
+        self.variables.insert(
+            name.clone(),
+            VariableInfo {
+                name,
+                declared: true,
+                used: false,
+                position,
+            },
+        );
 
         Ok(())
     }
@@ -63,7 +70,11 @@ impl Scope {
     }
 
     pub fn is_declared(&self, name: &str) -> bool {
-        self.variables.contains_key(name) || 
-        self.parent.as_ref().map(|p| p.is_declared(name)).unwrap_or(false)
+        self.variables.contains_key(name)
+            || self
+                .parent
+                .as_ref()
+                .map(|p| p.is_declared(name))
+                .unwrap_or(false)
     }
 }

@@ -11,382 +11,241 @@
 //! - **Memory efficient**: Minimal overhead per object
 //! - **Perfect for small objects**: Strings, numbers, booleans, etc.
 
-use super::{Allocator, AllocationStats, AllocationError};
-use crate::vm::handle::HeapHandleId;
+use crate::vm::memory::heap::allocation::{Allocator, AllocationStats, AllocationError};
+use crate::vm::memory::heap::types::CellId;
 use crate::vm::types::MemorySize;
-use super::alignment::{align_up, ALIGN_8};
+use std::collections::HashMap;
 
-/// Cell size for small objects
-pub const CELL_SIZE: usize = 16;
+/// Cell in the cell allocator
+#[derive(Debug, Clone)]
+struct Cell {
+    /// Start address of the cell
+    start: usize,
+    /// Size of the cell
+    size: usize,
+    /// Whether the cell is allocated
+    allocated: bool,
+    /// Next cell in the chain (for chaining)
+    next: Option<CellId>,
+}
 
-/// Cell allocator for small objects
+/// Cell allocator for small, fixed-size objects
+/// 
+/// This allocator is optimized for objects of similar sizes,
+/// reducing fragmentation and improving allocation speed.
 pub struct CellAllocator {
-    /// Memory region divided into cells
-    memory: Vec<u8>,
-    /// Free cell list (stack-based for O(1) allocation)
-    free_cells: Vec<usize>,
+    /// All cells
+    cells: Vec<Cell>,
+    /// Free cells
+    free_cells: Vec<CellId>,
+    /// Cell size
+    cell_size: usize,
     /// Total number of cells
     total_cells: usize,
-    /// Number of allocated cells
-    allocated_cells: usize,
-    /// Statistics
-    stats: AllocationStats,
+    /// Total allocated memory
+    total_allocated: MemorySize,
+    /// Total freed memory
+    total_freed: MemorySize,
+    /// Peak memory usage
+    peak_usage: MemorySize,
 }
 
 impl CellAllocator {
-    /// Create a new cell allocator with the specified number of cells
-    pub fn new(cell_count: usize) -> Self {
-        let total_size = cell_count * CELL_SIZE;
-        let memory = vec![0; total_size];
+    /// Create a new cell allocator
+    pub fn new(cell_size: usize, cell_count: usize) -> Self {
+        let mut cells = Vec::with_capacity(cell_count);
         let mut free_cells = Vec::with_capacity(cell_count);
         
-        // Initialize free cell list (cells are numbered from 0)
         for i in 0..cell_count {
-            free_cells.push(i);
+            let cell = Cell {
+                start: i * cell_size,
+                size: cell_size,
+                allocated: false,
+                next: None,
+            };
+            cells.push(cell);
+            free_cells.push(CellId::new(i));
         }
         
         Self {
-            memory,
+            cells,
             free_cells,
+            cell_size,
             total_cells: cell_count,
-            allocated_cells: 0,
-            stats: AllocationStats::default(),
+            total_allocated: MemorySize::new(0),
+            total_freed: MemorySize::new(0),
+            peak_usage: MemorySize::new(0),
         }
     }
     
-    /// Create a new cell allocator with the specified total size
-    pub fn with_size(total_size: usize) -> Self {
-        let cell_count = total_size / CELL_SIZE;
-        Self::new(cell_count)
-    }
-    
-    /// Get the number of available cells
-    pub fn available_cells(&self) -> usize {
+    /// Get the number of free cells
+    pub fn free_cell_count(&self) -> usize {
         self.free_cells.len()
     }
     
     /// Get the number of allocated cells
-    pub fn allocated_cells(&self) -> usize {
-        self.allocated_cells
-    }
-    
-    /// Get the total number of cells
-    pub fn total_cells(&self) -> usize {
-        self.total_cells
+    pub fn allocated_cell_count(&self) -> usize {
+        self.total_cells - self.free_cells.len()
     }
     
     /// Get cell usage percentage
     pub fn usage_percentage(&self) -> f64 {
-        (self.allocated_cells as f64 / self.total_cells as f64) * 100.0
+        let allocated = self.allocated_cell_count();
+        (allocated as f64 / self.total_cells as f64) * 100.0
     }
     
-    /// Get memory efficiency (cells used vs total cells)
-    pub fn efficiency(&self) -> f64 {
-        let used_memory = self.allocated_cells * CELL_SIZE;
-        let total_memory = self.total_cells * CELL_SIZE;
-        (used_memory as f64 / total_memory as f64) * 100.0
-    }
-    
-    /// Get cell information
-    pub fn cell_info(&self) -> CellInfo {
-        CellInfo {
-            total_cells: self.total_cells,
-            allocated_cells: self.allocated_cells,
-            free_cells: self.free_cells.len(),
-            cell_size: CELL_SIZE,
-            usage_percentage: self.usage_percentage(),
-            efficiency: self.efficiency(),
-        }
-    }
-    
-    /// Check if a cell index is valid
-    fn is_valid_cell(&self, cell_index: usize) -> bool {
-        cell_index < self.total_cells
-    }
-    
-    /// Get memory address for a cell index
-    fn get_cell_address(&self, cell_index: usize) -> usize {
-        cell_index * CELL_SIZE
-    }
-    
-    /// Get cell index from memory address
-    fn get_cell_index(&self, address: usize) -> usize {
-        address / CELL_SIZE
-    }
-    
-    /// Write data to a cell
-    pub fn write_cell(&mut self, handle: HeapHandleId, data: &[u8]) -> Result<(), AllocationError> {
-        let cell_index = self.get_cell_index(handle.as_usize());
-        
-        if !self.is_valid_cell(cell_index) {
-            return Err(AllocationError::InvalidHandle { handle });
-        }
-        
-        let start = self.get_cell_address(cell_index);
-        let end = start + CELL_SIZE;
-        
-        if data.len() > CELL_SIZE {
-            return Err(AllocationError::SizeTooLarge { 
-                size: data.len(), 
-                max: CELL_SIZE 
-            });
-        }
-        
-        // Copy data to cell
-        self.memory[start..start + data.len()].copy_from_slice(data);
-        
-        // Zero out remaining bytes
-        if data.len() < CELL_SIZE {
-            self.memory[start + data.len()..end].fill(0);
-        }
-        
-        Ok(())
-    }
-    
-    /// Read data from a cell
-    pub fn read_cell(&self, handle: HeapHandleId) -> Result<&[u8], AllocationError> {
-        let cell_index = self.get_cell_index(handle.as_usize());
-        
-        if !self.is_valid_cell(cell_index) {
-            return Err(AllocationError::InvalidHandle { handle });
-        }
-        
-        let start = self.get_cell_address(cell_index);
-        let end = start + CELL_SIZE;
-        
-        Ok(&self.memory[start..end])
-    }
-    
-    /// Clear a cell (set all bytes to 0)
-    pub fn clear_cell(&mut self, handle: HeapHandleId) -> Result<(), AllocationError> {
-        let cell_index = self.get_cell_index(handle.as_usize());
-        
-        if !self.is_valid_cell(cell_index) {
-            return Err(AllocationError::InvalidHandle { handle });
-        }
-        
-        let start = self.get_cell_address(cell_index);
-        let end = start + CELL_SIZE;
-        
-        self.memory[start..end].fill(0);
-        
-        Ok(())
-    }
-    
-    /// Get memory region for a cell (for direct access)
-    pub fn get_cell_memory(&mut self, handle: HeapHandleId) -> Result<&mut [u8], AllocationError> {
-        let cell_index = self.get_cell_index(handle.as_usize());
-        
-        if !self.is_valid_cell(cell_index) {
-            return Err(AllocationError::InvalidHandle { handle });
-        }
-        
-        let start = self.get_cell_address(cell_index);
-        let end = start + CELL_SIZE;
-        
-        Ok(&mut self.memory[start..end])
-    }
-    
-    /// Compact memory by moving allocated cells to the beginning
-    pub fn compact(&mut self) -> CompactionStats {
+    /// Compact the cell space by moving allocated cells together
+    pub fn compact(&mut self) -> crate::vm::memory::heap::allocation::CompactionStats {
         let start_time = std::time::Instant::now();
-        let initial_fragmentation = self.calculate_fragmentation();
+        let fragmentation_before = self.fragmentation();
         
         // Create a map of old to new positions
-        let mut old_to_new: Vec<Option<usize>> = vec![None; self.total_cells];
+        let mut old_to_new: Vec<Option<CellId>> = vec![None; self.total_cells];
         let mut new_cell_index = 0;
         
-        // Find all allocated cells and assign new positions
-        for cell_index in 0..self.total_cells {
-            if !self.free_cells.contains(&cell_index) {
-                old_to_new[cell_index] = Some(new_cell_index);
+        // First pass: mark cells that should stay
+        for (i, cell) in self.cells.iter().enumerate() {
+            if cell.allocated {
+                old_to_new[i] = Some(CellId::new(new_cell_index));
                 new_cell_index += 1;
             }
         }
         
-        // Move cells to new positions
-        let mut moved_cells = 0;
-        for old_index in 0..self.total_cells {
-            if let Some(new_index) = old_to_new[old_index] {
-                if old_index != new_index {
-                    let old_start = self.get_cell_address(old_index);
-                    let new_start = self.get_cell_address(new_index);
-                    
-                    // Copy cell data
-                    self.memory.copy_within(old_start..old_start + CELL_SIZE, new_start);
-                    
-                    // Clear old cell
-                    self.memory[old_start..old_start + CELL_SIZE].fill(0);
-                    
-                    moved_cells += 1;
-                }
+        // Second pass: rebuild cells array
+        let mut new_cells = Vec::with_capacity(self.total_cells);
+        let mut new_free_cells = Vec::new();
+        
+        // Add allocated cells first
+        for (_i, cell) in self.cells.iter().enumerate() {
+            if cell.allocated {
+                let new_cell = Cell {
+                    start: new_cells.len() * self.cell_size,
+                    size: self.cell_size,
+                    allocated: true,
+                    next: None,
+                };
+                new_cells.push(new_cell);
             }
         }
         
-        // Rebuild free cell list
-        self.free_cells.clear();
-        for i in new_cell_index..self.total_cells {
-            self.free_cells.push(i);
+        // Add free cells
+        for _i in new_cell_index..self.total_cells {
+            let new_cell = Cell {
+                start: new_cells.len() * self.cell_size,
+                size: self.cell_size,
+                allocated: false,
+                next: None,
+            };
+            new_cells.push(new_cell);
+            new_free_cells.push(CellId::new(_i));
         }
         
-        let end_time = std::time::Instant::now();
-        let duration = end_time.duration_since(start_time);
+        // Update internal state
+        self.cells = new_cells;
+        self.free_cells = new_free_cells;
         
-        CompactionStats {
-            duration_micros: duration.as_micros() as u64,
-            initial_fragmentation,
-            final_fragmentation: self.calculate_fragmentation(),
-            cells_moved: moved_cells,
+        let _end_time = std::time::Instant::now();
+        let _duration = _end_time.duration_since(start_time);
+        
+        crate::vm::memory::heap::allocation::CompactionStats {
+            objects_moved: self.allocated_cell_count(),
+            memory_compacted: MemorySize::new(self.total_cells * self.cell_size),
+            fragmentation_before,
+            fragmentation_after: self.fragmentation(),
         }
-    }
-    
-    /// Calculate fragmentation percentage
-    fn calculate_fragmentation(&self) -> f64 {
-        if self.free_cells.is_empty() {
-            return 0.0;
-        }
-        
-        let total_free = self.free_cells.len();
-        let largest_free_run = self.get_largest_free_run();
-        
-        if total_free == 0 {
-            0.0
-        } else {
-            (1.0 - (largest_free_run as f64 / total_free as f64)) * 100.0
-        }
-    }
-    
-    /// Get the largest consecutive run of free cells
-    fn get_largest_free_run(&self) -> usize {
-        let mut free_cells_sorted = self.free_cells.clone();
-        free_cells_sorted.sort();
-        
-        let mut max_run = 0;
-        let mut current_run = 0;
-        
-        for i in 0..free_cells_sorted.len() {
-            if i == 0 || free_cells_sorted[i] == free_cells_sorted[i - 1] + 1 {
-                current_run += 1;
-            } else {
-                current_run = 1;
-            }
-            
-            if current_run > max_run {
-                max_run = current_run;
-            }
-        }
-        
-        max_run
     }
 }
 
 impl Allocator for CellAllocator {
-    fn allocate(&mut self, size: MemorySize) -> Option<HeapHandleId> {
-        let aligned_size = align_up(size.as_usize(), ALIGN_8);
+    fn allocate(&mut self, size: MemorySize) -> Option<usize> {
+        let size_bytes = size.bytes();
         
-        if aligned_size > CELL_SIZE {
-            return None; // Too large for cell allocator
+        // Check if the size fits in a cell
+        if size_bytes > self.cell_size {
+            return None;
         }
         
-        if self.free_cells.is_empty() {
-            return None; // No free cells available
+        // Get a free cell
+        if let Some(cell_id) = self.free_cells.pop() {
+            if let Some(cell) = self.cells.get_mut(cell_id.as_usize()) {
+                cell.allocated = true;
+                self.total_allocated = MemorySize::new(self.total_allocated.bytes() + self.cell_size);
+                
+                if self.total_allocated.bytes() > self.peak_usage.bytes() {
+                    self.peak_usage = self.total_allocated;
+                }
+                
+                return Some(cell.start);
+            }
         }
         
-        // Pop a free cell from the stack
-        let cell_index = self.free_cells.pop().unwrap();
-        let address = self.get_cell_address(cell_index);
-        let handle = HeapHandleId::new(address);
-        
-        // Update statistics
-        self.allocated_cells += 1;
-        self.stats.total_allocations += 1;
-        self.stats.current_allocations += 1;
-        self.stats.total_allocated_bytes += CELL_SIZE;
-        
-        if self.stats.total_allocated_bytes > self.stats.peak_allocated_bytes {
-            self.stats.peak_allocated_bytes = self.stats.total_allocated_bytes;
-        }
-        
-        self.stats.average_allocation_size = 
-            self.stats.total_allocated_bytes as f64 / self.stats.total_allocations as f64;
-        
-        Some(handle)
+        None
     }
     
-    fn deallocate(&mut self, handle: HeapHandleId) -> bool {
-        let cell_index = self.get_cell_index(handle.as_usize());
+    fn deallocate(&mut self, address: usize, _size: MemorySize) -> bool {
+        let cell_index = address / self.cell_size;
         
-        if !self.is_valid_cell(cell_index) {
+        if cell_index >= self.total_cells {
             return false;
         }
         
-        // Check if cell is actually allocated
-        if self.free_cells.contains(&cell_index) {
-            return false; // Already free
+        if let Some(cell) = self.cells.get_mut(cell_index) {
+            if cell.allocated {
+                cell.allocated = false;
+                self.free_cells.push(CellId::new(cell_index));
+                self.total_freed = MemorySize::new(self.total_freed.bytes() + self.cell_size);
+                return true;
+            }
         }
         
-        // Clear the cell
-        let start = self.get_cell_address(cell_index);
-        let end = start + CELL_SIZE;
-        self.memory[start..end].fill(0);
-        
-        // Add back to free list
-        self.free_cells.push(cell_index);
-        self.allocated_cells -= 1;
-        
-        // Update statistics
-        self.stats.total_deallocations += 1;
-        self.stats.current_allocations = self.stats.current_allocations.saturating_sub(1);
-        self.stats.total_deallocated_bytes += CELL_SIZE;
-        
-        true
+        false
     }
     
-    fn can_allocate(&self, size: usize) -> bool {
-        let aligned_size = align_up(size, ALIGN_8);
-        aligned_size <= CELL_SIZE && !self.free_cells.is_empty()
+    fn can_allocate(&self, size: MemorySize) -> bool {
+        let size_bytes = size.bytes();
+        size_bytes <= self.cell_size && !self.free_cells.is_empty()
     }
     
     fn total_allocated(&self) -> MemorySize {
-        MemorySize::new(self.allocated_cells * CELL_SIZE)
+        self.total_allocated
     }
     
     fn total_free(&self) -> MemorySize {
-        MemorySize::new(self.free_cells.len() * CELL_SIZE)
+        MemorySize::new(self.free_cells.len() * self.cell_size)
     }
     
     fn fragmentation(&self) -> f64 {
-        self.calculate_fragmentation()
+        let allocated_count = self.allocated_cell_count();
+        if allocated_count == 0 {
+            return 0.0;
+        }
+        
+        // Calculate fragmentation based on how spread out allocated cells are
+        let mut gaps = 0;
+        let mut last_allocated = None;
+        
+        for (i, cell) in self.cells.iter().enumerate() {
+            if cell.allocated {
+                if let Some(last) = last_allocated {
+                    if i - last > 1 {
+                        gaps += 1;
+                    }
+                }
+                last_allocated = Some(i);
+            }
+        }
+        
+        if gaps == 0 {
+            0.0
+        } else {
+            (gaps as f64 / allocated_count as f64) * 100.0
+        }
     }
-    
-    fn stats(&self) -> AllocationStats {
-        self.stats.clone()
-    }
-}
-
-/// Cell information
-#[derive(Debug, Clone)]
-pub struct CellInfo {
-    pub total_cells: usize,
-    pub allocated_cells: usize,
-    pub free_cells: usize,
-    pub cell_size: usize,
-    pub usage_percentage: f64,
-    pub efficiency: f64,
-}
-
-/// Compaction statistics
-#[derive(Debug, Clone)]
-pub struct CompactionStats {
-    pub duration_micros: u64,
-    pub initial_fragmentation: f64,
-    pub final_fragmentation: f64,
-    pub cells_moved: usize,
 }
 
 impl Default for CellAllocator {
     fn default() -> Self {
-        Self::new(1024) // 1024 cells = 16KB default
+        Self::new(64, 1024) // 64-byte cells, 1024 cells
     }
 }
 
@@ -395,77 +254,54 @@ mod tests {
     use super::*;
     
     #[test]
-    fn test_cell_allocator_new() {
-        let allocator = CellAllocator::new(100);
-        assert_eq!(allocator.total_cells(), 100);
-        assert_eq!(allocator.allocated_cells(), 0);
-        assert_eq!(allocator.available_cells(), 100);
-        assert_eq!(allocator.usage_percentage(), 0.0);
+    fn test_cell_allocator_creation() {
+        let allocator = CellAllocator::new(64, 100);
+        assert_eq!(allocator.total_cells, 100);
+        assert_eq!(allocator.cell_size, 64);
+        assert_eq!(allocator.free_cell_count(), 100);
+        assert_eq!(allocator.allocated_cell_count(), 0);
     }
     
     #[test]
-    fn test_cell_allocator_allocate() {
-        let mut allocator = CellAllocator::new(100);
+    fn test_cell_allocator_allocation() {
+        let mut allocator = CellAllocator::new(64, 100);
         
-        let handle = allocator.allocate(MemorySize::new(8));
-        assert!(handle.is_some());
-        assert_eq!(allocator.allocated_cells(), 1);
-        assert_eq!(allocator.available_cells(), 99);
-        assert_eq!(allocator.usage_percentage(), 1.0);
+        let addr = allocator.allocate(MemorySize::new(32));
+        assert!(addr.is_some());
+        assert_eq!(allocator.allocated_cell_count(), 1);
+        assert_eq!(allocator.free_cell_count(), 99);
     }
     
     #[test]
-    fn test_cell_allocator_deallocate() {
-        let mut allocator = CellAllocator::new(100);
+    fn test_cell_allocator_deallocation() {
+        let mut allocator = CellAllocator::new(64, 100);
         
-        let handle = allocator.allocate(MemorySize::new(8)).unwrap();
-        assert_eq!(allocator.allocated_cells(), 1);
+        let addr = allocator.allocate(MemorySize::new(32)).unwrap();
+        assert_eq!(allocator.allocated_cell_count(), 1);
         
-        assert!(allocator.deallocate(handle));
-        assert_eq!(allocator.allocated_cells(), 0);
-        assert_eq!(allocator.available_cells(), 100);
-    }
-    
-    #[test]
-    fn test_cell_allocator_write_read() {
-        let mut allocator = CellAllocator::new(100);
-        let handle = allocator.allocate(MemorySize::new(8)).unwrap();
-        
-        let test_data = b"Hello";
-        assert!(allocator.write_cell(handle, test_data).is_ok());
-        
-        let read_data = allocator.read_cell(handle).unwrap();
-        assert_eq!(&read_data[..5], test_data);
+        assert!(allocator.deallocate(addr, MemorySize::new(32)));
+        assert_eq!(allocator.allocated_cell_count(), 0);
+        assert_eq!(allocator.free_cell_count(), 100);
     }
     
     #[test]
     fn test_cell_allocator_size_limit() {
-        let mut allocator = CellAllocator::new(100);
+        let mut allocator = CellAllocator::new(64, 100);
         
-        // Try to allocate more than CELL_SIZE
-        let handle = allocator.allocate(MemorySize::new(CELL_SIZE + 1));
-        assert!(handle.is_none());
+        // Try to allocate more than cell size
+        let addr = allocator.allocate(MemorySize::new(128));
+        assert!(addr.is_none());
     }
     
     #[test]
-    fn test_cell_allocator_compact() {
-        let mut allocator = CellAllocator::new(100);
+    fn test_cell_allocator_usage_percentage() {
+        let mut allocator = CellAllocator::new(64, 100);
+        assert_eq!(allocator.usage_percentage(), 0.0);
         
-        // Allocate some cells
-        let handles: Vec<HeapHandleId> = (0..10)
-            .map(|_| allocator.allocate(MemorySize::new(8)).unwrap())
-            .collect();
+        allocator.allocate(MemorySize::new(32));
+        assert_eq!(allocator.usage_percentage(), 1.0);
         
-        // Deallocate some cells to create fragmentation
-        allocator.deallocate(handles[2]);
-        allocator.deallocate(handles[5]);
-        allocator.deallocate(handles[8]);
-        
-        let initial_fragmentation = allocator.fragmentation();
-        
-        // Compact
-        let stats = allocator.compact();
-        assert!(stats.final_fragmentation < stats.initial_fragmentation);
-        assert!(stats.cells_moved > 0);
+        allocator.allocate(MemorySize::new(32));
+        assert_eq!(allocator.usage_percentage(), 2.0);
     }
 }

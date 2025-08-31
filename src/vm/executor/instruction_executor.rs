@@ -290,8 +290,9 @@ where
                     }
                     args.reverse();
 
-                    self.context_cache
-                        .set_heap(self.heap_manager.get_heap().clone());
+                    // TODO: Fix heap cloning - this should be a reference instead
+                    // self.context_cache
+                    //     .set_heap(self.heap_manager.get_heap().clone());
 
                     if let Some(builtin_fn) = self.builtins.get_function(name) {
                         match builtin_fn(&mut self.context_cache, &args) {

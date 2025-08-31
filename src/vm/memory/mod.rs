@@ -3,9 +3,17 @@
 //! Simplified memory management system
 
 use crate::vm::handle::HeapHandleId;
-use crate::vm::memory::heap::Heap;
-use crate::vm::memory::stack::Stack;
 use crate::vm::types::MemorySize;
+
+// Declare submodules
+pub mod heap;
+pub mod stack;
+pub mod allocator;
+
+// Re-export main types
+pub use heap::Heap;
+pub use stack::Stack;
+pub use heap::ObjectType;
 
 /// Memory management system that orchestrates all memory operations
 pub struct MemoryManager {
@@ -51,7 +59,7 @@ impl MemoryManager {
     pub fn allocate(&mut self, size: MemorySize) -> Result<HeapHandleId, String> {
         let result = self
             .heap
-            .allocate(size, crate::vm::memory::heap::spaces::ObjectType::Object);
+            .allocate(size, ObjectType::Object);
         match result {
             Ok(handle) => Ok(handle),
             Err(_) => Err("Failed to allocate memory".to_string()),
@@ -99,8 +107,8 @@ impl MemoryManager {
     pub fn heap_info(&self) -> String {
         format!(
             "Heap: {} allocated, {} free",
-            self.heap.total_allocated_bytes(),
-            self.heap.total_free_bytes()
+            self.heap.total_allocated().as_usize(),
+            self.heap.total_free().as_usize()
         )
     }
 

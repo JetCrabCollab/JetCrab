@@ -45,3 +45,4 @@ pub mod statements;
 pub use bytecode::Bytecode;
 pub use error::BytecodeError;
 pub use generator::BytecodeGenerator;
+pub use optimizer::BytecodeOptimizer;

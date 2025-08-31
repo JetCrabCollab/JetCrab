@@ -1,5 +1,5 @@
 //! Object Shapes (Hidden Classes) - Optimization system for object property access
-//! 
+//!
 //! This module implements V8-style hidden classes that optimize:
 //! - Property access patterns
 //! - Memory layout optimization
@@ -186,21 +186,22 @@ impl ObjectShape {
     pub fn with_parent(parent: ShapeId, properties: Vec<PropertyDescriptor>) -> Self {
         let mut property_map = HashMap::new();
         let mut object_size = 0;
-        
+
         for (index, prop) in properties.iter().enumerate() {
             property_map.insert(prop.name.clone(), index);
             object_size = object_size.max(prop.offset + prop.size());
         }
 
         let depth = Self::calculate_depth(parent);
-        
+        let property_count = property_map.len();
+
         Self {
             id: ShapeId::new(),
             parent: Some(parent),
             properties,
             property_map,
             object_size,
-            property_count: property_map.len(),
+            property_count,
             depth,
         }
     }
@@ -213,18 +214,32 @@ impl ObjectShape {
     }
 
     /// Add a property to the shape
-    pub fn add_property(&mut self, name: String, property_type: PropertyType) -> Result<usize, String> {
+    pub fn add_property(
+        &mut self,
+        name: String,
+        property_type: PropertyType,
+    ) -> Result<usize, String> {
         if self.property_map.contains_key(&name) {
             return Err(format!("Property '{}' already exists in shape", name));
         }
 
         let offset = self.object_size;
-        let descriptor = PropertyDescriptor::new(name.clone(), offset, property_type);
         let index = self.properties.len();
-        
+
+        // Calculate size based on property type
+        let property_size = match property_type {
+            PropertyType::Primitive => 8, // 64-bit value
+            PropertyType::Object => 8,    // 64-bit pointer
+            PropertyType::Array => 8,     // 64-bit pointer
+            PropertyType::Function => 8,  // 64-bit pointer
+            PropertyType::Accessor => 16, // 64-bit getter + 64-bit setter
+        };
+
+        // Create descriptor after calculating size
+        let descriptor = PropertyDescriptor::new(name.clone(), offset, property_type);
         self.properties.push(descriptor);
         self.property_map.insert(name, index);
-        self.object_size = offset + descriptor.size();
+        self.object_size = offset + property_size;
         self.property_count += 1;
 
         Ok(index)
@@ -232,7 +247,9 @@ impl ObjectShape {
 
     /// Get property descriptor by name
     pub fn get_property(&self, name: &str) -> Option<&PropertyDescriptor> {
-        self.property_map.get(name).map(|&index| &self.properties[index])
+        self.property_map
+            .get(name)
+            .map(|&index| &self.properties[index])
     }
 
     /// Get property descriptor by index
@@ -351,29 +368,35 @@ impl ShapeTransitionManager {
         property_type: PropertyType,
     ) -> Result<ShapeId, String> {
         // Check if transition already exists
-        if let Some(&transition_id) = self.transition_cache.get(&(base_shape, name.clone(), property_type.clone())) {
+        if let Some(&transition_id) =
+            self.transition_cache
+                .get(&(base_shape, name.clone(), property_type.clone()))
+        {
             return Ok(transition_id);
         }
 
         // Get base shape
-        let base_shape = self.shapes.get(&base_shape)
+        let base_shape_data = self
+            .shapes
+            .get(&base_shape)
             .ok_or_else(|| format!("Base shape {} not found", base_shape.value()))?;
 
         // Create new properties list with the new property
-        let mut new_properties = base_shape.properties.clone();
-        let offset = base_shape.object_size;
+        let mut new_properties = base_shape_data.properties.clone();
+        let offset = base_shape_data.object_size;
         let descriptor = PropertyDescriptor::new(name.clone(), offset, property_type.clone());
         new_properties.push(descriptor);
 
         // Create new shape
-        let new_shape = ObjectShape::with_parent(base_shape.id, new_properties);
+        let new_shape = ObjectShape::with_parent(base_shape_data.id, new_properties);
         let new_shape_id = new_shape.id;
 
         // Register the new shape
         self.shapes.insert(new_shape_id, new_shape);
 
         // Cache the transition
-        self.transition_cache.insert((base_shape.id, name, property_type), new_shape_id);
+        self.transition_cache
+            .insert((base_shape_data.id, name, property_type), new_shape_id);
 
         Ok(new_shape_id)
     }
@@ -384,11 +407,13 @@ impl ShapeTransitionManager {
         base_shape: ShapeId,
         name: &str,
     ) -> Result<ShapeId, String> {
-        let base_shape = self.shapes.get(&base_shape)
+        let base_shape_data = self
+            .shapes
+            .get(&base_shape)
             .ok_or_else(|| format!("Base shape {} not found", base_shape.value()))?;
 
         // Create new properties list without the specified property
-        let new_properties: Vec<PropertyDescriptor> = base_shape
+        let new_properties: Vec<PropertyDescriptor> = base_shape_data
             .properties
             .iter()
             .filter(|prop| prop.name != name)
@@ -396,7 +421,7 @@ impl ShapeTransitionManager {
             .collect();
 
         // Create new shape
-        let new_shape = ObjectShape::with_parent(base_shape.id, new_properties);
+        let new_shape = ObjectShape::with_parent(base_shape_data.id, new_properties);
         let new_shape_id = new_shape.id;
 
         // Register the new shape
@@ -412,11 +437,14 @@ impl ShapeTransitionManager {
 
     /// Get shape statistics
     pub fn stats(&self) -> ShapeStats {
+        // Calculate all values before using self.shapes
         let total_shapes = self.shapes.len();
         let total_transitions = self.transition_cache.len();
+
         let max_depth = self.shapes.values().map(|s| s.depth).max().unwrap_or(0);
         let avg_properties = if total_shapes > 0 {
-            self.shapes.values().map(|s| s.property_count).sum::<usize>() / total_shapes
+            let total_props: usize = self.shapes.values().map(|s| s.property_count).sum();
+            total_props / total_shapes
         } else {
             0
         };

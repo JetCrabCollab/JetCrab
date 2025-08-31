@@ -7,636 +7,506 @@
 //!
 //! - **New Space**: Two semi-spaces for copying GC (young generation)
 //! - **Old Space**: Mark & sweep GC (old generation)
-//! - **Specialized Spaces**: Code, large objects, cells, properties, maps
-//! - **Object Shapes**: Hidden classes for property access optimization
-//! - **String Interning**: Deduplication and fast comparison
+//! - **Specialized Spaces**: Optimized for specific object types
 
-use crate::vm::compiler::Bytecode;
 use crate::vm::handle::HeapHandleId;
-use crate::vm::types::{ArgIndex, ArraySize, LocalIndex};
-use crate::vm::value::Value;
-use std::collections::HashMap;
+use crate::vm::memory::heap::allocation::{
+    Allocator, BumpAllocator, CellAllocator, FreeListAllocator,
+};
+use crate::vm::types::MemorySize;
 
 /// Generational heap with specialized spaces for optimal performance
 pub struct GenerationalHeap {
     // New Space (Young Generation) - Copying GC
-    new_space: SemiSpace,
-    
+    new_space: NewSpace,
+
     // Old Space (Old Generation) - Mark & Sweep GC
-    old_pointer_space: PointerSpace,
-    old_data_space: DataSpace,
-    
+    old_space: OldSpace,
+
     // Specialized Spaces
     large_object_space: LargeObjectSpace,
     code_space: CodeSpace,
     cell_space: CellSpace,
     property_cell_space: PropertyCellSpace,
     map_space: MapSpace,
-    
-    // Object Shapes (Hidden Classes)
-    shape_table: ShapeTable,
-    
-    // String Interning
-    string_table: StringTable,
-    
+
     // Statistics and metrics
     stats: HeapStats,
     promotion_threshold: usize,
 }
 
-/// Semi-space for young generation objects
-pub struct SemiSpace {
-    from_space: Vec<u8>,
-    to_space: Vec<u8>,
-    allocation_ptr: usize,
+/// New space for young objects using semi-spaces
+pub struct NewSpace {
+    from_space: BumpAllocator,
+    to_space: BumpAllocator,
     current_space: bool, // true = from_space, false = to_space
-    size: usize,
+    total_allocated: MemorySize,
 }
 
-/// Space for old generation objects with pointers
-pub struct PointerSpace {
-    objects: HashMap<HeapHandleId, OldObject>,
-    free_list: Vec<HeapHandleId>,
-}
-
-/// Space for old generation objects without pointers
-pub struct DataSpace {
-    objects: HashMap<HeapHandleId, OldObject>,
-    free_list: Vec<HeapHandleId>,
-}
-
-/// Space for large objects (> 1MB)
-pub struct LargeObjectSpace {
-    objects: HashMap<HeapHandleId, LargeObject>,
-}
-
-/// Space for compiled bytecode
-pub struct CodeSpace {
-    code_objects: HashMap<HeapHandleId, CodeObject>,
-}
-
-/// Space for small objects (cells)
-pub struct CellSpace {
-    cells: Vec<Cell>,
-    free_cells: Vec<usize>,
-}
-
-/// Space for property descriptors
-pub struct PropertyCellSpace {
-    properties: Vec<PropertyDescriptor>,
-    free_properties: Vec<usize>,
-}
-
-/// Space for object shapes/maps
-pub struct MapSpace {
-    shapes: HashMap<ShapeId, ObjectShape>,
-    next_shape_id: usize,
-}
-
-/// Object shape (hidden class) for property access optimization
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct ObjectShape {
-    pub id: ShapeId,
-    pub properties: Vec<PropertyDescriptor>,
-    pub transitions: HashMap<String, ShapeId>,
-    pub prototype: Option<ShapeId>,
-    pub property_count: usize,
-}
-
-/// Property descriptor with offset and type information
-#[derive(Debug, Clone)]
-pub struct PropertyDescriptor {
-    pub key: String,
-    pub attributes: PropertyAttributes,
-    pub offset: usize,
-    pub type_info: TypeInfo,
-}
-
-/// Property attributes (writable, enumerable, configurable)
-#[derive(Debug, Clone)]
-pub struct PropertyAttributes {
-    pub writable: bool,
-    pub enumerable: bool,
-    pub configurable: bool,
-}
-
-/// Type information for property optimization
-#[derive(Debug, Clone, PartialEq)]
-pub enum TypeInfo {
-    Any,
-    Number,
-    String,
-    Boolean,
-    Object,
-    Array,
-    Function,
-}
-
-/// Optimized object with shape-based layout
-pub struct OptimizedObject {
-    pub shape: ShapeId,
-    pub properties: Vec<Value>,
-    pub elements: Option<Vec<Value>>,
-}
-
-/// Old generation object
-pub struct OldObject {
-    pub data: Vec<u8>,
-    pub shape: ShapeId,
-    pub mark: bool,
-    pub age: usize,
-}
-
-/// Large object
-pub struct LargeObject {
-    pub data: Vec<u8>,
-    pub size: usize,
-    pub mark: bool,
-}
-
-/// Code object
-pub struct CodeObject {
-    pub bytecode: Bytecode,
-    pub size: usize,
-}
-
-/// Cell for small objects
-pub struct Cell {
-    pub data: [u8; 16], // 16 bytes per cell
-    pub used: bool,
-}
-
-/// Shape identifier
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct ShapeId(usize);
-
-/// String identifier for interning
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct StringId(usize);
-
-/// Heap statistics
-#[derive(Debug, Clone)]
-pub struct HeapStats {
-    pub new_space_size: usize,
-    pub old_space_size: usize,
-    pub large_object_count: usize,
-    pub code_size: usize,
-    pub shape_count: usize,
-    pub string_count: usize,
-    pub total_allocated: usize,
-    pub total_freed: usize,
-}
-
-/// String table for interning
-pub struct StringTable {
-    strings: HashMap<String, StringId>,
-    string_data: Vec<String>,
-    deduplication_enabled: bool,
-}
-
-/// Shape table for object shapes
-pub struct ShapeTable {
-    shapes: HashMap<ShapeId, ObjectShape>,
-    next_shape_id: usize,
-}
-
-impl GenerationalHeap {
-    pub fn new() -> Self {
+impl NewSpace {
+    pub fn new(size: MemorySize) -> Self {
         Self {
-            new_space: SemiSpace::new(1024 * 1024), // 1MB new space
-            old_pointer_space: PointerSpace::new(),
-            old_data_space: DataSpace::new(),
-            large_object_space: LargeObjectSpace::new(),
-            code_space: CodeSpace::new(),
-            cell_space: CellSpace::new(),
-            property_cell_space: PropertyCellSpace::new(),
-            map_space: MapSpace::new(),
-            shape_table: ShapeTable::new(),
-            string_table: StringTable::new(),
-            stats: HeapStats::new(),
-            promotion_threshold: 3, // Promote after 3 minor GCs
-        }
-    }
-
-    pub fn with_capacity(new_space_size: usize) -> Self {
-        Self {
-            new_space: SemiSpace::new(new_space_size),
-            old_pointer_space: PointerSpace::new(),
-            old_data_space: DataSpace::new(),
-            large_object_space: LargeObjectSpace::new(),
-            code_space: CodeSpace::new(),
-            cell_space: CellSpace::new(),
-            property_cell_space: PropertyCellSpace::new(),
-            map_space: MapSpace::new(),
-            shape_table: ShapeTable::new(),
-            string_table: StringTable::new(),
-            stats: HeapStats::new(),
-            promotion_threshold: 3,
-        }
-    }
-
-    /// Allocate a new object in the appropriate space
-    pub fn alloc_object(&mut self, size: usize, has_pointers: bool) -> Option<HeapHandleId> {
-        if size > 1024 * 1024 {
-            // Large object
-            self.large_object_space.allocate(size)
-        } else if size <= 16 {
-            // Small object in cell space
-            self.cell_space.allocate()
-        } else if self.new_space.can_allocate(size) {
-            // Young object in new space
-            self.new_space.allocate(size)
-        } else {
-            // Old object
-            if has_pointers {
-                self.old_pointer_space.allocate(size)
-            } else {
-                self.old_data_space.allocate(size)
-            }
-        }
-    }
-
-    /// Allocate a string with interning
-    pub fn alloc_string(&mut self, value: String) -> HeapHandleId {
-        let string_id = self.string_table.intern(value);
-        // Store in new space for now
-        self.new_space.allocate_string(string_id)
-    }
-
-    /// Get object shape for property access optimization
-    pub fn get_shape(&self, shape_id: ShapeId) -> Option<&ObjectShape> {
-        self.shape_table.get(shape_id)
-    }
-
-    /// Create or get object shape for property access
-    pub fn get_or_create_shape(&mut self, properties: Vec<PropertyDescriptor>) -> ShapeId {
-        self.shape_table.get_or_create(properties)
-    }
-
-    /// Perform minor garbage collection (new space only)
-    pub fn minor_gc(&mut self, roots: &[HeapHandleId]) -> GcStats {
-        self.new_space.collect(roots, &mut self.old_pointer_space, &mut self.old_data_space)
-    }
-
-    /// Perform major garbage collection (old spaces)
-    pub fn major_gc(&mut self, roots: &[HeapHandleId]) -> GcStats {
-        let pointer_stats = self.old_pointer_space.collect(roots);
-        let data_stats = self.old_data_space.collect(roots);
-        let large_stats = self.large_object_space.collect(roots);
-        
-        GcStats {
-            objects_collected: pointer_stats.objects_collected + data_stats.objects_collected + large_stats.objects_collected,
-            bytes_freed: pointer_stats.bytes_freed + data_stats.bytes_freed + large_stats.bytes_freed,
-            collection_time: pointer_stats.collection_time + data_stats.collection_time + large_stats.collection_time,
-        }
-    }
-
-    /// Get heap statistics
-    pub fn get_stats(&self) -> &HeapStats {
-        &self.stats
-    }
-}
-
-impl SemiSpace {
-    pub fn new(size: usize) -> Self {
-        Self {
-            from_space: vec![0; size],
-            to_space: vec![0; size],
-            allocation_ptr: 0,
+            from_space: BumpAllocator::new(size),
+            to_space: BumpAllocator::new(size),
             current_space: true,
-            size,
+            total_allocated: MemorySize::new(0),
         }
     }
 
-    pub fn can_allocate(&self, size: usize) -> bool {
-        self.allocation_ptr + size <= self.size
-    }
+    pub fn allocate(&mut self, size: MemorySize) -> Option<usize> {
+        let allocator = if self.current_space {
+            &mut self.from_space
+        } else {
+            &mut self.to_space
+        };
 
-    pub fn allocate(&mut self, size: usize) -> Option<HeapHandleId> {
-        if self.can_allocate(size) {
-            let handle = HeapHandleId::new(self.allocation_ptr);
-            self.allocation_ptr += size;
-            Some(handle)
+        if let Some(addr) = allocator.allocate(size) {
+            self.total_allocated = MemorySize::new(self.total_allocated.bytes() + size.bytes());
+            Some(addr)
         } else {
             None
         }
     }
 
-    pub fn allocate_string(&mut self, string_id: StringId) -> HeapHandleId {
-        // For now, just allocate space for the string ID
-        self.allocate(8).unwrap_or_else(|| HeapHandleId::new(0))
-    }
-
-    pub fn collect(
-        &mut self,
-        roots: &[HeapHandleId],
-        old_pointer_space: &mut PointerSpace,
-        old_data_space: &mut DataSpace,
-    ) -> GcStats {
-        // Simple copying collector for now
-        // TODO: Implement proper mark and copy
-        let start_time = std::time::Instant::now();
-        
-        // Swap spaces
+    pub fn switch_spaces(&mut self) {
         self.current_space = !self.current_space;
-        self.allocation_ptr = 0;
-        
-        let collection_time = start_time.elapsed().as_micros() as u64;
-        
-        GcStats {
-            objects_collected: 0, // TODO: Implement actual collection
-            bytes_freed: 0,
-            collection_time,
+        self.total_allocated = MemorySize::new(0);
+
+        if self.current_space {
+            self.from_space.reset();
+        } else {
+            self.to_space.reset();
         }
+    }
+
+    pub fn is_nearly_full(&self) -> bool {
+        let active_allocator = if self.current_space {
+            &self.from_space
+        } else {
+            &self.to_space
+        };
+
+        let usage_percentage = (active_allocator.total_allocated().bytes() as f64
+            / active_allocator.total_free().bytes() as f64)
+            * 100.0;
+        usage_percentage > 80.0
+    }
+
+    pub fn total_allocated(&self) -> MemorySize {
+        self.total_allocated
+    }
+
+    pub fn total_free(&self) -> MemorySize {
+        let active_allocator = if self.current_space {
+            &self.from_space
+        } else {
+            &self.to_space
+        };
+        active_allocator.total_free()
     }
 }
 
-impl PointerSpace {
-    pub fn new() -> Self {
-        Self {
-            objects: HashMap::new(),
-            free_list: Vec::new(),
-        }
+/// Old space for mature objects
+pub struct OldSpace {
+    allocator: FreeListAllocator,
+    total_allocated: MemorySize,
+}
+
+impl OldSpace {
+    pub fn new(size: MemorySize) -> Self {
+        let mut space = Self {
+            allocator: FreeListAllocator::new(),
+            total_allocated: MemorySize::new(0),
+        };
+
+        // Add initial free block
+        space.allocator.add_free_block(0, size.bytes());
+
+        space
     }
 
-    pub fn allocate(&mut self, size: usize) -> Option<HeapHandleId> {
-        if let Some(handle) = self.free_list.pop() {
-            Some(handle)
+    pub fn allocate(&mut self, size: MemorySize) -> Option<usize> {
+        if let Some(addr) = self.allocator.allocate(size) {
+            self.total_allocated = MemorySize::new(self.total_allocated.bytes() + size.bytes());
+            Some(addr)
         } else {
-            let handle = HeapHandleId::new(self.objects.len());
-            let object = OldObject {
-                data: vec![0; size],
-                shape: ShapeId(0),
-                mark: false,
-                age: 0,
-            };
-            self.objects.insert(handle, object);
-            Some(handle)
+            None
         }
     }
 
-    pub fn collect(&self, _roots: &[HeapHandleId]) -> GcStats {
-        // TODO: Implement mark and sweep
-        GcStats {
-            objects_collected: 0,
-            bytes_freed: 0,
-            collection_time: 0,
-        }
+    pub fn total_allocated(&self) -> MemorySize {
+        self.total_allocated
+    }
+
+    pub fn total_free(&self) -> MemorySize {
+        self.allocator.total_free()
     }
 }
 
-impl DataSpace {
-    pub fn new() -> Self {
-        Self {
-            objects: HashMap::new(),
-            free_list: Vec::new(),
-        }
-    }
-
-    pub fn allocate(&mut self, size: usize) -> Option<HeapHandleId> {
-        if let Some(handle) = self.free_list.pop() {
-            Some(handle)
-        } else {
-            let handle = HeapHandleId::new(self.objects.len());
-            let object = OldObject {
-                data: vec![0; size],
-                shape: ShapeId(0),
-                mark: false,
-                age: 0,
-            };
-            self.objects.insert(handle, object);
-            Some(handle)
-        }
-    }
-
-    pub fn collect(&self, _roots: &[HeapHandleId]) -> GcStats {
-        // TODO: Implement mark and sweep
-        GcStats {
-            objects_collected: 0,
-            bytes_freed: 0,
-            collection_time: 0,
-        }
-    }
+/// Space for large objects (> 1MB)
+pub struct LargeObjectSpace {
+    allocator: FreeListAllocator,
+    total_allocated: MemorySize,
 }
 
 impl LargeObjectSpace {
-    pub fn new() -> Self {
-        Self {
-            objects: HashMap::new(),
-        }
-    }
-
-    pub fn allocate(&mut self, size: usize) -> Option<HeapHandleId> {
-        let handle = HeapHandleId::new(self.objects.len());
-        let object = LargeObject {
-            data: vec![0; size],
-            size,
-            mark: false,
+    pub fn new(size: MemorySize) -> Self {
+        let mut space = Self {
+            allocator: FreeListAllocator::new(),
+            total_allocated: MemorySize::new(0),
         };
-        self.objects.insert(handle, object);
-        Some(handle)
+
+        // Add initial free block
+        space.allocator.add_free_block(0, size.bytes());
+
+        space
     }
 
-    pub fn collect(&self, _roots: &[HeapHandleId]) -> GcStats {
-        // TODO: Implement mark and sweep
-        GcStats {
-            objects_collected: 0,
-            bytes_freed: 0,
-            collection_time: 0,
+    pub fn allocate(&mut self, size: MemorySize) -> Option<usize> {
+        if let Some(addr) = self.allocator.allocate(size) {
+            self.total_allocated = MemorySize::new(self.total_allocated.bytes() + size.bytes());
+            Some(addr)
+        } else {
+            None
         }
     }
+
+    pub fn total_allocated(&self) -> MemorySize {
+        self.total_allocated
+    }
+
+    pub fn total_free(&self) -> MemorySize {
+        self.allocator.total_free()
+    }
+}
+
+/// Space for compiled bytecode
+pub struct CodeSpace {
+    allocator: FreeListAllocator,
+    total_allocated: MemorySize,
 }
 
 impl CodeSpace {
-    pub fn new() -> Self {
-        Self {
-            code_objects: HashMap::new(),
+    pub fn new(size: MemorySize) -> Self {
+        let mut space = Self {
+            allocator: FreeListAllocator::new(),
+            total_allocated: MemorySize::new(0),
+        };
+
+        // Add initial free block
+        space.allocator.add_free_block(0, size.bytes());
+
+        space
+    }
+
+    pub fn allocate(&mut self, size: MemorySize) -> Option<usize> {
+        if let Some(addr) = self.allocator.allocate(size) {
+            self.total_allocated = MemorySize::new(self.total_allocated.bytes() + size.bytes());
+            Some(addr)
+        } else {
+            None
         }
     }
+
+    pub fn total_allocated(&self) -> MemorySize {
+        self.total_allocated
+    }
+
+    pub fn total_free(&self) -> MemorySize {
+        self.allocator.total_free()
+    }
+}
+
+/// Space for small objects (cells)
+pub struct CellSpace {
+    allocator: CellAllocator,
+    total_allocated: MemorySize,
 }
 
 impl CellSpace {
-    pub fn new() -> Self {
+    pub fn new(cell_size: usize, cell_count: usize) -> Self {
         Self {
-            cells: Vec::new(),
-            free_cells: Vec::new(),
+            allocator: CellAllocator::new(cell_size, cell_count),
+            total_allocated: MemorySize::new(0),
         }
     }
 
-    pub fn allocate(&mut self) -> Option<HeapHandleId> {
-        if let Some(&index) = self.free_cells.last() {
-            self.free_cells.pop();
-            Some(HeapHandleId::new(index))
+    pub fn allocate(&mut self, size: MemorySize) -> Option<usize> {
+        if let Some(addr) = self.allocator.allocate(size) {
+            self.total_allocated = MemorySize::new(self.total_allocated.bytes() + size.bytes());
+            Some(addr)
         } else {
-            let index = self.cells.len();
-            self.cells.push(Cell {
-                data: [0; 16],
-                used: true,
-            });
-            Some(HeapHandleId::new(index))
+            None
         }
     }
+
+    pub fn total_allocated(&self) -> MemorySize {
+        self.total_allocated
+    }
+
+    pub fn total_free(&self) -> MemorySize {
+        self.allocator.total_free()
+    }
+}
+
+/// Space for property descriptors
+pub struct PropertyCellSpace {
+    allocator: FreeListAllocator,
+    total_allocated: MemorySize,
 }
 
 impl PropertyCellSpace {
-    pub fn new() -> Self {
-        Self {
-            properties: Vec::new(),
-            free_properties: Vec::new(),
+    pub fn new(size: MemorySize) -> Self {
+        let mut space = Self {
+            allocator: FreeListAllocator::new(),
+            total_allocated: MemorySize::new(0),
+        };
+
+        // Add initial free block
+        space.allocator.add_free_block(0, size.bytes());
+
+        space
+    }
+
+    pub fn allocate(&mut self, size: MemorySize) -> Option<usize> {
+        if let Some(addr) = self.allocator.allocate(size) {
+            self.total_allocated = MemorySize::new(self.total_allocated.bytes() + size.bytes());
+            Some(addr)
+        } else {
+            None
         }
     }
+
+    pub fn total_allocated(&self) -> MemorySize {
+        self.total_allocated
+    }
+
+    pub fn total_free(&self) -> MemorySize {
+        self.allocator.total_free()
+    }
+}
+
+/// Space for object shapes/maps
+pub struct MapSpace {
+    allocator: FreeListAllocator,
+    total_allocated: MemorySize,
 }
 
 impl MapSpace {
-    pub fn new() -> Self {
-        Self {
-            shapes: HashMap::new(),
-            next_shape_id: 0,
-        }
-    }
-}
-
-impl StringTable {
-    pub fn new() -> Self {
-        Self {
-            strings: HashMap::new(),
-            string_data: Vec::new(),
-            deduplication_enabled: true,
-        }
-    }
-
-    pub fn intern(&mut self, s: String) -> StringId {
-        if let Some(&id) = self.strings.get(&s) {
-            id
-        } else {
-            let id = StringId(self.string_data.len());
-            self.strings.insert(s.clone(), id);
-            self.string_data.push(s);
-            id
-        }
-    }
-
-    pub fn get(&self, id: StringId) -> Option<&String> {
-        self.string_data.get(id.0)
-    }
-}
-
-impl ShapeTable {
-    pub fn new() -> Self {
-        Self {
-            shapes: HashMap::new(),
-            next_shape_id: 0,
-        }
-    }
-
-    pub fn get(&self, id: ShapeId) -> Option<&ObjectShape> {
-        self.shapes.get(&id)
-    }
-
-    pub fn get_or_create(&mut self, properties: Vec<PropertyDescriptor>) -> ShapeId {
-        // For now, create a new shape for each property set
-        // TODO: Implement shape sharing and transitions
-        let id = ShapeId(self.next_shape_id);
-        self.next_shape_id += 1;
-        
-        let shape = ObjectShape {
-            id,
-            properties,
-            transitions: HashMap::new(),
-            prototype: None,
-            property_count: 0,
+    pub fn new(size: MemorySize) -> Self {
+        let mut space = Self {
+            allocator: FreeListAllocator::new(),
+            total_allocated: MemorySize::new(0),
         };
-        
-        self.shapes.insert(id, shape);
-        id
+
+        // Add initial free block
+        space.allocator.add_free_block(0, size.bytes());
+
+        space
     }
+
+    pub fn allocate(&mut self, size: MemorySize) -> Option<usize> {
+        if let Some(addr) = self.allocator.allocate(size) {
+            self.total_allocated = MemorySize::new(self.total_allocated.bytes() + size.bytes());
+            Some(addr)
+        } else {
+            None
+        }
+    }
+
+    pub fn total_allocated(&self) -> MemorySize {
+        self.total_allocated
+    }
+
+    pub fn total_free(&self) -> MemorySize {
+        self.allocator.total_free()
+    }
+}
+
+/// Object type for allocation
+#[derive(Debug, Clone, Copy)]
+pub enum ObjectType {
+    Object,
+    Array,
+    Function,
+    String,
+    Number,
+    Boolean,
+}
+
+/// Heap statistics
+#[derive(Debug, Clone)]
+pub struct HeapStats {
+    pub total_allocations: usize,
+    pub total_deallocations: usize,
+    pub total_allocated: MemorySize,
+    pub total_freed: MemorySize,
+    pub peak_usage: MemorySize,
+    pub current_usage: MemorySize,
 }
 
 impl HeapStats {
     pub fn new() -> Self {
         Self {
-            new_space_size: 0,
-            old_space_size: 0,
-            large_object_count: 0,
-            code_size: 0,
-            shape_count: 0,
-            string_count: 0,
-            total_allocated: 0,
-            total_freed: 0,
+            total_allocations: 0,
+            total_deallocations: 0,
+            total_allocated: MemorySize::new(0),
+            total_freed: MemorySize::new(0),
+            peak_usage: MemorySize::new(0),
+            current_usage: MemorySize::new(0),
         }
     }
 }
 
 /// Garbage collection statistics
 #[derive(Debug, Clone)]
-pub struct GcStats {
+pub struct GarbageCollectionStats {
+    pub duration_micros: u64,
     pub objects_collected: usize,
-    pub bytes_freed: usize,
-    pub collection_time: u64, // microseconds
+    pub memory_freed: MemorySize,
+    pub new_space_collections: usize,
+    pub old_space_collections: usize,
 }
 
-impl Default for GenerationalHeap {
-    fn default() -> Self {
-        Self::new()
+/// Object promotion statistics
+#[derive(Debug, Clone)]
+pub struct PromotionStats {
+    pub objects_promoted: usize,
+    pub memory_promoted: MemorySize,
+    pub promotion_duration_micros: u64,
+}
+
+impl GenerationalHeap {
+    /// Create a new generational heap
+    pub fn new() -> Self {
+        Self {
+            new_space: NewSpace::new(MemorySize::new(16 * 1024 * 1024)), // 16MB
+            old_space: OldSpace::new(MemorySize::new(64 * 1024 * 1024)), // 64MB
+            large_object_space: LargeObjectSpace::new(MemorySize::new(32 * 1024 * 1024)), // 32MB
+            code_space: CodeSpace::new(MemorySize::new(8 * 1024 * 1024)), // 8MB
+            cell_space: CellSpace::new(64, 1024 * 1024),                 // 64-byte cells, 1M cells
+            property_cell_space: PropertyCellSpace::new(MemorySize::new(4 * 1024 * 1024)), // 4MB
+            map_space: MapSpace::new(MemorySize::new(2 * 1024 * 1024)),  // 2MB
+
+            stats: HeapStats::new(),
+            promotion_threshold: 3,
+        }
     }
-}
 
-impl Default for SemiSpace {
-    fn default() -> Self {
-        Self::new(1024 * 1024)
+    /// Allocate an object in the appropriate space
+    pub fn alloc_object(
+        &mut self,
+        size: MemorySize,
+        object_type: ObjectType,
+    ) -> Option<HeapHandleId> {
+        let handle = match object_type {
+            ObjectType::String | ObjectType::Number | ObjectType::Boolean => {
+                // Small objects go to cell space
+                self.cell_space.allocate(size)
+            }
+            ObjectType::Array => {
+                // Arrays go to new space initially
+                self.new_space.allocate(size)
+            }
+            ObjectType::Object | ObjectType::Function => {
+                if size.bytes() <= 1024 {
+                    // Small objects go to new space
+                    self.new_space.allocate(size)
+                } else if size.bytes() <= 1024 * 1024 {
+                    // Medium objects go to old space
+                    self.old_space.allocate(size)
+                } else {
+                    // Large objects go to large object space
+                    self.large_object_space.allocate(size)
+                }
+            }
+        };
+
+        if let Some(addr) = handle {
+            self.stats.total_allocations += 1;
+            self.stats.total_allocated =
+                MemorySize::new(self.stats.total_allocated.bytes() + size.bytes());
+
+            if self.stats.total_allocated.bytes() > self.stats.peak_usage.bytes() {
+                self.stats.peak_usage = self.stats.total_allocated;
+            }
+
+            Some(HeapHandleId::new(addr))
+        } else {
+            None
+        }
     }
-}
 
-impl Default for PointerSpace {
-    fn default() -> Self {
-        Self::new()
+    /// Allocate code in code space
+    pub fn alloc_code(&mut self, size: MemorySize) -> Option<HeapHandleId> {
+        self.code_space
+            .allocate(size)
+            .map(|addr| HeapHandleId::new(addr))
     }
-}
 
-impl Default for DataSpace {
-    fn default() -> Self {
-        Self::new()
+    /// Allocate property cell
+    pub fn alloc_property_cell(&mut self, size: MemorySize) -> Option<HeapHandleId> {
+        self.property_cell_space
+            .allocate(size)
+            .map(|addr| HeapHandleId::new(addr))
     }
-}
 
-impl Default for LargeObjectSpace {
-    fn default() -> Self {
-        Self::new()
+    /// Allocate map in map space
+    pub fn alloc_map(&mut self, size: MemorySize) -> Option<HeapHandleId> {
+        self.map_space
+            .allocate(size)
+            .map(|addr| HeapHandleId::new(addr))
     }
-}
 
-impl Default for CodeSpace {
-    fn default() -> Self {
-        Self::new()
+    /// Get heap statistics
+    pub fn stats(&self) -> &HeapStats {
+        &self.stats
     }
-}
 
-impl Default for CellSpace {
-    fn default() -> Self {
-        Self::new()
+    /// Get total allocated memory
+    pub fn total_allocated(&self) -> MemorySize {
+        self.stats.total_allocated
     }
-}
 
-impl Default for PropertyCellSpace {
-    fn default() -> Self {
-        Self::new()
+    /// Collect garbage (simplified implementation)
+    pub fn collect_garbage(&mut self) -> GarbageCollectionStats {
+        let start_time = std::time::Instant::now();
+
+        // Simple garbage collection: just switch new space if it's nearly full
+        if self.new_space.is_nearly_full() {
+            self.new_space.switch_spaces();
+        }
+
+        let end_time = std::time::Instant::now();
+        let duration = end_time.duration_since(start_time);
+
+        GarbageCollectionStats {
+            duration_micros: duration.as_micros() as u64,
+            objects_collected: 0,             // Simplified
+            memory_freed: MemorySize::new(0), // Simplified
+            new_space_collections: if self.new_space.is_nearly_full() {
+                1
+            } else {
+                0
+            },
+            old_space_collections: 0,
+        }
     }
-}
 
-impl Default for MapSpace {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+    /// Promote objects from new space to old space
+    pub fn promote_objects(&mut self) -> PromotionStats {
+        let start_time = std::time::Instant::now();
 
-impl Default for StringTable {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+        // Simplified promotion: just switch spaces
+        self.new_space.switch_spaces();
 
-impl Default for ShapeTable {
-    fn default() -> Self {
-        Self::new()
+        let end_time = std::time::Instant::now();
+        let duration = end_time.duration_since(start_time);
+
+        PromotionStats {
+            objects_promoted: 0,                 // Simplified
+            memory_promoted: MemorySize::new(0), // Simplified
+            promotion_duration_micros: duration.as_micros() as u64,
+        }
     }
 }
