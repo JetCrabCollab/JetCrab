@@ -96,8 +96,8 @@ impl NewSpace {
         let inactive_info = self.inactive_space.layout_info();
 
         NewSpaceInfo {
-            active_space: active_info,
-            inactive_space: inactive_info,
+            active_space: active_info.clone(),
+            inactive_space: inactive_info.clone(),
             total_size: self.space_size * 2,
             total_used: active_info.allocated_size.bytes(),
             total_free: active_info.free_size.bytes() + inactive_info.free_size.bytes(),

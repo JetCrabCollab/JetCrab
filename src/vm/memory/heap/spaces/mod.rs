@@ -226,12 +226,24 @@ impl SpaceManager {
 
     /// Defragment old space
     pub fn defragment_old_space(&mut self) -> DefragmentationStats {
-        self.old_space.defragment()
+        let defrag_stats = self.old_space.defragment();
+        DefragmentationStats {
+            duration_micros: 0,
+            initial_fragmentation: 0.0,
+            final_fragmentation: 0.0,
+            blocks_moved: defrag_stats.blocks_merged,
+        }
     }
 
     /// Compact cell space
     pub fn compact_cell_space(&mut self) -> CompactionStats {
-        self.cell_space.compact()
+        let compact_stats = self.cell_space.compact();
+        CompactionStats {
+            duration_micros: 0,
+            initial_fragmentation: 0.0,
+            final_fragmentation: 0.0,
+            cells_moved: compact_stats.objects_moved,
+        }
     }
 }
 

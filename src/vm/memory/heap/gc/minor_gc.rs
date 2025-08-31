@@ -73,23 +73,81 @@ impl MinorGc {
     ) -> Result<GcStats, String> {
         let start_time = std::time::Instant::now();
 
-        // Get new space for young generation
-        let new_space = spaces
-            .get_mut(&SpaceType::NewSpace)
-            .ok_or("New space not found")?;
+        // Clone the spaces to avoid borrow checker issues
+        let space_types: Vec<SpaceType> = spaces.keys().cloned().collect();
 
-        // Get old space for promotion
-        let old_space = spaces
-            .get_mut(&SpaceType::OldSpace)
-            .ok_or("Old space not found")?;
-
-        // Perform copying collection
-        let collection_result = self.perform_copying_collection(new_space, old_space)?;
+        // Perform copying collection without borrowing conflicts
+        let collection_result = self.perform_copying_collection_safe(spaces)?;
 
         // Update statistics
         self.update_stats(&collection_result, start_time);
 
         Ok(collection_result)
+    }
+
+    /// Perform copying collection safely without borrow conflicts
+    fn perform_copying_collection_safe(
+        &mut self,
+        spaces: &mut HashMap<SpaceType, Box<dyn MemorySpace>>,
+    ) -> Result<GcStats, String> {
+        let start_time = std::time::Instant::now();
+
+        // Get current usage before collection
+        let before_usage = if let Some(new_space) = spaces.get(&SpaceType::NewSpace) {
+            new_space.total_allocated().as_usize()
+        } else {
+            return Err("New space not found".to_string());
+        };
+
+        let before_objects = if let Some(new_space) = spaces.get(&SpaceType::NewSpace) {
+            new_space.stats().object_count
+        } else {
+            return Err("New space not found".to_string());
+        };
+
+        // Simulate copying collection
+        let mut objects_to_promote = Vec::new();
+        let mut objects_to_collect: Vec<HeapHandleId> = Vec::new();
+
+        // Simulate object age tracking and promotion decisions
+        for handle in self.get_simulated_object_handles(before_objects) {
+            let age = self.object_ages.entry(handle).or_insert(0);
+            *age += 1;
+
+            if *age >= self.promotion_threshold {
+                objects_to_promote.push(handle);
+            } else {
+                // Object survives this collection
+                continue;
+            }
+        }
+
+        // Simulate promotion to old generation
+        let promoted_count = if let Some(old_space) = spaces.get_mut(&SpaceType::OldSpace) {
+            self.simulate_promotion(old_space, &objects_to_promote)
+        } else {
+            0
+        };
+
+        // Simulate collection of remaining objects
+        let collected_count = before_objects - promoted_count;
+
+        // Reset new space (simulate copying collection)
+        if let Some(new_space) = spaces.get_mut(&SpaceType::NewSpace) {
+            self.simulate_new_space_reset(new_space);
+        }
+
+        // Calculate collection statistics
+        let end_time = std::time::Instant::now();
+        let collection_time = end_time.duration_since(start_time).as_micros() as u64;
+
+        let bytes_freed = before_usage;
+
+        Ok(GcStats {
+            objects_collected: collected_count,
+            bytes_freed,
+            collection_time,
+        })
     }
 
     /// Perform copying collection
@@ -112,7 +170,7 @@ impl MinorGc {
         // 4. Swap from-space and to-space
 
         let mut objects_to_promote = Vec::new();
-        let mut objects_to_collect = Vec::new();
+        let mut objects_to_collect: Vec<HeapHandleId> = Vec::new();
 
         // Simulate object age tracking and promotion decisions
         for handle in self.get_simulated_object_handles(before_objects) {
@@ -255,7 +313,7 @@ impl MinorGc {
     pub fn get_promotable_objects(&self) -> Vec<HeapHandleId> {
         self.object_ages
             .iter()
-            .filter(|(_, &age)| *age >= self.promotion_threshold)
+            .filter(|(_, &age)| age >= self.promotion_threshold)
             .map(|(&handle, _)| handle)
             .collect()
     }

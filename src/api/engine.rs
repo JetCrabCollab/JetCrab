@@ -28,11 +28,11 @@
 //! println!("Result: {:?}", result);
 //! ```
 
-use crate::vm::compiler::generator::BytecodeGenerator;
 use crate::parser::Parser;
 use crate::semantic::SemanticAnalyzer;
-use crate::vm::runtime::Context;
+use crate::vm::compiler::generator::BytecodeGenerator;
 use crate::vm::executor::Executor;
+use crate::vm::runtime::Context;
 use crate::vm::{Bytecode, Value};
 
 /// Main JavaScript execution engine
@@ -66,14 +66,10 @@ impl Engine {
         let mut parser = Parser::new(source);
         let ast = parser.parse().map_err(|e| format!("Parser error: {e}"))?;
 
-        self.analyzer
-            .analyze(&ast)
-            .map_err(|errors| {
-                let error_messages: Vec<String> = errors.iter()
-                    .map(|e| e.message.clone())
-                    .collect();
-                format!("Semantic errors: {}", error_messages.join("; "))
-            })?;
+        self.analyzer.analyze(&ast).map_err(|errors| {
+            let error_messages: Vec<String> = errors.iter().map(|e| e.message.clone()).collect();
+            format!("Semantic errors: {}", error_messages.join("; "))
+        })?;
 
         let instructions = self.generator.generate(&ast);
         let constants = self.generator.get_constants().clone();
@@ -105,8 +101,10 @@ impl Engine {
             })
             .collect();
 
-        let bytecode = Bytecode::new(instructions, values);
-        self.executor.execute(&bytecode).map_err(|e| format!("Execution error: {e:?}"))?;
+        let bytecode = Bytecode::new(instructions);
+        self.executor
+            .execute(&bytecode, &values)
+            .map_err(|e| format!("Execution error: {e:?}"))?;
 
         Ok(Value::Undefined)
     }

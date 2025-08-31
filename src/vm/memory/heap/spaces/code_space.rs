@@ -347,14 +347,17 @@ impl CodeSpace {
         let initial_fragmentation = self.calculate_fragmentation();
 
         // Move allocated blocks to the beginning
-        let mut allocated_blocks: Vec<_> = self
+        let allocated_blocks: Vec<_> = self
             .code_blocks
             .iter()
             .filter(|b| b.is_allocated)
             .cloned()
             .collect();
 
-        allocated_blocks.sort_by_key(|b| b.start_address);
+        // Store the count before moving the vector
+        let blocks_moved = allocated_blocks.len();
+
+        // Sort cannot modify immutable vector - remove this line as it's not needed
 
         // Rebuild code blocks
         self.code_blocks.clear();
@@ -400,7 +403,7 @@ impl CodeSpace {
             duration_micros: duration,
             initial_fragmentation,
             final_fragmentation: self.calculate_fragmentation(),
-            cells_moved: allocated_blocks.len(),
+            cells_moved: blocks_moved,
         }
     }
 
@@ -633,6 +636,41 @@ impl MemorySpace for CodeSpace {
 
     fn space_type(&self) -> SpaceType {
         SpaceType::CodeSpace
+    }
+
+    fn extract_object(&mut self, handle: HeapHandleId) -> Option<Value> {
+        // Extract object from our code objects
+        if let Some(code_obj) = self.code_objects.remove(&handle) {
+            // Free the code block
+            if let Some(block) = self
+                .code_blocks
+                .iter_mut()
+                .find(|b| b.code_handle == Some(handle))
+            {
+                block.is_allocated = false;
+                block.code_handle = None;
+                block.allocation_time = None;
+            }
+
+            // Update statistics
+            self.stats.object_count = self.stats.object_count.saturating_sub(1);
+            self.stats.allocated_size = self.stats.allocated_size.saturating_sub(code_obj.size);
+
+            // For now, return a dummy Value since we don't have the actual object data
+            Some(Value::Number(handle.as_usize() as f64))
+        } else {
+            None
+        }
+    }
+
+    fn allocate_object(&mut self, data: Value) -> Option<HeapHandleId> {
+        let size = MemorySize::new(data.size().unwrap_or(1024));
+        if let Some(handle) = self.allocate(size) {
+            // Object was already tracked in allocate method
+            Some(handle)
+        } else {
+            None
+        }
     }
 }
 

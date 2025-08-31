@@ -1,4 +1,4 @@
-use super::{MemorySpace, SpaceType, SpaceStats};
+use super::{MemorySpace, SpaceStats, SpaceType};
 use crate::vm::handle::HeapHandleId;
 use crate::vm::types::MemorySize;
 use crate::vm::value::Value;
@@ -61,9 +61,13 @@ impl SpaceCoordinator {
         self.spaces.insert(space_type, space);
     }
 
-    pub fn allocate(&mut self, size: MemorySize, object_type: super::ObjectType) -> Option<HeapHandleId> {
+    pub fn allocate(
+        &mut self,
+        size: MemorySize,
+        object_type: super::ObjectType,
+    ) -> Option<HeapHandleId> {
         let space_type = self.select_space_for_allocation(size, object_type);
-        
+
         if let Some(space) = self.spaces.get_mut(&space_type) {
             if let Some(handle) = space.allocate(size) {
                 self.object_generations.insert(handle, 0);
@@ -71,7 +75,7 @@ impl SpaceCoordinator {
                 return Some(handle);
             }
         }
-        
+
         None
     }
 
@@ -89,12 +93,30 @@ impl SpaceCoordinator {
     pub fn promote_object(&mut self, handle: HeapHandleId) -> bool {
         let current_generation = self.object_generations.get(&handle).copied().unwrap_or(0);
         let new_generation = current_generation + 1;
-        
-        if let Some(space) = self.get_space_for_generation(new_generation) {
-            if let Some(old_space) = self.get_space_for_generation(current_generation) {
-                if let Some(object_data) = old_space.extract_object(handle) {
-                    if let Some(new_handle) = space.allocate_object(object_data) {
-                        old_space.deallocate(handle);
+
+        // Get space types
+        let old_space_type = match current_generation {
+            0 => SpaceType::NewSpace,
+            1 => SpaceType::OldSpace,
+            _ => SpaceType::OldSpace,
+        };
+
+        let new_space_type = match new_generation {
+            0 => SpaceType::NewSpace,
+            1 => SpaceType::OldSpace,
+            _ => SpaceType::OldSpace,
+        };
+
+        // Extract object from old space
+        if let Some(old_space) = self.spaces.get_mut(&old_space_type) {
+            if let Some(object_data) = old_space.extract_object(handle) {
+                // Allocate in new space
+                if let Some(new_space) = self.spaces.get_mut(&new_space_type) {
+                    if let Some(new_handle) = new_space.allocate_object(object_data) {
+                        // Deallocate from old space
+                        if let Some(old_space) = self.spaces.get_mut(&old_space_type) {
+                            old_space.deallocate(handle);
+                        }
                         self.object_generations.insert(new_handle, new_generation);
                         self.object_tenure.insert(new_handle, 0);
                         return true;
@@ -102,7 +124,7 @@ impl SpaceCoordinator {
                 }
             }
         }
-        
+
         false
     }
 
@@ -144,7 +166,11 @@ impl SpaceCoordinator {
         total
     }
 
-    fn select_space_for_allocation(&self, size: MemorySize, object_type: super::ObjectType) -> SpaceType {
+    fn select_space_for_allocation(
+        &self,
+        size: MemorySize,
+        object_type: super::ObjectType,
+    ) -> SpaceType {
         match object_type {
             super::ObjectType::String | super::ObjectType::Number | super::ObjectType::Boolean => {
                 if size.bytes() <= self.allocation_strategies.small_object_threshold {
@@ -169,9 +195,7 @@ impl SpaceCoordinator {
                     SpaceType::LargeObjectSpace
                 }
             }
-            super::ObjectType::Code | super::ObjectType::Large => {
-                SpaceType::CodeSpace
-            }
+            super::ObjectType::Code | super::ObjectType::Large => SpaceType::CodeSpace,
         }
     }
 
@@ -181,7 +205,10 @@ impl SpaceCoordinator {
             1 => SpaceType::OldSpace,
             _ => SpaceType::OldSpace,
         };
-        self.spaces.get_mut(&space_type)
+
+        // Clone the key to avoid borrow checker issues
+        let key = space_type.clone();
+        self.spaces.get_mut(&key)
     }
 }
 

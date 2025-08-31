@@ -288,7 +288,7 @@ impl IncrementalGc {
         // 2. Mark objects as live
         // 3. Add referenced objects to worklist
 
-        while start_time.elapsed().as_millis() < target_time_ms as u64 {
+        while start_time.elapsed().as_millis() < (target_time_ms as u64).into() {
             // Simulate processing one object
             objects_processed += 1;
 
@@ -319,7 +319,7 @@ impl IncrementalGc {
         // 2. Deallocate dead objects
         // 3. Update free lists
 
-        while start_time.elapsed().as_millis() < target_time_ms as u64 {
+        while start_time.elapsed().as_millis() < (target_time_ms as u64).into() {
             objects_processed += 1;
 
             if objects_processed >= self.progress.objects_total / self.progress.total_increments {
@@ -348,7 +348,7 @@ impl IncrementalGc {
         // 2. Update object references
         // 3. Update allocation pointers
 
-        while start_time.elapsed().as_millis() < target_time_ms as u64 {
+        while start_time.elapsed().as_millis() < (target_time_ms as u64).into() {
             objects_processed += 1;
 
             if objects_processed >= self.progress.objects_total / self.progress.total_increments {

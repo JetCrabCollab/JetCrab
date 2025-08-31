@@ -13,7 +13,7 @@
 
 use super::{MemorySpace, SpaceStats, SpaceType};
 use crate::vm::handle::HeapHandleId;
-use crate::vm::memory::heap::allocation::{CellAllocator, CellInfo, CompactionStats, Allocator};
+use crate::vm::memory::heap::allocation::{Allocator, CellAllocator, CellInfo, CompactionStats};
 use crate::vm::memory::heap::spaces::{DefragmentationStats, GcStats};
 use crate::vm::types::MemorySize;
 use crate::vm::value::Value;
@@ -93,7 +93,14 @@ impl CellSpace {
 
     /// Get cell information
     pub fn cell_info(&self) -> CellInfo {
-        self.allocator.cell_info()
+        CellInfo {
+            total_cells: self.total_size / 16,
+            allocated_cells: self.allocator.total_allocated().as_usize() / 16,
+            free_cells: (self.total_size - self.allocator.total_allocated().as_usize()) / 16,
+            cell_size: 16, // Default cell size
+            fragmentation: self.allocator.fragmentation(),
+            efficiency: self.efficiency(),
+        }
     }
 
     /// Get object type information
@@ -121,8 +128,8 @@ impl CellSpace {
 
     /// Get space efficiency
     pub fn efficiency(&self) -> f64 {
-        let used_cells = self.allocator.allocated_cells();
-        let total_cells = self.allocator.total_cells();
+        let used_cells = self.allocator.total_allocated().as_usize() / 16;
+        let total_cells = self.total_size / 16;
         (used_cells as f64 / total_cells as f64) * 100.0
     }
 
@@ -193,7 +200,7 @@ impl CellSpace {
 
         // Remove dead objects
         for handle in &objects_to_remove {
-            if self.allocator.deallocate(*handle) {
+            if self.allocator.deallocate(handle.as_usize(), MemorySize::new(0)) {
                 self.object_types.remove(handle);
             }
         }
@@ -271,7 +278,8 @@ impl MemorySpace for CellSpace {
             };
 
             // Track object type
-            self.object_types.insert(handle, object_type);
+            self.object_types
+                .insert(HeapHandleId::from(handle), object_type);
 
             // Update statistics
             self.stats.allocated_size += size.as_usize();
@@ -290,7 +298,7 @@ impl MemorySpace for CellSpace {
                 + self.metrics.compaction_time_ns)
                 / self.metrics.total_operations as u64;
 
-            Some(handle)
+            Some(HeapHandleId::from(handle))
         } else {
             None
         }
@@ -299,7 +307,10 @@ impl MemorySpace for CellSpace {
     fn deallocate(&mut self, handle: HeapHandleId) -> bool {
         let start_time = std::time::Instant::now();
 
-        if self.allocator.deallocate(handle.as_usize(), MemorySize::new(0)) {
+        if self
+            .allocator
+            .deallocate(handle.as_usize(), MemorySize::new(0))
+        {
             // Remove type tracking
             self.object_types.remove(&handle);
 
@@ -345,25 +356,26 @@ impl MemorySpace for CellSpace {
     fn space_type(&self) -> SpaceType {
         SpaceType::CellSpace
     }
-    
+
     fn extract_object(&mut self, handle: HeapHandleId) -> Option<Value> {
         // Extract object from allocator
         if let Some(object_data) = self.allocator.extract_object(handle.as_usize()) {
             // Remove type tracking
             self.object_types.remove(&handle);
-            
+
             // Update statistics
             self.stats.object_count = self.stats.object_count.saturating_sub(1);
-            self.stats.allocated_size = self.stats.allocated_size.saturating_sub(
-                object_data.size().unwrap_or(0)
-            );
-            
+            self.stats.allocated_size = self
+                .stats
+                .allocated_size
+                .saturating_sub(object_data.size().unwrap_or(0));
+
             Some(object_data)
         } else {
             None
         }
     }
-    
+
     fn allocate_object(&mut self, data: Value) -> Option<HeapHandleId> {
         let size = MemorySize::new(data.size().unwrap_or(16));
         if let Some(handle) = self.allocator.allocate_object(data.clone()) {
@@ -376,18 +388,19 @@ impl MemorySpace for CellSpace {
                 Value::Null => SmallObjectType::Null,
                 _ => SmallObjectType::Other,
             };
-            
+
             // Track object type
-            self.object_types.insert(HeapHandleId::from(handle), object_type);
-            
+            self.object_types
+                .insert(HeapHandleId::from(handle), object_type);
+
             // Update statistics
             self.stats.allocated_size += size.bytes();
             self.stats.object_count += 1;
             self.stats.allocation_count += 1;
-            
+
             // Update free space
             self.stats.free_size = self.allocator.total_free().bytes();
-            
+
             Some(HeapHandleId::from(handle))
         } else {
             None

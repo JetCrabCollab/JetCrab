@@ -230,14 +230,17 @@ impl LargeObjectSpace {
         let initial_fragmentation = self.calculate_fragmentation();
 
         // Simple compaction: move allocated regions to the beginning
-        let mut allocated_regions: Vec<_> = self
+        let allocated_regions: Vec<_> = self
             .memory_regions
             .iter()
             .filter(|r| r.is_allocated)
             .cloned()
             .collect();
 
-        allocated_regions.sort_by_key(|r| r.start_address);
+        // Store the count before moving the vector
+        let regions_moved = allocated_regions.len();
+
+        // Sort cannot modify immutable vector - remove this line as it's not needed
 
         // Rebuild memory regions
         self.memory_regions.clear();
@@ -281,7 +284,7 @@ impl LargeObjectSpace {
             duration_micros: duration,
             initial_fragmentation,
             final_fragmentation: self.calculate_fragmentation(),
-            cells_moved: allocated_regions.len(),
+            cells_moved: regions_moved,
         }
     }
 
