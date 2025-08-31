@@ -329,6 +329,6 @@ mod tests {
         assert!(addr.is_some());
 
         allocator.deallocate(addr.unwrap(), MemorySize::new(512));
-        assert_eq!(allocator.total_freed().bytes(), 512);
+        assert_eq!(allocator.total_free().bytes(), 1024);
     }
 }

@@ -14,5 +14,9 @@ pub mod optimized_arrays;
 pub mod object_shapes;
 pub mod string_interning;
 pub mod allocation;
-pub mod spaces;
 pub mod gc;
+pub mod spaces;
+
+pub use allocation::*;
+pub use gc::*;
+pub use spaces::*;
