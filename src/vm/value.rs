@@ -97,6 +97,18 @@ impl Value {
     pub fn is_falsy(&self) -> bool {
         !self.to_boolean()
     }
+    
+    pub fn size(&self) -> Option<usize> {
+        match self {
+            Value::Number(_) => Some(8),
+            Value::String(s) => Some(s.len()),
+            Value::Boolean(_) => Some(1),
+            Value::Object(_) => Some(8),
+            Value::Array(_) => Some(8),
+            Value::Function(_) => Some(8),
+            Value::Null | Value::Undefined => Some(0),
+        }
+    }
 }
 
 impl fmt::Display for Value {

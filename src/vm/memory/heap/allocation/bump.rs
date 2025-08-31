@@ -103,7 +103,8 @@ impl Allocator for BumpAllocator {
 
     fn can_allocate(&self, size: MemorySize) -> bool {
         let aligned_size = align_up(size.bytes(), 8);
-        unsafe { self.current.add(aligned_size) <= self.end }
+        let remaining = unsafe { self.end.offset_from(self.current) as usize };
+        aligned_size <= remaining
     }
 
     fn total_allocated(&self) -> MemorySize {

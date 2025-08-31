@@ -39,6 +39,47 @@ pub trait Allocator {
 
     /// Get fragmentation percentage
     fn fragmentation(&self) -> f64;
+    
+    /// Extract object data for promotion (returns None if not supported)
+    fn extract_object(&mut self, _handle: usize) -> Option<crate::vm::value::Value> {
+        None
+    }
+    
+    /// Allocate object with existing data (returns None if not supported)
+    fn allocate_object(&mut self, _data: crate::vm::value::Value) -> Option<usize> {
+        None
+    }
+    
+    /// Get layout information
+    fn layout_info(&self) -> LayoutInfo {
+        LayoutInfo {
+            total_size: self.total_allocated() + self.total_free(),
+            allocated_size: self.total_allocated(),
+            free_size: self.total_free(),
+            fragmentation: self.fragmentation(),
+            alignment: 8,
+        }
+    }
+    
+    /// Check if allocator is full
+    fn is_full(&self) -> bool {
+        self.total_free().bytes() == 0
+    }
+    
+    /// Get remaining space
+    fn remaining_space(&self) -> MemorySize {
+        self.total_free()
+    }
+    
+    /// Get usage percentage
+    fn usage_percentage(&self) -> f64 {
+        let total = self.total_allocated().bytes() + self.total_free().bytes();
+        if total == 0 {
+            0.0
+        } else {
+            (self.total_allocated().bytes() as f64 / total as f64) * 100.0
+        }
+    }
 }
 
 /// Allocation statistics

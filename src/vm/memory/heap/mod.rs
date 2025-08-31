@@ -3,6 +3,8 @@ pub mod generational;
 pub mod object_shapes;
 pub mod string_interning;
 pub mod types;
+pub mod gc;
+pub mod spaces;
 
 pub use allocation::*;
 pub use generational::GenerationalHeap;

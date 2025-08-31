@@ -25,3 +25,6 @@ pub mod ast;
 
 // Semantic Analysis
 pub mod semantic;
+
+// Memory Management Integration
+pub mod gc_spaces_integration_tests;

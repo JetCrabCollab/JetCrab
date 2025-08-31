@@ -13,10 +13,11 @@
 
 use super::{MemorySpace, SpaceStats, SpaceType};
 use crate::vm::handle::HeapHandleId;
-use crate::vm::memory::heap::allocation::{CellAllocator, CellInfo, CompactionStats};
+use crate::vm::memory::heap::allocation::{CellAllocator, CellInfo, CompactionStats, Allocator};
 use crate::vm::memory::heap::spaces::{DefragmentationStats, GcStats};
 use crate::vm::types::MemorySize;
 use crate::vm::value::Value;
+use std::collections::HashMap;
 
 /// Cell space for small objects
 pub struct CellSpace {
@@ -33,7 +34,7 @@ pub struct CellSpace {
 }
 
 /// Types of small objects
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum SmallObjectType {
     String,
     Number,
@@ -69,10 +70,11 @@ impl Default for CellMetrics {
 impl CellSpace {
     /// Create a new cell space with the specified number of cells
     pub fn new(cell_count: usize) -> Self {
-        let total_size = cell_count * 16; // 16 bytes per cell
+        let cell_size = 16; // 16 bytes per cell
+        let total_size = cell_count * cell_size;
 
         Self {
-            allocator: CellAllocator::new(cell_count),
+            allocator: CellAllocator::new(cell_size, cell_count),
             total_size,
             stats: SpaceStats {
                 space_type: SpaceType::CellSpace,
@@ -104,7 +106,7 @@ impl CellSpace {
 
         ObjectTypeInfo {
             total_objects: self.object_types.len(),
-            type_distribution: type_counts,
+            type_distribution: type_counts.clone(),
             most_common_type: type_counts
                 .iter()
                 .max_by_key(|(_, &count)| count)
@@ -297,7 +299,7 @@ impl MemorySpace for CellSpace {
     fn deallocate(&mut self, handle: HeapHandleId) -> bool {
         let start_time = std::time::Instant::now();
 
-        if self.allocator.deallocate(handle) {
+        if self.allocator.deallocate(handle.as_usize(), MemorySize::new(0)) {
             // Remove type tracking
             self.object_types.remove(&handle);
 
@@ -342,6 +344,54 @@ impl MemorySpace for CellSpace {
 
     fn space_type(&self) -> SpaceType {
         SpaceType::CellSpace
+    }
+    
+    fn extract_object(&mut self, handle: HeapHandleId) -> Option<Value> {
+        // Extract object from allocator
+        if let Some(object_data) = self.allocator.extract_object(handle.as_usize()) {
+            // Remove type tracking
+            self.object_types.remove(&handle);
+            
+            // Update statistics
+            self.stats.object_count = self.stats.object_count.saturating_sub(1);
+            self.stats.allocated_size = self.stats.allocated_size.saturating_sub(
+                object_data.size().unwrap_or(0)
+            );
+            
+            Some(object_data)
+        } else {
+            None
+        }
+    }
+    
+    fn allocate_object(&mut self, data: Value) -> Option<HeapHandleId> {
+        let size = MemorySize::new(data.size().unwrap_or(16));
+        if let Some(handle) = self.allocator.allocate_object(data.clone()) {
+            // Determine object type based on value
+            let object_type = match data {
+                Value::String(_) => SmallObjectType::String,
+                Value::Number(_) => SmallObjectType::Number,
+                Value::Boolean(_) => SmallObjectType::Boolean,
+                Value::Undefined => SmallObjectType::Undefined,
+                Value::Null => SmallObjectType::Null,
+                _ => SmallObjectType::Other,
+            };
+            
+            // Track object type
+            self.object_types.insert(HeapHandleId::from(handle), object_type);
+            
+            // Update statistics
+            self.stats.allocated_size += size.bytes();
+            self.stats.object_count += 1;
+            self.stats.allocation_count += 1;
+            
+            // Update free space
+            self.stats.free_size = self.allocator.total_free().bytes();
+            
+            Some(HeapHandleId::from(handle))
+        } else {
+            None
+        }
     }
 }
 

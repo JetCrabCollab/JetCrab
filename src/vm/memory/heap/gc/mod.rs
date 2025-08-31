@@ -15,11 +15,13 @@ pub mod background;
 pub mod incremental;
 pub mod major_gc;
 pub mod minor_gc;
+pub mod write_barrier;
 
 pub use background::BackgroundGc;
 pub use incremental::IncrementalGc;
 pub use major_gc::MajorGc;
 pub use minor_gc::MinorGc;
+pub use write_barrier::{WriteBarrier, BarrierType, WriteBarrierStats};
 
 use crate::vm::handle::HeapHandleId;
 use crate::vm::memory::heap::spaces::{MemorySpace, SpaceType};
@@ -35,6 +37,8 @@ pub struct GarbageCollector {
     incremental_gc: IncrementalGc,
     /// Background GC for non-blocking collection
     background_gc: BackgroundGc,
+    /// Write barrier for detecting reference changes
+    write_barrier: WriteBarrier,
     /// Collection statistics
     stats: GcStats,
     /// Collection triggers and thresholds
@@ -149,6 +153,7 @@ impl GarbageCollector {
             major_gc: MajorGc::new(),
             incremental_gc: IncrementalGc::new(),
             background_gc: BackgroundGc::new(),
+            write_barrier: WriteBarrier::new(1024 * 1024, BarrierType::Hybrid),
             stats: GcStats::default(),
             triggers: GcTriggers::default(),
             spaces: HashMap::new(),
@@ -158,6 +163,31 @@ impl GarbageCollector {
     /// Register a memory space
     pub fn register_space(&mut self, space_type: SpaceType, space: Box<dyn MemorySpace>) {
         self.spaces.insert(space_type, space);
+    }
+    
+    /// Record a write operation for write barrier
+    pub fn record_write(&mut self, object_id: HeapHandleId, field_address: usize) {
+        self.write_barrier.record_write(object_id, field_address);
+    }
+    
+    /// Record a reference write operation for write barrier
+    pub fn record_reference_write(&mut self, source_object: HeapHandleId, target_object: HeapHandleId) {
+        self.write_barrier.record_reference_write(source_object, target_object);
+    }
+    
+    /// Get write barrier statistics
+    pub fn get_write_barrier_stats(&self) -> WriteBarrierStats {
+        self.write_barrier.get_stats()
+    }
+    
+    /// Enable write barrier
+    pub fn enable_write_barrier(&mut self) {
+        self.write_barrier.enable();
+    }
+    
+    /// Disable write barrier
+    pub fn disable_write_barrier(&mut self) {
+        self.write_barrier.disable();
     }
 
     /// Check if collection is needed

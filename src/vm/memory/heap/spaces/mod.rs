@@ -10,17 +10,19 @@
 //! - **Code Space**: Compiled bytecode
 //! - **Cell Space**: Small objects (≤ 16 bytes)
 
+pub mod cell_space;
+pub mod code_space;
+pub mod coordinator;
+pub mod large_space;
 pub mod new_space;
 pub mod old_space;
-pub mod large_space;
-pub mod code_space;
-pub mod cell_space;
 
+pub use cell_space::CellSpace;
+pub use code_space::CodeSpace;
+pub use coordinator::{AllocationStrategies, PromotionPolicies, SpaceCoordinator};
+pub use large_space::LargeObjectSpace;
 pub use new_space::NewSpace;
 pub use old_space::OldSpace;
-pub use large_space::LargeObjectSpace;
-pub use code_space::CodeSpace;
-pub use cell_space::CellSpace;
 
 use crate::vm::handle::HeapHandleId;
 use crate::vm::types::MemorySize;
@@ -30,28 +32,34 @@ use crate::vm::value::Value;
 pub trait MemorySpace {
     /// Allocate memory in this space
     fn allocate(&mut self, size: MemorySize) -> Option<HeapHandleId>;
-    
+
     /// Deallocate memory in this space
     fn deallocate(&mut self, handle: HeapHandleId) -> bool;
-    
+
     /// Check if allocation is possible
     fn can_allocate(&self, size: MemorySize) -> bool;
-    
+
     /// Get total allocated memory
     fn total_allocated(&self) -> MemorySize;
-    
+
     /// Get total free memory
     fn total_free(&self) -> MemorySize;
-    
+
     /// Get space statistics
     fn stats(&self) -> SpaceStats;
-    
+
     /// Get space type
     fn space_type(&self) -> SpaceType;
+
+    /// Extract object data for promotion
+    fn extract_object(&mut self, handle: HeapHandleId) -> Option<Value>;
+
+    /// Allocate object with existing data
+    fn allocate_object(&mut self, data: Value) -> Option<HeapHandleId>;
 }
 
 /// Memory space type
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum SpaceType {
     NewSpace,
     OldSpace,
@@ -122,53 +130,53 @@ impl SpaceManager {
             stats: ManagerStats::default(),
         }
     }
-    
+
     /// Allocate memory in the appropriate space
     pub fn allocate(&mut self, size: MemorySize, object_type: ObjectType) -> Option<HeapHandleId> {
         let size_bytes = size.as_usize();
-        
+
         // Choose space based on size and type
         let result = match (size_bytes, object_type) {
             (size, _) if size <= 16 => {
                 // Small objects go to cell space
-                self.cell_space.allocate(size)
+                self.cell_space.allocate(MemorySize::new(size))
             }
             (size, ObjectType::Code) if size <= 1024 * 1024 => {
                 // Code objects go to code space
-                self.code_space.allocate(size)
+                self.code_space.allocate(MemorySize::new(size))
             }
             (size, _) if size > 1024 * 1024 => {
                 // Large objects go to large object space
-                self.large_space.allocate(size)
+                self.large_space.allocate(MemorySize::new(size))
             }
             (size, _) if size <= 1024 * 1024 => {
                 // Medium objects go to new space first, then old space
-                if let Some(handle) = self.new_space.allocate(size) {
+                if let Some(handle) = self.new_space.allocate(MemorySize::new(size)) {
                     Some(handle)
                 } else {
-                    self.old_space.allocate(size)
+                    self.old_space.allocate(MemorySize::new(size))
                 }
             }
             _ => None,
         };
-        
+
         if result.is_some() {
             self.stats.total_allocations += 1;
             self.stats.current_allocations += 1;
         }
-        
+
         result
     }
-    
+
     /// Deallocate memory from the appropriate space
     pub fn deallocate(&mut self, handle: HeapHandleId) -> bool {
         // Try each space until we find the right one
-        if self.cell_space.deallocate(handle) ||
-           self.new_space.deallocate(handle) ||
-           self.old_space.deallocate(handle) ||
-           self.large_space.deallocate(handle) ||
-           self.code_space.deallocate(handle) {
-            
+        if self.cell_space.deallocate(handle)
+            || self.new_space.deallocate(handle)
+            || self.old_space.deallocate(handle)
+            || self.large_space.deallocate(handle)
+            || self.code_space.deallocate(handle)
+        {
             self.stats.total_deallocations += 1;
             self.stats.current_allocations = self.stats.current_allocations.saturating_sub(1);
             true
@@ -176,7 +184,7 @@ impl SpaceManager {
             false
         }
     }
-    
+
     /// Get information about all spaces
     pub fn get_info(&self) -> ManagerInfo {
         ManagerInfo {
@@ -188,35 +196,39 @@ impl SpaceManager {
             manager: self.stats.clone(),
         }
     }
-    
+
     /// Reset new space (after minor GC)
     pub fn reset_new_space(&mut self) {
         self.new_space.reset();
     }
-    
+
     /// Perform minor garbage collection
     pub fn minor_gc(&mut self) -> GcStats {
         self.new_space.collect()
     }
-    
+
     /// Perform major garbage collection
     pub fn major_gc(&mut self) -> GcStats {
         let old_stats = self.old_space.collect();
         let large_stats = self.large_space.collect();
         let code_stats = self.code_space.collect();
-        
+
         GcStats {
-            objects_collected: old_stats.objects_collected + large_stats.objects_collected + code_stats.objects_collected,
+            objects_collected: old_stats.objects_collected
+                + large_stats.objects_collected
+                + code_stats.objects_collected,
             bytes_freed: old_stats.bytes_freed + large_stats.bytes_freed + code_stats.bytes_freed,
-            collection_time: old_stats.collection_time + large_stats.collection_time + code_stats.collection_time,
+            collection_time: old_stats.collection_time
+                + large_stats.collection_time
+                + code_stats.collection_time,
         }
     }
-    
+
     /// Defragment old space
     pub fn defragment_old_space(&mut self) -> DefragmentationStats {
         self.old_space.defragment()
     }
-    
+
     /// Compact cell space
     pub fn compact_cell_space(&mut self) -> CompactionStats {
         self.cell_space.compact()

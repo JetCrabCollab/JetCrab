@@ -48,7 +48,7 @@ pub struct CodeObjectInfo {
 }
 
 /// Types of code objects
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum CodeType {
     Function,
     Class,
@@ -61,7 +61,7 @@ pub enum CodeType {
 }
 
 /// Optimization levels for code
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Hash)]
 pub enum OptimizationLevel {
     None = 0,
     Basic = 1,
@@ -531,12 +531,13 @@ impl MemorySpace for CodeSpace {
 
         // Find best fit code block
         if let Some(block_index) = self.find_best_fit_code_block(size_bytes) {
-            let block = &mut self.code_blocks[block_index];
-
             // Split block if necessary
-            if block.size > size_bytes {
+            if self.code_blocks[block_index].size > size_bytes {
                 self.split_code_block(block_index, size_bytes);
             }
+
+            // Get block reference after potential split
+            let block = &mut self.code_blocks[block_index];
 
             // Allocate the block
             block.is_allocated = true;
