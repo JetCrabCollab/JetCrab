@@ -36,6 +36,11 @@ impl Stack {
         self.values.len()
     }
 
+    /// Get the number of values on the stack
+    pub fn len(&self) -> usize {
+        self.values.len()
+    }
+
     pub fn is_empty(&self) -> bool {
         self.values.is_empty()
     }

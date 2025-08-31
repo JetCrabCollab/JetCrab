@@ -220,6 +220,7 @@ pub mod helpers {
             &index.to_string(),
             Some("0"),
             Some(&(length - 1).to_string())
+        )
     }
 
     /// Create a RangeError for invalid array length
@@ -227,6 +228,7 @@ pub mod helpers {
         RuntimeError::range_error(
             &length.to_string(),
             Some("0"),
-            Some("2^32-1"))
+            Some("2^32-1")
+        )
     }
 }

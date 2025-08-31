@@ -1,7 +1,44 @@
 use crate::lexer::scanners::LexerCore;
 use crate::lexer::utils::PositionManager;
 use crate::lexer::{LexerError, Token, TokenKind};
-use crate::vm::types::{ColumnNumber, LineNumber};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub struct LineNumber(u32);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub struct ColumnNumber(u32);
+
+impl LineNumber {
+    pub fn new(value: u32) -> Self {
+        Self(value)
+    }
+    
+    pub fn as_usize(&self) -> usize {
+        self.0 as usize
+    }
+    
+    pub fn increment(&mut self) {
+        self.0 += 1;
+    }
+}
+
+impl ColumnNumber {
+    pub fn new(value: u32) -> Self {
+        Self(value)
+    }
+    
+    pub fn as_usize(&self) -> usize {
+        self.0 as usize
+    }
+    
+    pub fn increment(&mut self) {
+        self.0 += 1;
+    }
+    
+    pub fn reset(&mut self) {
+        self.0 = 1;
+    }
+}
 
 #[derive(Debug)]
 pub struct Lexer {

@@ -1,4 +1,4 @@
-use crate::vm::types::{ColumnNumber, LineNumber};
+use crate::lexer::core::{ColumnNumber, LineNumber};
 
 pub trait PositionManager {
     fn skip_whitespace(&mut self);
@@ -27,12 +27,12 @@ where
             if c.is_whitespace() {
                 if c == '\n' {
                     let mut new_line = self.line();
-                    new_line += 1;
+                    new_line.increment();
                     self.set_line(new_line);
                     self.set_column(ColumnNumber::new(1));
                 } else {
                     let mut new_column = self.column();
-                    new_column += 1;
+                    new_column.increment();
                     self.set_column(new_column);
                 }
                 self.advance();
@@ -46,7 +46,7 @@ where
         if self.pos() < self.source().len() {
             self.set_pos(self.pos() + 1);
             let mut new_column = self.column();
-            new_column += 1;
+            new_column.increment();
             self.set_column(new_column);
         }
     }

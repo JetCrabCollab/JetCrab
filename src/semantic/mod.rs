@@ -32,17 +32,10 @@
 
 use crate::ast::Node;
 
-pub struct SemanticAnalyzer {
-    // Placeholder for semantic analysis
-}
+pub use crate::semantic::analyzer::SemanticAnalyzer;
+pub use crate::semantic::error::SemanticError;
+pub use crate::semantic::scope::{Scope, VariableInfo};
 
-impl SemanticAnalyzer {
-    pub fn new() -> Self {
-        Self {}
-    }
-
-    pub fn analyze(&mut self, _ast: &Node) -> Result<(), String> {
-        // For now, just a placeholder implementation
-        Ok(())
-    }
-}
+pub mod analyzer;
+pub mod error;
+pub mod scope;

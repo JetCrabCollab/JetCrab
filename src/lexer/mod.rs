@@ -39,7 +39,7 @@ pub mod token;
 pub mod tokens;
 pub mod utils;
 
-pub use core::Lexer;
+pub use core::{Lexer, LineNumber, ColumnNumber};
 pub use error::LexerError;
 pub use token::{Token, TokenKind};
 pub use tokens::{Keyword, Literal, Operator, Punctuation};

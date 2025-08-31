@@ -13,6 +13,11 @@ impl MemorySize {
         self.0
     }
 
+    /// Get the size in bytes
+    pub fn bytes(&self) -> usize {
+        self.0
+    }
+
     pub fn is_zero(&self) -> bool {
         self.0 == 0
     }

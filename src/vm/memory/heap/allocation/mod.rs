@@ -151,6 +151,16 @@ impl SmartAllocator {
         }
     }
 
+    /// Create a new smart allocator with custom sizes
+    pub fn with_sizes(new_space_size: usize, old_space_size: usize, cell_count: usize) -> Self {
+        Self {
+            bump_allocator: BumpAllocator::new(new_space_size),
+            free_list_allocator: FreeListAllocator::new(old_space_size),
+            cell_allocator: CellAllocator::new(cell_count),
+            stats: AllocationStats::default(),
+        }
+    }
+
     /// Get information about all allocators
     pub fn get_info(&self) -> AllocatorInfo {
         AllocatorInfo {
