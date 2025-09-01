@@ -10,6 +10,7 @@
 
 // VM Components
 pub mod vm;
+pub mod vm_executor_tests;
 
 // API Components
 pub mod api;

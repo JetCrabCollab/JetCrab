@@ -225,4 +225,180 @@ mod tests {
             assert_eq!(value, Value::String("test".to_string()));
         }
     }
+
+    // Additional Engine Tests
+    #[test]
+    fn test_engine_evaluate_complex_arithmetic() {
+        let mut engine = Engine::new();
+        let result = engine.evaluate("(2 + 3) * 4 - 1");
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Value::Number(19.0));
+    }
+
+    #[test]
+    fn test_engine_evaluate_variable_assignment() {
+        let mut engine = Engine::new();
+        let result = engine.evaluate("let x = 10; let y = 20; x + y");
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Value::Number(30.0));
+    }
+
+    #[test]
+    fn test_engine_evaluate_simple_function() {
+        let mut engine = Engine::new();
+        let code = "function test() { return 42; } test()";
+        let result = engine.evaluate(code);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Value::Number(42.0));
+    }
+
+    #[test]
+    fn test_engine_evaluate_array_operations() {
+        let mut engine = Engine::new();
+        let code = "let arr = [1, 2, 3]; arr[0] + arr[1] + arr[2]";
+        let result = engine.evaluate(code);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Value::Number(6.0));
+    }
+
+    #[test]
+    fn test_engine_evaluate_object_property_access() {
+        let mut engine = Engine::new();
+        let code = "let obj = {name: 'John', age: 30}; obj.name";
+        let result = engine.evaluate(code);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Value::String("John".to_string()));
+    }
+
+    #[test]
+    fn test_engine_evaluate_logical_operations() {
+        let mut engine = Engine::new();
+        let result = engine.evaluate("true && false || true");
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Value::Boolean(true));
+    }
+
+    #[test]
+    fn test_engine_evaluate_logical_comparison() {
+        let mut engine = Engine::new();
+        let result = engine.evaluate("5 > 3 && 10 <= 15");
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Value::Boolean(true));
+    }
+
+    #[test]
+    fn test_engine_evaluate_simple_conditional() {
+        let mut engine = Engine::new();
+        let result = engine.evaluate("5 > 3");
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Value::Boolean(true));
+    }
+
+    #[test]
+    fn test_engine_evaluate_string_concatenation() {
+        let mut engine = Engine::new();
+        let result = engine.evaluate("'Hello' + ' ' + 'World'");
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Value::String("Hello World".to_string()));
+    }
+
+    #[test]
+    fn test_engine_evaluate_simple_math() {
+        let mut engine = Engine::new();
+        let result = engine.evaluate("42");
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Value::Number(42.0));
+    }
+
+    #[test]
+    fn test_engine_evaluate_boolean_operations() {
+        let mut engine = Engine::new();
+        let result = engine.evaluate("!false");
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Value::Boolean(true));
+    }
+
+    #[test]
+    fn test_engine_evaluate_basic_operations() {
+        let mut engine = Engine::new();
+        let test_cases = vec![
+            ("2 + 2", Value::Number(4.0)),
+            ("10 - 3", Value::Number(7.0)),
+            ("4 * 5", Value::Number(20.0)),
+            ("15 / 3", Value::Number(5.0)),
+        ];
+
+        for (code, expected) in test_cases {
+            let result = engine.evaluate(code);
+            assert!(result.is_ok(), "Failed for: {}", code);
+            assert_eq!(result.unwrap(), expected, "Failed for: {}", code);
+        }
+    }
+
+    #[test]
+    fn test_engine_evaluate_comparison_operations() {
+        let mut engine = Engine::new();
+        let test_cases = vec![
+            ("5 > 3", Value::Boolean(true)),
+            ("3 < 5", Value::Boolean(true)),
+            ("5 == 5", Value::Boolean(true)),
+            ("5 != 3", Value::Boolean(true)),
+        ];
+
+        for (code, expected) in test_cases {
+            let result = engine.evaluate(code);
+            assert!(result.is_ok(), "Failed for: {}", code);
+            assert_eq!(result.unwrap(), expected, "Failed for: {}", code);
+        }
+    }
+
+    #[test]
+    fn test_engine_evaluate_string_operations() {
+        let mut engine = Engine::new();
+        let test_cases = vec![
+            (
+                "'Hello' + ' ' + 'World'",
+                Value::String("Hello World".to_string()),
+            ),
+            ("'Test'.length", Value::Number(4.0)),
+        ];
+
+        for (code, expected) in test_cases {
+            let result = engine.evaluate(code);
+            assert!(result.is_ok(), "Failed for: {}", code);
+            assert_eq!(result.unwrap(), expected, "Failed for: {}", code);
+        }
+    }
+
+    #[test]
+    fn test_engine_evaluate_variable_operations() {
+        let mut engine = Engine::new();
+        let test_cases = vec![
+            ("let x = 10; x", Value::Number(10.0)),
+            ("let y = 'test'; y", Value::String("test".to_string())),
+            ("let z = true; z", Value::Boolean(true)),
+        ];
+
+        for (code, expected) in test_cases {
+            let result = engine.evaluate(code);
+            assert!(result.is_ok(), "Failed for: {}", code);
+            assert_eq!(result.unwrap(), expected, "Failed for: {}", code);
+        }
+    }
+
+    #[test]
+    fn test_engine_evaluate_working_builtins() {
+        let mut engine = Engine::new();
+
+        // Testar builtins que sabemos que funcionam
+        let result = engine.evaluate("console.log('test')");
+        assert!(result.is_ok());
+
+        let result = engine.evaluate("JSON.stringify('test')");
+        assert!(result.is_ok());
+
+        let result = engine.evaluate("Math.sqrt(16)");
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Value::Number(4.0));
+    }
 }

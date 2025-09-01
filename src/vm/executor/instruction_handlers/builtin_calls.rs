@@ -106,7 +106,7 @@ impl BuiltinCallsHandler {
             }
             print!("{arg:?}");
         }
-        println!();
+        print!("\n");
 
         stack.push(Value::Undefined);
         Ok(())
@@ -135,7 +135,7 @@ impl BuiltinCallsHandler {
             }
             eprint!("{arg:?}");
         }
-        eprintln!();
+        eprint!("\n");
 
         stack.push(Value::Undefined);
         Ok(())
