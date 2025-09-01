@@ -16,8 +16,7 @@ fn test_breakpoint_creation() {
 
 #[test]
 fn test_breakpoint_with_condition() {
-    let breakpoint = Breakpoint::new("bp1".to_string(), 10, 5)
-        .with_condition("x > 5".to_string());
+    let breakpoint = Breakpoint::new("bp1".to_string(), 10, 5).with_condition("x > 5".to_string());
     assert_eq!(breakpoint.condition, Some("x > 5".to_string()));
 }
 
@@ -35,7 +34,7 @@ fn test_breakpoint_hit() {
 fn test_call_frame_creation() {
     let mut variables = HashMap::new();
     variables.insert("x".to_string(), Value::Number(42.0));
-    
+
     let call_frame = CallFrame {
         function_name: "test_func".to_string(),
         line: 10,
@@ -44,7 +43,7 @@ fn test_call_frame_creation() {
         this_value: Some(Value::Null),
         arguments: vec![Value::String("arg1".to_string())],
     };
-    
+
     assert_eq!(call_frame.function_name, "test_func");
     assert_eq!(call_frame.line, 10);
     assert_eq!(call_frame.column, 5);
@@ -57,7 +56,7 @@ fn test_call_frame_creation() {
 fn test_debug_info_creation() {
     let mut variables = HashMap::new();
     variables.insert("x".to_string(), Value::Number(42.0));
-    
+
     let debug_info = DebugInfo {
         current_line: 10,
         current_column: 5,
@@ -66,7 +65,7 @@ fn test_debug_info_creation() {
         variables,
         is_paused: false,
     };
-    
+
     assert_eq!(debug_info.current_line, 10);
     assert_eq!(debug_info.current_column, 5);
     assert_eq!(debug_info.call_stack.len(), 0);
@@ -84,7 +83,7 @@ fn test_profiling_metrics_creation() {
         function_calls: 50,
         gc_cycles: 5,
     };
-    
+
     assert_eq!(metrics.execution_time, Duration::from_millis(100));
     assert_eq!(metrics.memory_usage, 1024);
     assert_eq!(metrics.instruction_count, 1000);
@@ -101,7 +100,7 @@ fn test_profiling_metrics_report() {
         function_calls: 50,
         gc_cycles: 5,
     };
-    
+
     let report = metrics.generate_report();
     assert!(report.contains("Profiling Report:"));
     assert!(report.contains("Execution Time:"));
@@ -208,7 +207,7 @@ fn test_debugger_update_debug_info() {
         variables: HashMap::new(),
         is_paused: false,
     };
-    
+
     debugger.update_debug_info(debug_info);
     assert!(debugger.get_debug_info().is_some());
     assert_eq!(debugger.get_debug_info().unwrap().current_line, 10);

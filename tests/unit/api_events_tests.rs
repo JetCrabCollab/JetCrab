@@ -70,7 +70,10 @@ fn test_event_emitter_emit_with_source() {
     assert_eq!(emitter.get_event_history().len(), 1);
     assert_eq!(emitter.get_event_history()[0].event_type, "test_event");
     assert_eq!(emitter.get_event_history()[0].data, json!("test_data"));
-    assert_eq!(emitter.get_event_history()[0].source, Some("test_source".to_string()));
+    assert_eq!(
+        emitter.get_event_history()[0].source,
+        Some("test_source".to_string())
+    );
 }
 
 #[test]
@@ -78,13 +81,13 @@ fn test_event_emitter_remove_listener() {
     let mut emitter = EventEmitter::new();
     emitter.on("test_event", |_| {});
     emitter.on("test_event", |_| {});
-    
+
     let result = emitter.remove_listener("test_event", 0);
     assert!(result.is_ok());
-    
+
     let result = emitter.remove_listener("test_event", 10);
     assert!(result.is_err());
-    
+
     let result = emitter.remove_listener("nonexistent", 0);
     assert!(result.is_err());
 }
@@ -110,7 +113,7 @@ fn test_event_emitter_get_event_history() {
 fn test_event_emitter_set_max_history_size() {
     let mut emitter = EventEmitter::new();
     emitter.set_max_history_size(5);
-    
+
     for i in 0..10 {
         emitter.emit("test_event", json!(i));
     }
@@ -333,7 +336,7 @@ fn test_event_chain_trigger_next() {
     let mut manager = EventManager::new();
     let events = vec!["event1".to_string(), "event2".to_string()];
     let mut chain = EventChain::new(events, &mut manager);
-    
+
     let result = chain.trigger_next(json!("test_data"));
     assert!(result.is_ok());
     assert!(!chain.is_complete());
@@ -345,10 +348,10 @@ fn test_event_chain_trigger_next_complete() {
     let mut manager = EventManager::new();
     let events = vec!["event1".to_string()];
     let mut chain = EventChain::new(events, &mut manager);
-    
+
     let result = chain.trigger_next(json!("test_data"));
     assert!(result.is_ok());
-    
+
     let result = chain.trigger_next(json!("test_data"));
     assert!(result.is_err());
 }
@@ -358,10 +361,10 @@ fn test_event_chain_reset() {
     let mut manager = EventManager::new();
     let events = vec!["event1".to_string(), "event2".to_string()];
     let mut chain = EventChain::new(events, &mut manager);
-    
+
     chain.trigger_next(json!("test_data"));
     assert!(!chain.is_complete());
-    
+
     chain.reset();
     assert!(!chain.is_complete());
 }
@@ -371,7 +374,7 @@ fn test_event_chain_is_complete() {
     let mut manager = EventManager::new();
     let events = vec!["event1".to_string()];
     let mut chain = EventChain::new(events, &mut manager);
-    
+
     assert!(!chain.is_complete());
     chain.trigger_next(json!("test_data"));
     assert!(chain.is_complete());
@@ -382,7 +385,7 @@ fn test_event_chain_is_complete_multiple_events() {
     let mut manager = EventManager::new();
     let events = vec!["event1".to_string(), "event2".to_string()];
     let mut chain = EventChain::new(events, &mut manager);
-    
+
     assert!(!chain.is_complete());
     chain.trigger_next(json!("test_data"));
     assert!(!chain.is_complete());

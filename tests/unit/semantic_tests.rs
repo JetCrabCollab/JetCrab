@@ -1,6 +1,6 @@
+use jetcrab::ast::Node;
 use jetcrab::semantic::analyzer::SemanticAnalyzer;
 use jetcrab::semantic::scope::Scope;
-use jetcrab::ast::Node;
 
 #[test]
 fn test_semantic_analyzer_new() {
