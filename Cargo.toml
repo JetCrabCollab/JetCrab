@@ -17,6 +17,128 @@ serde_json = "1.0"
 [dev-dependencies]
 criterion = "0.5"
 
+# Integration Tests
+[[test]]
+name = "basic_tests"
+path = "tests/integration/basic_tests.rs"
+
+[[test]]
+name = "advanced_tests"
+path = "tests/integration/advanced_tests.rs"
+
+[[test]]
+name = "e2e_tests"
+path = "tests/integration/e2e_tests.rs"
+
+[[test]]
+name = "vm_tests"
+path = "tests/integration/vm_tests.rs"
+
+[[test]]
+name = "math_functions_tests"
+path = "tests/integration/math_functions_tests.rs"
+
+[[test]]
+name = "string_methods_tests"
+path = "tests/integration/string_methods_tests.rs"
+
+[[test]]
+name = "loops_tests"
+path = "tests/integration/loops_tests.rs"
+
+[[test]]
+name = "memory_management_tests"
+path = "tests/integration/test_memory_management.rs"
+
+[[test]]
+name = "object_property_access_tests"
+path = "tests/integration/test_object_property_access.rs"
+
+[[test]]
+name = "switch_statement_tests"
+path = "tests/integration/test_switch_statement.rs"
+
+# Unit Tests
+[[test]]
+name = "unit_api_tests"
+path = "tests/unit/api/mod.rs"
+
+[[test]]
+name = "unit_vm_tests"
+path = "tests/unit/vm_tests.rs"
+
+[[test]]
+name = "unit_lexer_tests"
+path = "tests/unit/lexer_tests.rs"
+
+[[test]]
+name = "unit_parser_tests"
+path = "tests/unit/parser_tests.rs"
+
+[[test]]
+name = "unit_semantic_tests"
+path = "tests/unit/semantic_tests.rs"
+
+[[test]]
+name = "unit_error_tests"
+path = "tests/unit/error_tests.rs"
+
+[[test]]
+name = "unit_lexer_tokens_tests"
+path = "tests/unit/lexer_tokens_tests.rs"
+
+[[test]]
+name = "unit_vm_core_tests"
+path = "tests/unit/vm_core_tests.rs"
+
+[[test]]
+name = "unit_vm_builtin_calls_tests"
+path = "tests/unit/vm_builtin_calls_tests.rs"
+
+[[test]]
+name = "unit_vm_control_flow_tests"
+path = "tests/unit/vm_control_flow_tests.rs"
+
+[[test]]
+name = "unit_vm_instruction_dispatcher_tests"
+path = "tests/unit/vm_instruction_dispatcher_tests.rs"
+
+[[test]]
+name = "unit_vm_generational_heap_tests"
+path = "tests/unit/vm_generational_heap_tests.rs"
+
+[[test]]
+name = "unit_vm_object_shapes_tests"
+path = "tests/unit/vm_object_shapes_tests.rs"
+
+[[test]]
+name = "unit_vm_string_interning_tests"
+path = "tests/unit/vm_string_interning_tests.rs"
+
+[[test]]
+name = "unit_vm_memory_allocator_tests"
+path = "tests/unit/vm_memory_allocator_tests.rs"
+
+[[test]]
+name = "unit_vm_error_tests"
+path = "tests/unit/vm_error_tests.rs"
+
+[[test]]
+name = "unit_api_debug_tests"
+path = "tests/unit/api_debug_tests.rs"
+
+[[test]]
+name = "unit_api_error_tests"
+path = "tests/unit/api_error_tests.rs"
+
+[[test]]
+name = "unit_api_events_tests"
+path = "tests/unit/api_events_tests.rs"
+
+[[test]]
+name = "unit_api_modules_tests"
+path = "tests/unit/api_modules_tests.rs"
+
 [[bench]]
 name = "basic_benchmark"
 harness = false

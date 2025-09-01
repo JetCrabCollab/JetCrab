@@ -349,7 +349,7 @@ impl Builtins {
             }
             print!("{arg:?}");
         }
-        print!("\n");
+        println!();
         Ok(Value::Undefined)
     }
 
@@ -361,7 +361,7 @@ impl Builtins {
             }
             eprint!("{arg:?}");
         }
-        eprint!("\n");
+        eprintln!();
         Ok(Value::Undefined)
     }
 

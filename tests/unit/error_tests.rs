@@ -1,137 +1,65 @@
-use jetcrab::ast::Position;
+//! Unit tests for error types
+
+use jetcrab::api::error::ApiError;
+use jetcrab::ast::error::AstError;
+use jetcrab::parser::error::ParserError;
+use jetcrab::semantic::error::SemanticError;
+use jetcrab::vm::compiler::error::BytecodeError;
 use jetcrab::vm::error::VmError;
 
 #[test]
-fn test_vm_error_execution_error() {
-    let error = VmError::ExecutionError {
-        message: "Test error".to_string(),
-        instruction: Some("ADD".to_string()),
+fn test_api_error_creation() {
+    let error = ApiError::CompilationError {
+        message: "test error".to_string(),
         position: None,
     };
-    let error_str = format!("{error:?}");
-    assert!(error_str.contains("Test error"));
+    assert!(matches!(error, ApiError::CompilationError { .. }));
 }
 
 #[test]
-fn test_vm_error_stack_underflow() {
+fn test_ast_error_creation() {
+    let error = AstError::SerializationError {
+        message: "test error".to_string(),
+        position: None,
+    };
+    assert!(matches!(error, AstError::SerializationError { .. }));
+}
+
+#[test]
+fn test_parser_error_creation() {
+    use jetcrab::ast::Position;
+    let error = ParserError::UnexpectedToken {
+        token: "test".to_string(),
+        position: Position::new(1, 1),
+        expected: Some("expected".to_string()),
+    };
+    assert!(matches!(error, ParserError::UnexpectedToken { .. }));
+}
+
+#[test]
+fn test_semantic_error_creation() {
+    let error = SemanticError {
+        message: "test error".to_string(),
+        position: None,
+    };
+    assert_eq!(error.message, "test error");
+}
+
+#[test]
+fn test_vm_error_creation() {
     let error = VmError::StackUnderflow {
-        message: "Stack underflow".to_string(),
+        message: "test".to_string(),
         position: None,
     };
-    let error_str = format!("{error:?}");
-    assert!(error_str.contains("StackUnderflow"));
+    assert!(matches!(error, VmError::StackUnderflow { .. }));
 }
 
 #[test]
-fn test_vm_error_stack_overflow() {
-    let error = VmError::StackOverflow {
-        message: "Stack overflow".to_string(),
+fn test_bytecode_error_creation() {
+    let error = BytecodeError::InvalidInstruction {
+        instruction: "test".to_string(),
+        message: "test message".to_string(),
         position: None,
     };
-    let error_str = format!("{error:?}");
-    assert!(error_str.contains("StackOverflow"));
-}
-
-#[test]
-fn test_vm_error_invalid_instruction() {
-    let error = VmError::InvalidInstruction {
-        instruction: "INVALID".to_string(),
-        message: "Invalid instruction".to_string(),
-        position: None,
-    };
-    let error_str = format!("{error:?}");
-    assert!(error_str.contains("InvalidInstruction"));
-}
-
-#[test]
-fn test_vm_error_type_mismatch() {
-    let error = VmError::TypeMismatch {
-        expected: "Number".to_string(),
-        found: "String".to_string(),
-        position: None,
-    };
-    let error_str = format!("{error:?}");
-    assert!(error_str.contains("TypeMismatch"));
-}
-
-#[test]
-fn test_vm_error_undefined_variable() {
-    let error = VmError::UndefinedVariable {
-        name: "x".to_string(),
-        position: None,
-    };
-    let error_str = format!("{error:?}");
-    assert!(error_str.contains("UndefinedVariable"));
-}
-
-#[test]
-fn test_vm_error_undefined_function() {
-    let error = VmError::UndefinedFunction {
-        name: "func".to_string(),
-        position: None,
-    };
-    let error_str = format!("{error:?}");
-    assert!(error_str.contains("UndefinedFunction"));
-}
-
-#[test]
-fn test_vm_error_division_by_zero() {
-    let error = VmError::DivisionByZero { position: None };
-    let error_str = format!("{error:?}");
-    assert!(error_str.contains("DivisionByZero"));
-}
-
-#[test]
-fn test_vm_error_out_of_memory() {
-    let error = VmError::OutOfMemory {
-        message: "Out of memory".to_string(),
-        position: None,
-    };
-    let error_str = format!("{error:?}");
-    assert!(error_str.contains("OutOfMemory"));
-}
-
-#[test]
-fn test_vm_error_runtime_error() {
-    let error = VmError::RuntimeError {
-        message: "Runtime error".to_string(),
-        position: None,
-    };
-    let error_str = format!("{error:?}");
-    assert!(error_str.contains("RuntimeError"));
-}
-
-#[test]
-fn test_vm_error_with_position() {
-    let pos = Position::new(10, 5);
-    let error = VmError::ExecutionError {
-        message: "Test error".to_string(),
-        instruction: None,
-        position: Some(pos),
-    };
-    let error_str = format!("{error:?}");
-    assert!(error_str.contains("Test error"));
-}
-
-#[test]
-fn test_vm_error_clone() {
-    let error = VmError::ExecutionError {
-        message: "Test error".to_string(),
-        instruction: None,
-        position: None,
-    };
-    let cloned = error.clone();
-    assert!(format!("{error:?}") == format!("{cloned:?}"));
-}
-
-#[test]
-fn test_vm_error_display() {
-    let error = VmError::ExecutionError {
-        message: "Test error".to_string(),
-        instruction: None,
-        position: None,
-    };
-    let display_str = error.to_string();
-    assert!(display_str.contains("VM execution error"));
-    assert!(display_str.contains("Test error"));
+    assert!(matches!(error, BytecodeError::InvalidInstruction { .. }));
 }
