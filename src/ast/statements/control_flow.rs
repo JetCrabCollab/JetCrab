@@ -25,6 +25,22 @@ pub struct ForStatement {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ForInStatement {
+    pub left: Box<crate::ast::node::Node>,
+    pub right: Box<crate::ast::node::Node>,
+    pub body: Box<crate::ast::node::Node>,
+    pub span: Option<Span>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ForOfStatement {
+    pub left: Box<crate::ast::node::Node>,
+    pub right: Box<crate::ast::node::Node>,
+    pub body: Box<crate::ast::node::Node>,
+    pub span: Option<Span>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct WhileStatement {
     pub test: Box<crate::ast::node::Node>,
     pub body: Box<crate::ast::node::Node>,

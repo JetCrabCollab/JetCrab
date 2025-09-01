@@ -46,11 +46,13 @@ pub enum Instruction {
     JumpIfFalse(CodeAddress),
 
     Call(FunctionIndex),
+    CallByName(ConstantIndex),
     Return,
 
     NewObject,
     NewArray(ArraySize),
     SetProperty,
+    SetPropertyAssign,
     GetProperty,
 
     TypeOf,
@@ -58,6 +60,7 @@ pub enum Instruction {
     In,
     Delete,
     New,
+    ToString,
 
     NewClass,
     GetPrototype,
@@ -83,6 +86,7 @@ pub enum Instruction {
     PushSymbol(ConstantIndex),
     PushBigInt(ConstantIndex),
     CallFunction(FunctionIndex, ArgIndex),
+    CallBuiltin(String, ArgIndex),
     RemoveObjectProperty,
     CallObjectMethod(String, ArgIndex),
     CallArrayMethod(String, ArgIndex),

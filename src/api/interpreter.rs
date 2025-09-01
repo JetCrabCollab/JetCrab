@@ -1,5 +1,6 @@
+use crate::vm::executor::Executor;
 use crate::vm::instructions::Instruction;
-use crate::vm::{Bytecode, Executor, Value};
+use crate::vm::{Bytecode, Value};
 
 pub struct Interpreter {
     instructions: Vec<Instruction>,
@@ -38,14 +39,16 @@ impl Interpreter {
             .collect();
 
         let bytecode = Bytecode::new(self.instructions.clone());
-        executor.execute(&bytecode, &values);
+        executor
+            .execute(&bytecode, &values)
+            .map_err(|e| format!("Execution error: {e}"))?;
 
-        Ok(executor.stack.pop().unwrap_or(Value::Undefined))
+        Ok(executor.stack_mut().pop().unwrap_or(Value::Undefined))
     }
 
     pub fn execute_with_context(
         &self,
-        _context: &mut crate::runtime::Context,
+        _context: &mut crate::vm::runtime::Context,
     ) -> Result<Value, String> {
         let mut executor = Executor::new();
 
@@ -70,9 +73,11 @@ impl Interpreter {
             .collect();
 
         let bytecode = Bytecode::new(self.instructions.clone());
-        executor.execute(&bytecode, &values);
+        executor
+            .execute(&bytecode, &values)
+            .map_err(|e| format!("Execution error: {e}"))?;
 
-        Ok(executor.stack.pop().unwrap_or(Value::Undefined))
+        Ok(executor.stack_mut().pop().unwrap_or(Value::Undefined))
     }
 
     pub fn get_instructions(&self) -> &[Instruction] {

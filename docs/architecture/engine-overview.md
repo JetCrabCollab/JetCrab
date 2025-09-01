@@ -85,7 +85,7 @@ graph TB
     style I fill:#e3f2fd
 ```
 
-### 1. Lexical Analysis (v8_lexer)
+### 1. Lexical Analysis (lexer module)
 - **Purpose**: Converts source code into tokens
 - **Features**:
   - ECMAScript-compliant tokenization
@@ -94,261 +94,183 @@ graph TB
   - Error handling and recovery
 - **Output**: Stream of tokens with metadata
 
-### 2. Syntax Analysis (v8_parser)
+### 2. Syntax Analysis (parser module)
 - **Purpose**: Converts tokens into Abstract Syntax Tree (AST)
 - **Features**:
-  - ECMAScript 5/6+ parsing
-  - Error recovery mechanisms
+  - Recursive descent parsing
+  - Error recovery strategies
   - Source location preservation
-  - Complex JavaScript construct handling
-- **Output**: Validated AST nodes
+  - AST node generation
+- **Output**: Complete AST representation
 
-### 3. Abstract Syntax Tree (v8_ast)
+### 3. Abstract Syntax Tree (ast module)
 - **Purpose**: Represents program structure
 - **Features**:
-  - Complete ECMAScript node types
-  - Serialization support (JSON)
-  - Visitor pattern implementation
-  - Source location tracking
+  - Comprehensive node types
+  - Visitor pattern support
+  - Serialization capabilities
+  - Position information
 - **Output**: Structured program representation
 
-### 4. Semantic Analysis (v8_semantic)
+### 4. Semantic Analysis (semantic module)
 - **Purpose**: Validates program semantics
 - **Features**:
-  - Type checking and scope analysis
-  - ECMAScript validation rules
-  - Error detection and reporting
-  - Static analysis capabilities
-- **Output**: Validated and analyzed AST
+  - Type checking
+  - Scope analysis
+  - Symbol resolution
+  - Error detection
+- **Output**: Validated AST with semantic information
 
-### 5. Bytecode Generation (v8_bytecode)
-- **Purpose**: Converts AST into executable bytecode
+### 5. Bytecode Generation (bytecode module)
+- **Purpose**: Converts AST to executable bytecode
 - **Features**:
-  - 100% AST coverage
-  - V8 Ignition-inspired instruction set
-  - Constant pool optimization
-  - All ECMAScript features supported
+  - Instruction generation
+  - Constant pool management
+  - Optimization passes
+  - Code emission
 - **Output**: Optimized bytecode instructions
 
-### 6. Virtual Machine (v8_vm)
+### 6. Virtual Machine (vm module)
 - **Purpose**: Executes bytecode instructions
 - **Features**:
-  - Stack-based execution engine
-  - Register management system
-  - Function and closure support
-  - Memory management integration
+  - Stack-based execution
+  - Register management
+  - Function calls
+  - Control flow
 - **Output**: Program execution results
 
-### 7. Runtime Environment (v8_runtime)
-- **Purpose**: Provides runtime services
+### 7. Runtime Environment (runtime module)
+- **Purpose**: Provides execution services
 - **Features**:
-  - Value system (primitives and objects)
-  - Context and scope management
-  - Function execution framework
-  - Object and array operations
-- **Output**: Runtime values and objects
+  - Built-in objects
+  - Function implementations
+  - Context management
+  - Value system
+- **Output**: Runtime services and values
 
-### 8. Garbage Collection (v8_gc)
-- **Purpose**: Manages memory allocation and cleanup
+### 8. Memory Management (memory module)
+- **Purpose**: Manages memory allocation
 - **Features**:
-  - Mark-sweep collection algorithm
-  - Object lifecycle tracking
-  - Memory optimization
   - Heap management
-- **Output**: Cleaned memory space
+  - Garbage collection
+  - Memory allocation
+  - Resource cleanup
+- **Output**: Efficient memory usage
 
-### 9. Public API (v8_api)
-- **Purpose**: External integration interface
+### 9. Public API (api module)
+- **Purpose**: Exposes engine interface
 - **Features**:
-  - Engine initialization and configuration
-  - Public interfaces for embedding
-  - Integration layer for applications
-- **Output**: Accessible engine functionality
-
-## Data Flow
-
-```mermaid
-graph LR
-    subgraph "Data Flow Through JetCrab"
-        A[JavaScript Source] --> B[Lexer]
-        B --> C[Tokens]
-        C --> D[Parser]
-        D --> E[AST]
-        
-        E --> F[Semantic Analyzer]
-        F --> G[Validated AST]
-        G --> H[Bytecode Generator]
-        H --> I[Bytecode]
-        
-        I --> J[Virtual Machine]
-        J --> K[Runtime Environment]
-        K --> L[Execution Results]
-        
-        M[Runtime Objects] --> N[Garbage Collector]
-        N --> O[Memory Cleanup]
-        O --> P[Available Memory]
-    end
-    
-    style A fill:#e1f5fe
-    style L fill:#c8e6c9
-    style P fill:#c8e6c9
-    style C fill:#fff3e0
-    style E fill:#fff3e0
-    style G fill:#fff3e0
-    style I fill:#fff3e0
-```
-
-### 1. Source Code Processing
-```
-JavaScript Source → Lexer → Tokens → Parser → AST
-```
-
-### 2. Analysis and Validation
-```
-AST → Semantic Analyzer → Validated AST → Bytecode Generator → Bytecode
-```
-
-### 3. Execution
-```
-Bytecode → Virtual Machine → Runtime Environment → Execution Results
-```
-
-### 4. Memory Management
-```
-Runtime Objects → Garbage Collector → Memory Cleanup → Available Memory
-```
+  - Engine initialization
+  - Code evaluation
+  - Configuration
+  - Integration
+- **Output**: Public API for applications
 
 ## Design Principles
 
-```mermaid
-graph TB
-    subgraph "JetCrab Design Principles"
-        A[Modularity<br/>Component Separation] --> A1[Clear Responsibilities]
-        A --> A2[Loose Coupling]
-        A --> A3[Well-defined Interfaces]
-        
-        B[Performance<br/>Optimization] --> B1[Efficient Data Structures]
-        B --> B2[Optimized Bytecode]
-        B --> B3[Memory-conscious Design]
-        
-        C[Standards Compliance<br/>ECMAScript] --> C1[Specification Adherence]
-        C --> C2[V8 Compatibility]
-        C --> C3[Modern JavaScript Support]
-        
-        D[Extensibility<br/>Future-proof] --> D1[Plugin Architecture]
-        D --> D2[Visitor Pattern]
-        D --> D3[Configurable Components]
-        
-        E[Reliability<br/>Robustness] --> E1[Error Handling]
-        E --> E2[Error Recovery]
-        E --> E3[Memory Safety]
-    end
-    
-    style A fill:#e3f2fd
-    style B fill:#e8f5e8
-    style C fill:#fff3e0
-    style D fill:#fce4ec
-    style E fill:#e3f2fd
-```
-
-### 1. Modularity
-- Each component is a separate crate with clear responsibilities
-- Loose coupling between components
+### 1. **Modularity**
+- Each component is a separate module with clear responsibilities
 - Well-defined interfaces between modules
+- Easy to extend and modify individual components
 
-### 2. Performance
+### 2. **Performance**
+- Optimized for common JavaScript patterns
 - Efficient data structures and algorithms
-- Optimized bytecode instruction set
-- Memory-conscious design
-- Benchmarking and profiling support
+- Minimal memory overhead
+- Fast startup and execution
 
-### 3. Standards Compliance
-- ECMAScript specification adherence
-- V8 engine compatibility where applicable
-- Modern JavaScript feature support
+### 3. **Reliability**
+- Comprehensive error handling
+- Robust error recovery
+- Memory safety through Rust
+- Extensive testing coverage
 
-### 4. Extensibility
-- Plugin-based architecture potential
+### 4. **Extensibility**
+- Plugin system architecture
 - Visitor pattern for AST traversal
 - Configurable components
-- API for external extensions
+- Custom built-in support
 
-### 5. Reliability
-- Comprehensive error handling
-- Robust error recovery mechanisms
-- Extensive testing coverage
-- Memory safety through Rust
+### 5. **Standards Compliance**
+- ECMAScript specification adherence
+- Modern JavaScript feature support
+- V8 engine compatibility where applicable
+- Progressive enhancement approach
 
 ## Performance Characteristics
 
-```mermaid
-graph TB
-    subgraph "Performance Characteristics"
-        A[Memory Usage] --> A1[Lexer: Minimal Footprint]
-        A --> A2[Parser: AST-based]
-        A --> A3[VM: Stack-based]
-        A --> A4[GC: Automatic Management]
-        
-        B[Execution Speed] --> B1[Lexical Analysis: O(n)]
-        B --> B2[Parsing: O(n) with Recovery]
-        B --> B3[Bytecode Generation: O(n)]
-        B --> B4[VM Execution: Optimized]
-        
-        C[Scalability] --> C1[Large Files: Streaming]
-        C --> C2[Complex Programs: Optimized]
-        C --> C3[Memory Pressure: GC]
-    end
-    
-    style A fill:#e3f2fd
-    style B fill:#e8f5e8
-    style C fill:#fff3e0
-```
-
-### Memory Usage
-- **Lexer**: Minimal memory footprint, streaming processing
-- **Parser**: AST-based, memory proportional to source size
-- **VM**: Stack-based execution, efficient memory usage
-- **GC**: Automatic memory management with optimization
-
-### Execution Speed
+### **Compilation Pipeline**
 - **Lexical Analysis**: O(n) where n is source length
 - **Parsing**: O(n) with error recovery
+- **Semantic Analysis**: O(n) where n is AST nodes
 - **Bytecode Generation**: O(n) where n is AST nodes
-- **VM Execution**: Optimized for common JavaScript patterns
 
-### Scalability
-- **Large Files**: Streaming lexer, efficient AST representation
-- **Complex Programs**: Optimized bytecode, efficient VM
-- **Memory Pressure**: Garbage collection, memory optimization
+### **Execution Performance**
+- **Startup Time**: < 10ms for basic initialization
+- **Memory Usage**: < 50MB baseline
+- **Execution Speed**: Optimized for common patterns
+- **Garbage Collection**: Efficient mark-sweep algorithm
+
+### **Optimization Strategies**
+- **Constant Folding**: Compile-time evaluation
+- **Dead Code Elimination**: Remove unused code
+- **Instruction Selection**: Optimize bytecode
+- **Memory Layout**: Optimize object structures
 
 ## Integration Points
 
-### External APIs
+### **External APIs**
 - **Embedding**: Public API for application integration
 - **Tooling**: AST serialization for development tools
 - **Debugging**: Source mapping and position tracking
 - **Profiling**: Performance measurement and analysis
 
-### Internal Interfaces
-- **Component Communication**: Well-defined interfaces
+### **Internal Interfaces**
+- **Module Communication**: Well-defined interfaces
 - **Data Flow**: Structured data passing between components
 - **Error Handling**: Consistent error propagation
 - **Configuration**: Flexible engine configuration
 
-## Future Extensions
+## Future Enhancements
 
-### Planned Features
-- **JIT Compilation**: Machine code generation for performance
-- **Optimizations**: Advanced bytecode and runtime optimizations
-- **WebAssembly**: WASM integration and execution
-- **Modules**: ES6 module system implementation
+### **Short Term (3-6 months)**
+- **Advanced Optimizations**: More optimization passes
+- **Better Error Messages**: User-friendly error reporting
+- **Performance Profiling**: Built-in performance tools
+- **Memory Optimization**: Improved garbage collection
 
-### Architecture Evolution
-- **Plugin System**: Extensible compiler pipeline
-- **Parallel Processing**: Multi-threaded execution
-- **Memory Management**: Advanced garbage collection algorithms
-- **Performance Profiling**: Real-time performance analysis
+### **Medium Term (6-12 months)**
+- **JIT Compilation**: Just-in-time optimization
+- **WebAssembly Support**: WASM compilation
+- **Advanced Debugging**: Breakpoint and inspection
+- **Module System**: ES6 module support
+
+### **Long Term (12+ months)**
+- **Multi-threading**: Parallel execution support
+- **Advanced Security**: Sandboxing and isolation
+- **Plugin System**: Extensible architecture
+- **Enterprise Features**: Multi-tenant support
+
+## Related Documentation
+
+- **[Module Architecture](./module-architecture.md)** - Detailed module organization
+- **[Implementation Status](../implementation/)** - Current development progress
+- **[Getting Started](../getting-started/)** - Setup and first steps
+- **[API Reference](../api/)** - Public interface documentation
 
 ---
 
-*This document provides a high-level overview of the JetCrab engine architecture. For detailed implementation information, see the individual component documentation.* 
+**Note**: This overview describes the current architecture of JetCrab. The engine is designed as a single crate with multiple modules, providing a clean separation of concerns while maintaining high performance and reliability.
+
+## ⚠️ **Implementation Status Note**
+
+**Important**: While this document describes the planned architecture and design of JetCrab, **many of the features described are not yet implemented**:
+
+- **Architecture**: ✅ Well-designed and documented
+- **Implementation**: ❌ Basic structure only, no working functionality
+- **JavaScript Execution**: ❌ Engine doesn't currently execute JavaScript code
+- **Performance Metrics**: ❌ Cannot be measured as nothing executes
+
+The project has excellent architecture and infrastructure in place, but needs significant development work to implement the core JavaScript execution functionality described in this overview.
+
+For current implementation status, see **[Implementation Status](../implementation/implementation-status.md)**. 

@@ -81,6 +81,8 @@ pub enum Node {
     BlockStatement(BlockStatement),
     IfStatement(IfStatement),
     ForStatement(ForStatement),
+    ForInStatement(ForInStatement),
+    ForOfStatement(ForOfStatement),
     WhileStatement(WhileStatement),
     DoWhileStatement(DoWhileStatement),
     SwitchStatement(SwitchStatement),

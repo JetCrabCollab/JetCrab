@@ -625,4 +625,27 @@ JetCrab is more than just a JavaScript engine - it's a comprehensive learning to
 
 This knowledge is valuable whether you're building web applications, system software, or learning about computer science fundamentals.
 
-Remember: Every complex system is built from simple components. JetCrab shows how these components work together to create something powerful and useful. 
+Remember: Every complex system is built from simple components. JetCrab shows how these components work together to create something powerful and useful.
+
+## ⚠️ **Important Current Status Note**
+
+**Current Implementation Status**: While this guide explains the concepts and architecture of JetCrab, **the JavaScript execution engine is currently non-functional**:
+
+- **Architecture**: ✅ Well-designed and documented
+- **Infrastructure**: ✅ Project compiles and has good structure
+- **JavaScript Execution**: ❌ Engine doesn't currently execute JavaScript code
+- **Examples**: ❌ Code examples in this guide won't work until core functionality is implemented
+
+**What This Means for You**:
+- **Learning**: You can still learn about JavaScript engine design and computer science concepts
+- **Code Examples**: The examples show the intended functionality, not current working code
+- **Contribution**: This is a great opportunity to help implement the core functionality
+- **Realistic Expectations**: Understand that the project is in early development
+
+**Next Steps**:
+1. **Learn the Concepts**: Use this guide to understand the theory
+2. **Explore the Code**: Look at the actual implementation structure
+3. **Contribute**: Help implement the missing functionality
+4. **Stay Updated**: Check [Implementation Status](../implementation/implementation-status.md) for current progress
+
+The project has excellent architecture and infrastructure in place, but needs significant development work to implement the JavaScript execution functionality described in this guide. 

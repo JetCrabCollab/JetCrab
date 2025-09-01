@@ -13,11 +13,39 @@ A modern JavaScript engine written in Rust, designed for performance, safety, an
 
 - **Lexical Analysis**: Fast tokenization with error recovery
 - **Parsing**: Robust AST generation with syntax error handling
-- **Semantic Analysis**: Type checking and scope management
-- **Bytecode Generation**: Optimized instruction generation
+- **Semantic Analysis**: Basic type checking and scope management
+- **Bytecode Generation**: Instruction generation and optimization
 - **Virtual Machine**: Stack-based execution engine
-- **Memory Management**: Garbage collection and memory allocation
+- **Memory Management**: Basic memory allocation and management
 - **Runtime Environment**: Object system and built-in functions
+
+## Current Status
+
+**JetCrab v0.2.0 is now functional with core JavaScript execution working:**
+
+✅ **Working Features:**
+- **JavaScript Execution**: Basic JavaScript code execution functional
+- **Arithmetic Operations**: `2 + 3 * 4` → `14`
+- **String Operations**: `'Hello' + ' ' + 'World'` → `'Hello World'`
+- **Variable Declarations**: `let x = 42; x` → `42`
+- **Object Creation**: `{name: 'Alice', age: 25}` → Object with properties
+- **Array Operations**: `[1, 2, 3].length` → `3`
+- **Function Calls**: `function add(a, b) { return a + b; } add(5, 3)` → `8`
+- **Arrow Functions**: `const square = (x) => x * x; square(5)` → `25`
+- **Template Literals**: `` `Hello ${name}!` `` → `"Hello World!"`
+- **Built-in Functions**: `console.log`, `JSON.stringify`, `Math.sqrt`
+
+🔄 **In Development:**
+- Function arguments and parameters
+- Recursion support
+- Advanced scope management
+- Error handling improvements
+
+❌ **Not Yet Implemented:**
+- Full ECMAScript compliance
+- Advanced debugging tools
+- Production deployment features
+- Comprehensive error recovery
 
 ## Architecture
 
@@ -28,11 +56,11 @@ src/
 ├── lexer/          # Tokenization and lexical analysis
 ├── ast/            # Abstract Syntax Tree representation
 ├── parser/         # Syntax analysis and AST construction
-├── semantic/       # Type checking and semantic analysis
+├── semantic/       # Basic type checking and validation
 ├── bytecode/       # Code generation and optimization
 ├── vm/             # Virtual machine and execution
 ├── runtime/        # Runtime environment and objects
-├── memory/         # Memory management and garbage collection
+├── memory/         # Basic memory management
 └── api/            # Public API and engine interface
 ```
 
@@ -66,7 +94,7 @@ fn main() {
 ### Running Examples
 
 ```bash
-cargo run --example basic_usage
+cargo run --example fibonacci
 ```
 
 ### Running Tests
@@ -143,31 +171,6 @@ make doc           # Generate documentation
 make run-examples  # Run all examples
 ```
 
-#### Branch Protection
-
-The main branch is protected and requires all checks to pass before merging:
-
-- **CI**: All tests, build, clippy, and format checks must pass
-- **Security**: No security vulnerabilities
-- **Coverage**: Must maintain minimum coverage threshold
-- **Documentation**: Documentation must be valid
-
-To set up branch protection:
-
-1. Go to Settings > Branches in your GitHub repository
-2. Add rule for `main` branch
-3. Enable "Require status checks to pass before merging"
-4. Add all required status checks:
-   - `CI`
-   - `Security`
-   - `Coverage`
-   - `Documentation`
-5. Enable "Require branches to be up to date before merging"
-6. Enable "Require pull request reviews before merging"
-7. Save changes
-
-Alternatively, run the "Setup Branch Protection" workflow manually.
-
 ## Contributing
 
 1. Fork the repository
@@ -182,6 +185,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Roadmap
 
+- [x] Fix JavaScript execution engine
+- [x] Implement basic arithmetic operations
+- [x] Add string and variable support
+- [x] Complete semantic analysis implementation
+- [x] Fix failing tests and stabilize API
+- [ ] Implement function arguments and parameters
+- [ ] Add recursion support
+- [ ] Improve error handling and recovery
 - [ ] ECMAScript 2024 compliance
 - [ ] JIT compilation
 - [ ] WebAssembly support
