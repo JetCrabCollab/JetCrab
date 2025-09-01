@@ -317,7 +317,7 @@ impl EventManager {
         self.emitter.emit(event, event_data.data);
     }
 
-    pub fn create_event_chain(&mut self, events: Vec<String>) -> EventChain {
+    pub fn create_event_chain(&mut self, events: Vec<String>) -> EventChain<'_> {
         EventChain::new(events, self)
     }
 }
