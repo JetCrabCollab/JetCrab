@@ -136,6 +136,7 @@ impl MinorGc {
     }
 
     /// Perform copying collection
+    #[allow(dead_code)]
     fn perform_copying_collection(
         &mut self,
         new_space: &mut Box<dyn MemorySpace>,

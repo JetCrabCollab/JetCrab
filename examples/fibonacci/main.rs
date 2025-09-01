@@ -19,11 +19,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     match engine.evaluate(&js_code) {
         Ok(result) => {
             println!("✅ Execution completed successfully!");
-            println!("Final result: {:?}", result);
+            println!("Final result: {result:?}");
         }
         Err(error) => {
             println!("❌ Execution failed with error:");
-            println!("{}", error);
+            println!("{error}");
         }
     }
 
@@ -38,13 +38,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     ];
 
     for test_case in test_cases {
-        println!("\nTesting: {}", test_case);
+        println!("\nTesting: {test_case}");
         match engine.evaluate(test_case) {
             Ok(result) => {
-                println!("✅ Result: {:?}", result);
+                println!("✅ Result: {result:?}");
             }
             Err(error) => {
-                println!("❌ Error: {}", error);
+                println!("❌ Error: {error}");
             }
         }
     }
@@ -52,17 +52,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Performance test
     println!("\n=== Performance Test ===");
     let performance_test = "fibonacciIterative(30)";
-    println!("Testing: {}", performance_test);
+    println!("Testing: {performance_test}");
 
     let start = std::time::Instant::now();
     match engine.evaluate(performance_test) {
         Ok(result) => {
             let duration = start.elapsed();
-            println!("✅ Result: {:?}", result);
-            println!("⏱️  Execution time: {:?}", duration);
+            println!("✅ Result: {result:?}");
+            println!("⏱️  Execution time: {duration:?}");
         }
         Err(error) => {
-            println!("❌ Error: {}", error);
+            println!("❌ Error: {error}");
         }
     }
 

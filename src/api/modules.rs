@@ -63,6 +63,7 @@ pub trait ModuleProvider: Send + Sync {
 }
 
 pub struct FileSystemModuleProvider {
+    #[allow(dead_code)]
     base_path: PathBuf,
     modules: HashMap<String, ModuleInfo>,
 }

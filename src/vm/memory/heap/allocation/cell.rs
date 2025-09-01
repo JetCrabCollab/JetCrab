@@ -21,10 +21,12 @@ struct Cell {
     /// Start address of the cell
     start: usize,
     /// Size of the cell
+    #[allow(dead_code)]
     size: usize,
     /// Whether the cell is allocated
     allocated: bool,
     /// Next cell in the chain (for chaining)
+    #[allow(dead_code)]
     next: Option<CellId>,
 }
 

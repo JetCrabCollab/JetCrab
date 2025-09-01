@@ -254,10 +254,12 @@ impl Default for Profiler {
     }
 }
 
+type EventListener = Box<dyn Fn(String) + Send + Sync>;
+
 pub struct Inspector {
     debugger: Debugger,
     profiler: Profiler,
-    event_listeners: HashMap<String, Vec<Box<dyn Fn(String) + Send + Sync>>>,
+    event_listeners: HashMap<String, Vec<EventListener>>,
 }
 
 impl Inspector {

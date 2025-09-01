@@ -157,15 +157,12 @@ impl Default for EventEmitter {
     }
 }
 
+type CallbackFunction =
+    Box<dyn Fn(serde_json::Value) -> Result<serde_json::Value, ApiError> + Send + Sync>;
+type CallbackArc = std::sync::Arc<std::sync::Mutex<CallbackFunction>>;
+
 pub struct CallbackRegistry {
-    callbacks: HashMap<
-        String,
-        std::sync::Arc<
-            std::sync::Mutex<
-                Box<dyn Fn(serde_json::Value) -> Result<serde_json::Value, ApiError> + Send + Sync>,
-            >,
-        >,
-    >,
+    callbacks: HashMap<String, CallbackArc>,
     metadata: HashMap<String, CallbackMetadata>,
 }
 
@@ -271,10 +268,12 @@ impl Default for CallbackRegistry {
     }
 }
 
+type EventFilter = Box<dyn Fn(&EventData) -> bool + Send + Sync>;
+
 pub struct EventManager {
     emitter: EventEmitter,
     callback_registry: CallbackRegistry,
-    event_filters: HashMap<String, Vec<Box<dyn Fn(&EventData) -> bool + Send + Sync>>>,
+    event_filters: HashMap<String, Vec<EventFilter>>,
 }
 
 impl EventManager {

@@ -198,6 +198,7 @@ impl SpaceCoordinator {
         }
     }
 
+    #[allow(dead_code)]
     fn get_space_for_generation(&mut self, generation: usize) -> Option<&mut Box<dyn MemorySpace>> {
         let space_type = match generation {
             0 => SpaceType::NewSpace,

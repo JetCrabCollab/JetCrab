@@ -32,6 +32,7 @@ pub struct GenerationalHeap {
 
     // Statistics and metrics
     stats: HeapStats,
+    #[allow(dead_code)]
     promotion_threshold: usize,
 }
 

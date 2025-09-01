@@ -101,7 +101,9 @@ where
     heap_manager: H,
     variable_manager: V,
     function_manager: crate::vm::function_manager::FunctionManager,
+    #[allow(dead_code)]
     frame: Frame,
+    #[allow(dead_code)]
     registers: Registers,
     builtins: Builtins,
     context_cache: Context,
