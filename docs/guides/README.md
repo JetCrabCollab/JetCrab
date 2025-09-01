@@ -1,86 +1,107 @@
-# Guides
+# JetCrab Guides
 
-This directory contains comprehensive guides for understanding JetCrab and related concepts.
+Welcome to the JetCrab guides! This directory contains comprehensive guides to help you understand and work with the JetCrab JavaScript engine.
 
-## Available Guides
+## 📚 **Available Guides**
 
 ### **For Beginners**
 - **[Beginner's Guide](./beginners-guide.md)** - Complete introduction to JetCrab and computer science concepts
-  - What is JetCrab and why it matters
-  - Computer science theory behind the project
-  - Step-by-step explanation of how JavaScript engines work
-  - Learning path for beginners
 
-### **Theory and Concepts**
-- **[Compiler Theory](./compiler-theory.md)** - Deep dive into compiler concepts
-  - Lexical analysis and tokenization
-  - Syntax analysis and parsing
-  - Code generation and optimization
-  - Virtual machine execution
+### **For Developers**
+- **[Getting Started](../getting-started/)** - Setup and installation guides
+- **[Architecture Overview](../architecture/)** - System design and module organization
+- **[Implementation Status](../implementation/)** - Current development progress
 
-- **[JavaScript Engine Basics](./javascript-engine-basics.md)** - Fundamentals of JavaScript engines
-  - How JavaScript engines work
-  - Comparison with other engines (V8, SpiderMonkey)
-  - Performance considerations
-  - Memory management
+## 🎯 **Guide Recommendations**
 
-## Guide Structure
-
-Each guide follows a consistent structure:
-
-1. **Overview** - What you'll learn
-2. **Prerequisites** - What you should know before starting
-3. **Theory** - Core concepts and principles
-4. **Practical Examples** - Real-world applications
-5. **Next Steps** - Where to go from here
-
-## Learning Path
-
-### **Recommended Order**
-
+### **If You're New to JetCrab**
 1. **Start Here**: [Beginner's Guide](./beginners-guide.md)
    - Complete introduction to the project
-   - No prior knowledge required
-   - Covers both theory and practice
+   - Computer science concepts explained
+   - Step-by-step learning path
 
-2. **Deepen Understanding**: [Compiler Theory](./compiler-theory.md)
-   - If you want to understand the technical details
-   - Covers the science behind JetCrab
+### **If You're a Developer**
+1. **Setup**: [Getting Started](../getting-started/) guides
+2. **Architecture**: [Module Architecture](../architecture/module-architecture.md)
+3. **Status**: [Implementation Status](../implementation/implementation-status.md)
 
-3. **Context**: [JavaScript Engine Basics](./javascript-engine-basics.md)
-   - Understand how JetCrab fits into the ecosystem
-   - Learn about other engines and performance
+### **If You Want to Contribute**
+1. **Understand**: [Beginner's Guide](./beginners-guide.md)
+2. **Architecture**: [Engine Overview](../architecture/engine-overview.md)
+3. **Current Work**: [Implementation Status](../implementation/)
 
-### **For Different Audiences**
+## 📖 **Guide Content**
 
-#### **Students**
-- Start with the Beginner's Guide
-- Focus on theory sections
-- Use examples to understand concepts
+### **Beginner's Guide**
+The [Beginner's Guide](./beginners-guide.md) covers:
+- What is JetCrab and why it exists
+- Basic computer science concepts
+- How JavaScript engines work
+- JetCrab's architecture overview
+- Getting started with development
 
-#### **Developers**
-- Skip to practical sections
-- Focus on implementation details
-- Use as reference for contributions
+## 🔗 **Related Documentation**
 
-#### **Researchers**
-- Focus on theory and architecture
-- Compare with other implementations
-- Use for academic understanding
+### **Getting Started**
+- **[Installation](../getting-started/installation.md)** - Setup your development environment
+- **[Quick Start](../getting-started/README.md)** - Getting started overview
 
-## Contributing to Guides
+### **Architecture & Design**
+- **[Engine Overview](../architecture/engine-overview.md)** - High-level system architecture
+- **[Module Architecture](../architecture/module-architecture.md)** - Detailed module organization
 
-When contributing to guides:
+### **Implementation**
+- **[Implementation Status](../implementation/implementation-status.md)** - Current development progress
+- **[Implementation Overview](../implementation/README.md)** - Implementation overview
 
-1. **Keep it accessible** - Explain complex concepts clearly
-2. **Include examples** - Practical code and diagrams
-3. **Update regularly** - Keep pace with codebase changes
-4. **Use Mermaid diagrams** - Visual explanations where helpful
-5. **Cross-reference** - Link to related documentation
+### **Development**
+- **[Contributing Guidelines](../CONTRIBUTING.md)** - How to contribute
+- **[Code of Conduct](../CODE_OF_CONDUCT.md)** - Community standards
 
-## Related Documentation
+## 🚀 **Getting Started**
 
-- **[Getting Started](../getting-started/)** - Quick start guides
-- **[Architecture](../architecture/)** - Technical architecture
-- **[Implementation](../implementation/)** - Current status
-- **[API Documentation](../api/)** - Integration details 
+### **Quick Navigation**
+- **New to JetCrab?** → [Beginner's Guide](./beginners-guide.md)
+- **Want to contribute?** → [Contributing Guidelines](../CONTRIBUTING.md)
+- **Need technical details?** → [Module Architecture](../architecture/module-architecture.md)
+- **Current status?** → [Implementation Status](../implementation/implementation-status.md)
+
+### **Project Status**
+- **Current Version**: 0.1.0
+- **Status**: Basic infrastructure complete, JavaScript execution non-functional
+- **Next Priority**: Fix JavaScript execution engine and implement basic operations
+
+## 📝 **Guide Standards**
+
+All guides follow these standards:
+- **Clear Structure**: Logical organization and flow
+- **Practical Examples**: Real code examples and use cases (when functionality works)
+- **Progressive Learning**: Build knowledge step by step
+- **Cross-references**: Links to related documentation
+- **Regular Updates**: Keep content current with codebase
+
+## ⚠️ **Important Notes**
+
+### **Current Limitations**
+- **JavaScript Execution**: The engine doesn't currently execute JavaScript code
+- **Examples**: Code examples in guides may not work until core functionality is implemented
+- **Features**: Many features described in guides are planned but not yet implemented
+
+### **What You Can Learn**
+- **Architecture**: Understanding how JavaScript engines are designed
+- **Computer Science**: Core concepts behind compilation and interpretation
+- **Project Structure**: How a large Rust project is organized
+- **Development Process**: How to contribute to an open-source project
+
+## 🤝 **Contributing to Guides**
+
+We welcome contributions to improve our guides! Please:
+1. Follow the existing style and structure
+2. Include practical examples (when functionality works)
+3. Test all code examples (note current limitations)
+4. Update related documentation
+5. Submit pull requests for review
+
+---
+
+**Note**: These guides are designed to help you understand and work with JetCrab effectively. Start with the [Beginner's Guide](./beginners-guide.md) if you're new to the project. **Note that many features described in these guides are not yet implemented - the project has good architecture but needs work on core functionality.** 

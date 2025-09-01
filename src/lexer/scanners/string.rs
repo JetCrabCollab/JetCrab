@@ -55,12 +55,14 @@ where
         self.advance_pos();
 
         let mut template = String::new();
+        let mut found_closing_backtick = false;
 
         while self.pos() < self.source().len() {
             let c = self.source()[self.pos()];
 
             if c == '`' {
                 self.advance_pos();
+                found_closing_backtick = true;
                 break;
             } else if c == '$' && self.peek_char(1) == Some('{') {
                 template.push_str("${");
@@ -85,6 +87,10 @@ where
                 template.push(c);
                 self.advance_pos();
             }
+        }
+
+        if !found_closing_backtick {
+            return Err(LexerError::UnterminatedString);
         }
 
         Ok(TokenKind::TemplateString(template))

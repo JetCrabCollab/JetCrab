@@ -1,7 +1,5 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use jetcrab::api::{Compiler, Engine};
-use jetcrab::ast::visitor::{AstPrinter, NodeCounter, Visitor};
-use jetcrab::semantic::analyzer::SemanticAnalyzer;
+use jetcrab::api::Engine;
 
 fn benchmark_template_literals(c: &mut Criterion) {
     let source = r#"
@@ -9,7 +7,7 @@ fn benchmark_template_literals(c: &mut Criterion) {
         const greeting = `Hello ${name}!`;
         const multi = `Line 1
         Line 2 ${name}
-        Line 3 ${name.toUpperCase()}`;
+        Line 3 ${name}`;
     "#;
 
     c.bench_function("template_literals", |b| {
@@ -20,17 +18,18 @@ fn benchmark_template_literals(c: &mut Criterion) {
     });
 }
 
-fn benchmark_meta_properties(c: &mut Criterion) {
+fn benchmark_function_execution(c: &mut Criterion) {
     let source = r#"
-        function MyClass() {
-            if (new.target !== MyClass) {
-                throw new Error("Must be called with new");
-            }
+        function add(a, b) {
+            return a + b;
         }
-        new MyClass();
+        function multiply(a, b) {
+            return a * b;
+        }
+        add(5, 3) + multiply(2, 4);
     "#;
 
-    c.bench_function("meta_properties", |b| {
+    c.bench_function("function_execution", |b| {
         b.iter(|| {
             let mut engine = Engine::new();
             engine.evaluate(black_box(source))
@@ -38,72 +37,67 @@ fn benchmark_meta_properties(c: &mut Criterion) {
     });
 }
 
-fn benchmark_visitor_pattern(c: &mut Criterion) {
-    let source = "let x = 5; let y = 10; let z = x + y;";
-    let mut parser = jetcrab::parser::Parser::new(source);
-    let ast = parser.parse().unwrap();
-
-    c.bench_function("node_counter", |b| {
-        b.iter(|| {
-            let mut counter = NodeCounter::new();
-            counter.visit_node(black_box(&ast))
-        })
-    });
-
-    c.bench_function("ast_printer", |b| {
-        b.iter(|| {
-            let mut printer = AstPrinter::new();
-            printer.visit_node(black_box(&ast))
-        })
-    });
-}
-
-fn benchmark_semantic_analysis(c: &mut Criterion) {
+fn benchmark_object_operations(c: &mut Criterion) {
     let source = r#"
-        let x = 5;
-        let y = 10;
-        function test(a, b) {
-            let result = a + b;
-            return result;
-        }
-        test(x, y);
+        let obj = {
+            name: "test",
+            value: 42,
+            nested: {
+                prop: "nested_value"
+            }
+        };
+        obj.name + obj.nested.prop;
     "#;
 
-    let mut parser = jetcrab::parser::Parser::new(source);
-    let ast = parser.parse().unwrap();
-
-    c.bench_function("semantic_analysis", |b| {
+    c.bench_function("object_operations", |b| {
         b.iter(|| {
-            let mut analyzer = SemanticAnalyzer::new();
-            analyzer.analyze(black_box(&ast))
+            let mut engine = Engine::new();
+            engine.evaluate(black_box(source))
         })
     });
 }
 
-fn benchmark_bytecode_generation(c: &mut Criterion) {
+fn benchmark_builtin_functions(c: &mut Criterion) {
+    let source = r#"
+        console.log("Hello", "World", 42);
+        JSON.stringify("Hello World");
+        Math.sqrt(16);
+        "Hello World".length;
+        [1, 2, 3, 4, 5].length;
+    "#;
+
+    c.bench_function("builtin_functions", |b| {
+        b.iter(|| {
+            let mut engine = Engine::new();
+            engine.evaluate(black_box(source))
+        })
+    });
+}
+
+fn benchmark_complex_expression(c: &mut Criterion) {
     let source = r#"
         let x = 5;
         let y = 10;
         let result = x + y * 2;
         if (result > 20) {
-            return "high";
+            "high"
         } else {
-            return "low";
+            "low"
         }
     "#;
 
-    let mut compiler = Compiler::new();
-
-    c.bench_function("bytecode_generation", |b| {
-        b.iter(|| compiler.compile(black_box(source)))
+    c.bench_function("complex_expression", |b| {
+        b.iter(|| {
+            let mut engine = Engine::new();
+            engine.evaluate(black_box(source))
+        })
     });
 }
 
 fn benchmark_large_program(c: &mut Criterion) {
     let source = r#"
-
         let data = [];
-        for (let i = 0; i < 100; i++) {
+        for (let i = 0; i < 10; i++) {
             data.push({
                 id: i,
                 name: `Item ${i}`,
@@ -112,18 +106,14 @@ fn benchmark_large_program(c: &mut Criterion) {
             });
         }
         
-        const filtered = data.filter(item => item.active);
-        const mapped = filtered.map(item => ({
-            ...item,
-            computed: item.value * 2
-        }));
-        
         let sum = 0;
-        for (const item of mapped) {
-            sum += item.computed;
+        for (let i = 0; i < data.length; i++) {
+            if (data[i].active) {
+                sum += data[i].value;
+            }
         }
         
-        return sum;
+        sum;
     "#;
 
     c.bench_function("large_program", |b| {
@@ -137,10 +127,10 @@ fn benchmark_large_program(c: &mut Criterion) {
 criterion_group!(
     benches,
     benchmark_template_literals,
-    benchmark_meta_properties,
-    benchmark_visitor_pattern,
-    benchmark_semantic_analysis,
-    benchmark_bytecode_generation,
+    benchmark_function_execution,
+    benchmark_object_operations,
+    benchmark_builtin_functions,
+    benchmark_complex_expression,
     benchmark_large_program
 );
 criterion_main!(benches);

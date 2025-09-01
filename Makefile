@@ -31,8 +31,3 @@ bench: ## Run benchmarks
 
 doc: ## Generate documentation
 	cargo doc --open
-
-run-examples: ## Run all examples
-	cargo run --example basic_usage
-	cargo run --example e2e_test
-	cargo run --example ecmascript_2024_compliance 

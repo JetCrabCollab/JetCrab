@@ -1,363 +1,273 @@
-# Getting Started with JetCrab
+# JetCrab Installation Guide
 
-This guide will help you get up and running with the JetCrab JavaScript engine, whether you want to contribute to the project or use it in your own applications.
+## Overview
+
+This guide will help you set up JetCrab on your system for development and usage.
 
 ## Prerequisites
 
-### Required Software
-- **Rust**: Version 1.75 or higher
-- **Cargo**: Latest stable version (comes with Rust)
-- **Git**: For version control
-- **Build Tools**: Standard development environment
+### **System Requirements**
+- **Operating System**: Windows 10+, macOS 10.15+, or Linux (Ubuntu 18.04+)
+- **Architecture**: x86_64 or ARM64
+- **Memory**: Minimum 4GB RAM, 8GB recommended
+- **Storage**: 2GB free space for development
 
-### Installing Rust
-If you don't have Rust installed, follow these steps:
+### **Required Software**
+- **Rust**: Version 1.70 or higher
+- **Cargo**: Rust's package manager (included with Rust)
+- **Git**: Version 2.0 or higher
+- **Build Tools**: Platform-specific build dependencies
 
+## Installation Steps
+
+### **Step 1: Install Rust**
+
+#### **Windows**
 ```bash
-# Install Rust using rustup
+# Download and run rustup-init.exe from https://rustup.rs/
+# Or use winget:
+winget install Rust.Rust
+```
+
+#### **macOS**
+```bash
+# Using Homebrew
+brew install rust
+
+# Or using rustup
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+
+#### **Linux**
+```bash
+# Ubuntu/Debian
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
-# Add Rust to your PATH
-source ~/.cargo/env
+# Or using package manager
+sudo apt update
+sudo apt install rustc cargo
+```
 
-# Verify installation
+### **Step 2: Verify Installation**
+
+```bash
+# Check Rust version
 rustc --version
 cargo --version
+
+# Expected output:
+# rustc 1.70.0 (90c541806 2023-05-31)
+# cargo 1.70.0 (ec8a8a0ca 2023-05-26)
 ```
 
-## Project Setup
+### **Step 3: Clone JetCrab Repository**
 
-### 1. Clone the Repository
 ```bash
+# Clone the repository
 git clone https://github.com/JetCrabCollab/JetCrab.git
 cd JetCrab
+
+# Verify the clone
+ls -la
 ```
 
-### 2. Build the Project
+### **Step 4: Build JetCrab**
+
 ```bash
 # Build the project
 cargo build
 
-# Build with optimizations
+# For release build (optimized)
 cargo build --release
+
+# Expected output: Compilation successful
 ```
 
-### 3. Run Tests
+### **Step 5: Test Installation**
+
+```bash
+# Run the basic example
+cargo run --example basic_usage
+
+# Expected output: JavaScript examples running successfully
+```
+
+## Development Setup
+
+### **Install Development Dependencies**
+
+```bash
+# Install additional tools for development
+cargo install cargo-watch  # For file watching
+cargo install cargo-audit   # For security auditing
+cargo install cargo-tarpaulin  # For code coverage
+```
+
+### **IDE Setup**
+
+#### **VS Code**
+1. Install the "Rust" extension
+2. Install "rust-analyzer" extension
+3. Open the JetCrab folder
+4. Enable auto-formatting on save
+
+#### **IntelliJ IDEA / CLion**
+1. Install the Rust plugin
+2. Open the JetCrab project
+3. Configure Rust toolchain
+4. Enable auto-imports
+
+### **Configure Git Hooks**
+
+```bash
+# Install pre-commit hooks
+./scripts/pre-commit.sh
+
+# Or manually set up hooks
+cp scripts/pre-commit.sh .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+```
+
+## Verification
+
+### **Run Tests**
 ```bash
 # Run all tests
 cargo test
 
-# Run tests with output
-cargo test -- --nocapture
-
-# Run specific module tests
-cargo test lexer
-cargo test parser
-cargo test vm
+# Note: Some tests may currently fail due to ongoing development
 ```
 
-### 4. Run Benchmarks
+### **Run Examples**
 ```bash
-# Run all benchmarks
-cargo bench
+# Basic usage example
+cargo run --example basic_usage
 
-# Run specific benchmarks
-cargo bench lexer
+# Other examples
+cargo run --example vm_demo
+cargo run --example simple_test
 ```
 
-## Project Structure
-
-### Project Overview
-```
-jetcrab/
-├── Cargo.toml              # Package configuration
-├── README.md               # Project overview
-├── CONTRIBUTING.md         # Contribution guidelines
-├── docs/                   # Documentation
-│   ├── README.md          # Documentation index
-│   ├── checklists/        # Implementation checklists
-│   ├── architecture/      # Architecture documentation
-│   ├── development/       # Development guides
-│   └── api/               # API documentation
-├── src/                    # Source code
-│   ├── lib.rs             # Public API and module declarations
-│   ├── lexer/             # Lexical analysis
-│   ├── ast/               # Abstract Syntax Tree
-│   ├── parser/            # Syntax analysis
-│   ├── semantic/          # Semantic analysis
-│   ├── bytecode/          # Bytecode generation
-│   ├── vm/                # Virtual Machine
-│   ├── runtime/           # Runtime environment
-│   ├── memory/            # Memory management
-│   └── api/               # Public API
-├── examples/              # Usage examples
-├── tests/                 # Integration tests
-└── benches/               # Performance benchmarks
-```
-
-### Key Directories
-- **`src/`**: Source code modules for each component
-- **`docs/`**: Comprehensive documentation
-- **`examples/`**: Usage examples and demonstrations
-- **`tests/`**: Integration tests
-- **`benches/`**: Performance benchmarks
-- **`target/`**: Build artifacts (generated)
-
-## Quick Examples
-
-### 1. Basic Lexical Analysis
-```rust
-use v8_lexer::tokenize;
-
-fn main() {
-    let source = "let x = 42;";
-    match tokenize(source) {
-        Ok(tokens) => {
-            println!("Found {} tokens:", tokens.len());
-            for token in tokens {
-                println!("  {:?}", token);
-            }
-        }
-        Err(error) => {
-            eprintln!("Lexical error: {}", error);
-        }
-    }
-}
-```
-
-### 2. AST Generation and Serialization
-```rust
-use v8_ast::Node;
-use serde_json;
-
-fn main() {
-    // Create a simple AST
-    let ast = Node::Program(Program {
-        body: vec![
-            Node::VariableDeclaration(VariableDeclaration {
-                declarations: vec![
-                    VariableDeclarator {
-                        id: Box::new(Node::Identifier("x".to_string())),
-                        init: Some(Box::new(Node::Number(42.0))),
-                        span: None,
-                    }
-                ],
-                kind: "let".to_string(),
-                span: None,
-            })
-        ],
-        source_type: "script".to_string(),
-        span: None,
-    });
-
-    // Serialize to JSON
-    let json = serde_json::to_string_pretty(&ast).unwrap();
-    println!("AST JSON:\n{}", json);
-}
-```
-
-### 3. Virtual Machine Execution
-```rust
-use v8_vm::{Executor, Bytecode, Instruction};
-use v8_runtime::Value;
-
-fn main() {
-    // Create simple bytecode
-    let bytecode = Bytecode::new(vec![
-        Instruction::PushConst(0),  // Push constant 42
-        Instruction::Return,         // Return from function
-    ]);
-
-    // Execute bytecode
-    let mut executor = Executor::new();
-    match executor.execute(&bytecode) {
-        Ok(value) => {
-            println!("Execution result: {:?}", value);
-        }
-        Err(error) => {
-            eprintln!("Execution error: {}", error);
-        }
-    }
-}
-```
-
-## Development Workflow
-
-### 1. Making Changes
+### **Check Code Quality**
 ```bash
-# Create a feature branch
-git checkout -b feature/your-feature-name
+# Format code
+cargo fmt
 
-# Make your changes
-# ... edit files ...
+# Run linter
+cargo clippy
 
-# Check formatting
-cargo fmt --all
-
-# Run clippy for code quality
-cargo clippy --all
-
-# Run tests
-cargo test --all
-
-# Commit your changes
-git add .
-git commit -m "feat(component): add your feature description"
+# Check for security issues
+cargo audit
 ```
 
-### 2. Testing Your Changes
+## Troubleshooting
+
+### **Common Issues**
+
+#### **Build Errors**
 ```bash
-# Run unit tests
-cargo test --all
+# Clean and rebuild
+cargo clean
+cargo build
 
-# Run integration tests
-cargo test --test integration_test
-
-# Run benchmarks
-cargo bench --all
-
-# Check test coverage (if available)
-cargo tarpaulin --all
+# Update Rust toolchain
+rustup update
 ```
 
-### 3. Documentation
+#### **Dependency Issues**
 ```bash
-# Build documentation
-cargo doc --all --no-deps
+# Update dependencies
+cargo update
 
-# Open documentation in browser
-cargo doc --all --no-deps --open
+# Check for outdated packages
+cargo outdated
 ```
 
-## Common Tasks
-
-### Adding a New Feature
-1. **Identify the appropriate crate** for your feature
-2. **Add tests** before implementing the feature
-3. **Implement the feature** following coding standards
-4. **Update documentation** if needed
-5. **Run all tests** to ensure nothing breaks
-
-### Debugging Issues
+#### **Permission Issues (Linux/macOS)**
 ```bash
-# Run with debug output
-RUST_LOG=debug cargo test --all
-
-# Run specific test with output
-cargo test test_name -- --nocapture
-
-# Use rust-gdb for debugging
-rust-gdb target/debug/v8_lexer
+# Fix permissions
+chmod +x scripts/*.sh
+chmod +x .git/hooks/*
 ```
 
-### Performance Profiling
-```bash
-# Run benchmarks
-cargo bench --all
+### **Platform-Specific Issues**
 
-# Profile with perf (Linux)
-perf record --call-graph=dwarf cargo bench
-perf report
+#### **Windows**
+- Ensure Visual Studio Build Tools are installed
+- Use PowerShell or Command Prompt
+- Check Windows Defender exclusions
 
-# Profile with flamegraph
-cargo install flamegraph
-cargo flamegraph --bench lexer_benchmarks
-```
+#### **macOS**
+- Install Xcode Command Line Tools
+- Use Homebrew for dependencies
+- Check Gatekeeper settings
+
+#### **Linux**
+- Install build essentials
+- Check system libraries
+- Verify Python installation
 
 ## Configuration
 
-### Environment Variables
-- `RUST_LOG`: Set logging level (debug, info, warn, error)
-- `RUST_BACKTRACE`: Enable backtraces for debugging
-- `CARGO_INCREMENTAL`: Enable incremental compilation
+### **Environment Variables**
 
-### Cargo Configuration
-Create `.cargo/config.toml` for project-specific settings:
+```bash
+# Set development environment
+export RUST_LOG=debug
+export RUST_BACKTRACE=1
+
+# For Windows PowerShell
+$env:RUST_LOG="debug"
+$env:RUST_BACKTRACE="1"
+```
+
+### **Cargo Configuration**
+
+Create `~/.cargo/config.toml`:
 ```toml
 [build]
 rustflags = ["-C", "target-cpu=native"]
 
 [profile.dev]
 opt-level = 1
+debug = true
 
 [profile.release]
+opt-level = 3
 lto = true
 codegen-units = 1
 ```
 
-## Troubleshooting
-
-### Common Issues
-
-#### Build Errors
-```bash
-# Clean and rebuild
-cargo clean
-cargo build --all
-
-# Update dependencies
-cargo update
-```
-
-#### Test Failures
-```bash
-# Run tests with more verbose output
-cargo test --all -- --nocapture
-
-# Run specific failing test
-cargo test test_name -- --nocapture
-```
-
-#### Performance Issues
-```bash
-# Check for memory leaks
-cargo install cargo-valgrind
-cargo valgrind test --all
-
-# Profile memory usage
-cargo install cargo-instruments
-cargo instruments --test
-```
-
-### Getting Help
-
-#### Documentation
-- **[Project README](../README.md)**: Project overview
-- **[Architecture Documentation](../architecture/)**: Technical details
-- **[API Documentation](../api/)**: Usage examples
-- **[Checklists](../checklists/)**: Implementation status
-
-#### Community
-- **GitHub Issues**: Report bugs and request features
-- **GitHub Discussions**: Ask questions and share ideas
-- **Pull Requests**: Contribute code and improvements
-
-#### Resources
-- **[Rust Book](https://doc.rust-lang.org/book/)**: Learn Rust
-- **[ECMAScript Specification](https://tc39.es/ecma262/)**: JavaScript reference
-- **[V8 Engine Documentation](https://v8.dev/)**: V8 engine reference
-
 ## Next Steps
 
-### For Contributors
+### **For Users**
+1. Read the **[Project README](../README.md)**: Project overview
+2. Try the **[Basic Examples](../examples/)**: Working examples
+3. Check **[Implementation Status](../implementation/)**: Current features
+
+### **For Contributors**
 1. Read the **[CONTRIBUTING.md](../CONTRIBUTING.md)** guide
-2. Review the **[Architecture Documentation](../architecture/)**
-3. Check the **[Implementation Checklists](../checklists/)**
-4. Pick an issue or feature to work on
-5. Submit a pull request
+2. Review **[Architecture Documentation](../architecture/)**: System design
+3. Check **[Implementation Status](../implementation/)**: Current work
 
-### For Users
-1. Explore the **[API Documentation](../api/)**
-2. Try the examples in this guide
-3. Check the **[Performance Guide](./performance-guide.md)**
-4. Integrate JetCrab into your project
+### **For Developers**
+1. Explore the **[Source Code](../src/)**: Codebase structure
+2. Review **[Module Architecture](../architecture/module-architecture.md)**: Module organization
+3. Check **[Test Suite](../tests/)**: Testing framework
 
-### For Maintainers
-1. Review the **[Architecture Documentation](../architecture/)**
-2. Monitor the **[Implementation Checklists](../checklists/)**
-3. Maintain code quality and test coverage
-4. Guide community contributions
+## Support
+
+### **Getting Help**
+- **Documentation**: Check this guide and related docs
+- **Issues**: Report problems on GitHub
+- **Discussions**: Join community discussions
+- **Code Review**: Submit pull requests
+
+### **Resources**
+- **[Rust Book](https://doc.rust-lang.org/book/)**: Rust language guide
+- **[Cargo Book](https://doc.rust-lang.org/cargo/)**: Package manager guide
+- **[JetCrab Repository](https://github.com/JetCrabCollab/JetCrab)**: Source code
 
 ---
 
-*This guide should help you get started with JetCrab. For more detailed information, explore the documentation in the `docs/` directory.* 
+**Note**: This installation guide covers the basic setup for JetCrab. For advanced configuration and development setup, refer to the architecture and implementation documentation. 

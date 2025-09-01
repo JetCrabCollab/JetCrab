@@ -54,6 +54,55 @@ pub enum VmError {
         message: String,
         position: Option<Position>,
     },
+
+    // JavaScript-specific runtime errors
+    TypeError {
+        message: String,
+        position: Option<Position>,
+    },
+
+    ReferenceError {
+        message: String,
+        position: Option<Position>,
+    },
+
+    RangeError {
+        message: String,
+        position: Option<Position>,
+    },
+
+    SyntaxError {
+        message: String,
+        position: Option<Position>,
+    },
+
+    UndefinedProperty {
+        object: String,
+        property: String,
+        position: Option<Position>,
+    },
+
+    InvalidFunctionCall {
+        function: String,
+        message: String,
+        position: Option<Position>,
+    },
+
+    ContextError {
+        message: String,
+        position: Option<Position>,
+    },
+
+    BuiltinError {
+        builtin: String,
+        message: String,
+        position: Option<Position>,
+    },
+
+    ObjectError {
+        message: String,
+        position: Option<Position>,
+    },
 }
 
 impl std::fmt::Display for VmError {
@@ -139,6 +188,91 @@ impl std::fmt::Display for VmError {
             }
             VmError::RuntimeError { message, position } => {
                 write!(f, "Runtime error: {message}")?;
+                if let Some(pos) = position {
+                    write!(f, " at line {}, column {}", pos.line, pos.column)?;
+                }
+                Ok(())
+            }
+
+            // JavaScript-specific runtime errors
+            VmError::TypeError { message, position } => {
+                write!(f, "TypeError: {message}")?;
+                if let Some(pos) = position {
+                    write!(f, " at line {}, column {}", pos.line, pos.column)?;
+                }
+                Ok(())
+            }
+
+            VmError::ReferenceError { message, position } => {
+                write!(f, "ReferenceError: {message}")?;
+                if let Some(pos) = position {
+                    write!(f, " at line {}, column {}", pos.line, pos.column)?;
+                }
+                Ok(())
+            }
+
+            VmError::RangeError { message, position } => {
+                write!(f, "RangeError: {message}")?;
+                if let Some(pos) = position {
+                    write!(f, " at line {}, column {}", pos.line, pos.column)?;
+                }
+                Ok(())
+            }
+
+            VmError::SyntaxError { message, position } => {
+                write!(f, "SyntaxError: {message}")?;
+                if let Some(pos) = position {
+                    write!(f, " at line {}, column {}", pos.line, pos.column)?;
+                }
+                Ok(())
+            }
+
+            VmError::UndefinedProperty {
+                object,
+                property,
+                position,
+            } => {
+                write!(f, "Cannot read property '{property}' of {object}")?;
+                if let Some(pos) = position {
+                    write!(f, " at line {}, column {}", pos.line, pos.column)?;
+                }
+                Ok(())
+            }
+
+            VmError::InvalidFunctionCall {
+                function,
+                message,
+                position,
+            } => {
+                write!(f, "Invalid function call '{function}': {message}")?;
+                if let Some(pos) = position {
+                    write!(f, " at line {}, column {}", pos.line, pos.column)?;
+                }
+                Ok(())
+            }
+
+            VmError::ContextError { message, position } => {
+                write!(f, "Context error: {message}")?;
+                if let Some(pos) = position {
+                    write!(f, " at line {}, column {}", pos.line, pos.column)?;
+                }
+                Ok(())
+            }
+
+            VmError::BuiltinError {
+                builtin,
+                message,
+                position,
+            } => {
+                write!(f, "Builtin error '{builtin}': {message}")?;
+                if let Some(pos) = position {
+                    write!(f, " at line {}, column {}", pos.line, pos.column)?;
+                }
+                Ok(())
+            }
+
+            VmError::ObjectError { message, position } => {
+                write!(f, "Object error: {message}")?;
                 if let Some(pos) = position {
                     write!(f, " at line {}, column {}", pos.line, pos.column)?;
                 }

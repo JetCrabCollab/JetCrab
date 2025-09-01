@@ -124,9 +124,9 @@ impl Parser {
                     _ => self.parse_expression_statement(),
                 },
                 TokenKind::LeftBrace => {
-                    // In statement context, { } is always a block statement
-                    // Object literals are parsed in expression context
-                    self.parse_block_statement()
+                    // For now, treat {} as an object literal when it's a standalone statement
+                    // This is a simplified approach - in a full parser we'd need more context
+                    self.parse_expression_statement()
                 }
                 TokenKind::Semicolon => self.parse_empty_statement(),
                 _ => self.parse_expression_statement(),
@@ -212,38 +212,42 @@ impl Parser {
     }
 
     fn parse_for_statement(&mut self) -> ParseResult<Node> {
-        self.advance();
+        self.advance(); // consume 'for'
 
         self.expect(TokenKind::LeftParen)?;
 
-        let init = if !self.check(TokenKind::Semicolon) {
-            Some(Box::new(if self.is_declaration() {
-                self.parse_declaration()?
-            } else {
-                self.parse_expression()?
-            }))
-        } else {
+        // Parse init
+        let init = if self.check(TokenKind::Semicolon) {
             None
+        } else if self.is_declaration() {
+            Some(Box::new(
+                self.parse_variable_declaration_without_semicolon()?,
+            ))
+        } else {
+            Some(Box::new(self.parse_expression()?))
         };
 
         self.expect(TokenKind::Semicolon)?;
 
-        let test = if !self.check(TokenKind::Semicolon) {
-            Some(Box::new(self.parse_expression()?))
-        } else {
+        // Parse test
+        let test = if self.check(TokenKind::Semicolon) {
             None
+        } else {
+            Some(Box::new(self.parse_expression()?))
         };
 
         self.expect(TokenKind::Semicolon)?;
 
-        let update = if !self.check(TokenKind::RightParen) {
-            Some(Box::new(self.parse_expression()?))
-        } else {
+        // Parse update
+        let update = if self.check(TokenKind::RightParen) {
             None
+        } else {
+            Some(Box::new(self.parse_expression()?))
         };
 
         self.expect(TokenKind::RightParen)?;
 
+        // Parse body
         let body = Box::new(self.parse_statement()?);
 
         let span = self.create_span_from_tokens();
@@ -1015,8 +1019,7 @@ impl Parser {
         }))
     }
 
-    #[allow(dead_code)]
-    fn parse_destructuring_pattern(&mut self) -> ParseResult<Node> {
+    pub fn parse_destructuring_pattern(&mut self) -> ParseResult<Node> {
         if self.check(TokenKind::LeftBrace) {
             self.advance();
             let mut properties = Vec::new();
@@ -1109,44 +1112,40 @@ impl Parser {
         let mut quasis = Vec::new();
         let mut expressions = Vec::new();
 
-        quasis.push(TemplateElement {
-            value: initial_value,
-            tail: false,
-            span: None,
-        });
+        // Parse the initial template string
+        let parts: Vec<&str> = initial_value.split("${").collect();
 
-        while !self.check(TokenKind::TemplateEnd) && !self.is_eof() {
-            if self.check(TokenKind::TemplateExpr) {
-                self.advance();
-                let expr = self.parse_expression()?;
-                expressions.push(expr);
-
-                if self.check(TokenKind::RightBrace) {
-                    self.advance();
-                } else {
-                    return Err(ParserError::unexpected_token(
-                        self.current_token().unwrap(),
-                        Some("Expected '}' in template expression"),
-                    ));
+        for (i, part) in parts.iter().enumerate() {
+            if i == 0 {
+                // First part is just text
+                if !part.is_empty() {
+                    quasis.push(TemplateElement {
+                        value: part.to_string(),
+                        tail: parts.len() == 1,
+                        span: None,
+                    });
                 }
-            } else if let TokenKind::TemplateString(value) = &self.current_token().unwrap().kind {
-                let value = value.clone();
-                self.advance();
-                quasis.push(TemplateElement {
-                    value,
-                    tail: false,
-                    span: None,
-                });
             } else {
-                break;
-            }
-        }
+                // Split by closing brace
+                let sub_parts: Vec<&str> = part.split("}").collect();
+                if sub_parts.len() >= 2 {
+                    // Parse the expression inside ${}
+                    let expression_str = sub_parts[0];
+                    let remaining_text = sub_parts[1..].join("}");
 
-        if self.check(TokenKind::TemplateEnd) {
-            self.advance();
+                    // Parse the expression using a simple approach
+                    let expression = self.parse_simple_expression(expression_str)?;
+                    expressions.push(expression);
 
-            if let Some(last_quasi) = quasis.last_mut() {
-                last_quasi.tail = true;
+                    // Add the remaining text as a quasi
+                    if !remaining_text.is_empty() {
+                        quasis.push(TemplateElement {
+                            value: remaining_text,
+                            tail: i == parts.len() - 1,
+                            span: None,
+                        });
+                    }
+                }
             }
         }
 
@@ -1156,5 +1155,24 @@ impl Parser {
             expressions,
             span: Some(span),
         }))
+    }
+
+    fn parse_simple_expression(&mut self, expr_str: &str) -> ParseResult<Node> {
+        // For now, handle simple cases: identifiers, numbers, and basic operations
+        let expr_str = expr_str.trim();
+
+        // Check if it's a number
+        if let Ok(num) = expr_str.parse::<f64>() {
+            return Ok(Node::Number(num));
+        }
+
+        // Check if it's a simple identifier
+        if expr_str.chars().all(|c| c.is_alphanumeric() || c == '_') {
+            return Ok(Node::Identifier(expr_str.to_string()));
+        }
+
+        // For complex expressions, create a temporary parser
+        let mut temp_parser = Parser::new(expr_str);
+        temp_parser.parse_expression()
     }
 }
