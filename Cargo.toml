@@ -1,6 +1,6 @@
 [package]
 name = "jetcrab"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 license = "MIT"
 authors = ["JetCrab Team"]
@@ -15,7 +15,39 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 
 [dev-dependencies]
-criterion = "0.4"
+criterion = "0.5"
+
+[[bench]]
+name = "basic_benchmark"
+harness = false
+
+[[bench]]
+name = "lexer_benchmarks"
+harness = false
+
+[[bench]]
+name = "parser_benchmarks"
+harness = false
+
+[[bench]]
+name = "vm_benchmarks"
+harness = false
+
+[[bench]]
+name = "performance_benchmarks"
+harness = false
+
+[[bench]]
+name = "simple_benchmark"
+harness = false
+
+[[bench]]
+name = "test_benchmark"
+harness = false
+
+[[bench]]
+name = "minimal_benchmark"
+harness = false
 
 [profile.dev]
 opt-level = 0

@@ -1,3 +1,38 @@
+//! # Test Utilities Module
+//!
+//! Provides testing utilities and test runner functionality for the JetCrab engine,
+//! enabling automated testing of JavaScript code execution and compliance.
+//!
+//! ## Overview
+//!
+//! The test utilities module includes:
+//!
+//! - **Test Results**: Tracking of test outcomes and statistics
+//! - **Test Runner**: Automated test execution engine
+//! - **Compliance Testing**: JavaScript specification compliance validation
+//! - **Result Reporting**: Detailed test result formatting
+//!
+//! ## Features
+//!
+//! - **Pass/Fail Tracking**: Count successful and failed tests
+//! - **Compliance Rate**: Calculate percentage of compliant features
+//! - **Batch Testing**: Run multiple tests in sequence
+//! - **Error Handling**: Graceful handling of test failures
+//!
+//! ## Usage
+//!
+//! ```rust
+//! use jetcrab::test_utils::{TestRunner, TestResult};
+//!
+//! let mut runner = TestRunner::new();
+//! let tests = vec![
+//!     ("addition", "2 + 2", "4"),
+//!     ("string", "'hello'", "hello"),
+//! ];
+//! let results = runner.run_tests(tests);
+//! println!("{}", results);
+//! ```
+
 use std::fmt;
 
 #[derive(Default)]
