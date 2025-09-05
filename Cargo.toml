@@ -1,0 +1,175 @@
+[package]
+name = "jetcrab"
+version = "0.4.0"
+edition = "2021"
+license = "MIT"
+authors = ["JetCrab Team <team@jetcrab.dev>"]
+description = "A modern JavaScript runtime in Rust with Node.js compatibility"
+repository = "https://github.com/JetCrabCollab/JetCrab"
+homepage = "https://jetcrab.dev"
+documentation = "https://docs.jetcrab.dev"
+readme = "README.md"
+keywords = ["javascript", "runtime", "engine", "boa", "rust", "nodejs", "v8-alternative"]
+categories = ["development-tools", "command-line-utilities", "web-programming"]
+
+[features]
+default = ["core-apis", "networking-apis", "filesystem-apis", "crypto-apis"]
+
+# Core APIs - Essential for basic functionality
+core-apis = []
+
+# Networking APIs - HTTP, HTTPS, fetch, net
+networking-apis = []
+
+# File System APIs - fs, path, buffer
+filesystem-apis = []
+
+# Crypto APIs - crypto, tls
+crypto-apis = []
+
+# System APIs - os, child_process, cluster
+system-apis = []
+
+# Utility APIs - util, url, querystring, timers
+utility-apis = []
+
+# Experimental APIs - worker_threads, vm, wasm
+experimental-apis = []
+
+# All APIs - enables everything
+all-apis = [
+    "core-apis",
+    "networking-apis", 
+    "filesystem-apis",
+    "crypto-apis",
+    "system-apis",
+    "utility-apis",
+    "experimental-apis"
+]
+
+# Development features
+dev-tools = []
+benchmarks = []
+
+[[bin]]
+name = "jetcrab"
+path = "src/bin/jetcrab.rs"
+required-features = ["core-apis"]
+
+[[bin]]
+name = "claw"
+path = "src/bin/claw.rs"
+required-features = ["core-apis"]
+
+[dependencies]
+# Core dependencies
+thiserror = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+toml = "0.8"
+
+# Boa Engine - JavaScript engine backend
+boa_engine = "0.20"
+boa_parser = "0.20"
+
+# CLI and runtime dependencies
+clap = { version = "4.0", features = ["derive", "color"] }
+tokio = { version = "1.0", features = ["full"] }
+futures = "0.3"
+anyhow = "1.0"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+
+# File system and networking
+walkdir = "2.0"
+glob = "0.3"
+tempfile = "3.0"
+reqwest = { version = "0.11", features = ["json"] }
+url = "2.0"
+tar = "0.4"
+flate2 = "1.0"
+
+# HTTP Server - Tokio-based
+axum = "0.7"
+tower = "0.4"
+tower-http = { version = "0.5", features = ["cors", "fs", "trace"] }
+hyper = { version = "1.0", features = ["full"] }
+
+# File System & I/O
+tokio-util = "0.7"
+bytes = "1.0"
+
+# Crypto & Security
+sha2 = "0.10"
+md5 = "0.7"
+rand = "0.8"
+hex = "0.4"
+
+# Compression
+brotli = "3.0"
+
+# Buffer support
+base64 = "0.22"
+
+# URL and UUID support
+uuid = { version = "1.0", features = ["v4", "serde"] }
+
+# HTTPS/TLS support
+rustls = "0.21"
+rustls-pemfile = "1.0"
+tokio-rustls = "0.24"
+native-tls = "0.2"
+tokio-native-tls = "0.3"
+chrono = { version = "0.4", features = ["serde"] }
+
+# Child Process support
+tokio-process = "0.2"
+fastrand = "2.0"
+num_cpus = "1.16"
+webpki-roots = "0.25"
+rustyline = "15.0"
+
+# System Information
+sysinfo = "0.30"
+
+# WebAssembly support
+wasmtime = "22.0"
+wasmtime-wasi = "22.0"
+wasm-bindgen = "0.2"
+
+# CLI Framework dependencies
+ctrlc = "3.4"
+dirs = "5.0"
+
+[dev-dependencies]
+# Testing dependencies
+criterion = "0.5"
+quickcheck = "1.0"
+mockito = "1.0"
+tempfile = "3.0"
+
+# Integration Tests
+[[test]]
+name = "integration_tests"
+path = "tests/integration_tests.rs"
+
+[[test]]
+name = "property_tests"
+path = "tests/property_tests.rs"
+
+[[test]]
+name = "benchmark_tests"
+path = "tests/benchmark_tests.rs"
+
+
+
+[profile.dev]
+opt-level = 0
+debug = true
+
+[profile.release]
+opt-level = 3
+debug = false
+lto = true
+codegen-units = 1
+panic = "abort"

@@ -1,0 +1,117 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Build for ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            artifact_name: jetcrab-linux-x86_64
+            jetcrab_path: target/x86_64-unknown-linux-gnu/release/jetcrab
+            claw_path: target/x86_64-unknown-linux-gnu/release/claw
+            archive_format: tar.gz
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            artifact_name: jetcrab-windows-x86_64
+            jetcrab_path: target/x86_64-pc-windows-msvc/release/jetcrab.exe
+            claw_path: target/x86_64-pc-windows-msvc/release/claw.exe
+            archive_format: zip
+          - target: x86_64-apple-darwin
+            os: macos-latest
+            artifact_name: jetcrab-macos-x86_64
+            jetcrab_path: target/x86_64-apple-darwin/release/jetcrab
+            claw_path: target/x86_64-apple-darwin/release/claw
+            archive_format: tar.gz
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            artifact_name: jetcrab-macos-aarch64
+            jetcrab_path: target/aarch64-apple-darwin/release/jetcrab
+            claw_path: target/aarch64-apple-darwin/release/claw
+            archive_format: tar.gz
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: ${{ matrix.target }}
+          override: true
+
+      - name: Cache cargo registry
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Strip binaries (Linux/macOS)
+        if: matrix.os != 'windows-latest'
+        run: |
+          strip ${{ matrix.jetcrab_path }}
+          strip ${{ matrix.claw_path }}
+
+      - name: Compress binaries
+        run: |
+          if [ "${{ matrix.archive_format }}" = "tar.gz" ]; then
+            tar -czf ${{ matrix.artifact_name }}.${{ matrix.archive_format }} -C target/${{ matrix.target }}/release jetcrab claw
+          else
+            cd target/${{ matrix.target }}/release && zip -r ../../../${{ matrix.artifact_name }}.${{ matrix.archive_format }} jetcrab.exe claw.exe
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_name }}.${{ matrix.archive_format }}
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Create checksums
+        run: |
+          for file in jetcrab-*; do
+            sha256sum "$file" > "$file.sha256"
+          done
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            jetcrab-*
+            jetcrab-*.sha256
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

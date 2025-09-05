@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>jetcrab</id>
+    <version>0.4.0</version>
+    <title>JetCrab</title>
+    <authors>JetCrab Team</authors>
+    <owners>JetCrab Team</owners>
+    <licenseUrl>https://github.com/JetCrabCollab/jetcrab/blob/main/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/JetCrabCollab/jetcrab</projectUrl>
+    <iconUrl>https://github.com/JetCrabCollab/jetcrab/raw/main/assets/icon.png</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>JavaScript runtime in Rust with Node.js compatibility</description>
+    <summary>JetCrab is a fast, modern JavaScript runtime built in Rust with Node.js compatibility</summary>
+    <tags>javascript runtime nodejs rust</tags>
+    <releaseNotes>https://github.com/JetCrabCollab/jetcrab/releases</releaseNotes>
+  </metadata>
+  <files>
+    <file src="tools\**" target="tools" />
+  </files>
+</package>
