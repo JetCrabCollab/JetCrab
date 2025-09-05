@@ -1,0 +1,38 @@
+name: jetcrab
+version: '0.4.0'
+summary: JavaScript runtime in Rust with Node.js compatibility
+description: |
+  JetCrab is a fast, modern JavaScript runtime built in Rust with Node.js compatibility.
+  It provides a high-performance alternative to Node.js with better memory management
+  and faster startup times.
+
+grade: stable
+confinement: strict
+
+base: core22
+
+architectures:
+  - build-on: amd64
+    run-on: amd64
+  - build-on: arm64
+    run-on: arm64
+
+apps:
+  jetcrab:
+    command: bin/jetcrab
+    plugs:
+      - home
+      - network
+      - network-bind
+      - removable-media
+
+parts:
+  jetcrab:
+    plugin: dump
+    source: https://github.com/JetCrabCollab/jetcrab/releases/download/v0.4.0/jetcrab-linux-x86_64.tar.gz
+    source-checksum: sha256/placeholder-sha256
+    organize:
+      jetcrab: bin/jetcrab
+    stage-packages:
+      - libc6
+      - libgcc-s1

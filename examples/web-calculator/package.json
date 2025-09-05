@@ -1,0 +1,33 @@
+{
+  "name": "web-calculator-jetcrab",
+  "version": "0.4.0",
+  "description": "A modern web calculator built with JetCrab runtime",
+  "main": "server.js",
+  "scripts": {
+    "start": "jetcrab run server.js",
+    "dev": "claw dev",
+    "test": "claw test",
+    "build": "claw build",
+    "build:wasm": "wasm-pack build --target web --out-dir pkg"
+  },
+  "keywords": [
+    "jetcrab",
+    "calculator",
+    "web",
+    "websocket",
+    "rust",
+    "wasm"
+  ],
+  "author": "JetCrab Team",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.0",
+    "ws": "^8.13.0",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {},
+  "engines": {
+    "jetcrab": ">=0.4.0"
+  }
+}
+

@@ -1,0 +1,63 @@
+name = "example-plugin"
+version = "0.4.0"
+description = "An example plugin demonstrating the JetCrab CLI plugin system"
+author = "JetCrab Team"
+license = "MIT"
+repository = "https://github.com/jetcrab/example-plugin"
+min_cli_version = "0.4.0"
+max_cli_version = "2.0.0"
+
+dependencies = []
+
+[commands.hello]
+name = "hello"
+description = "Say hello to the user"
+usage = "jetcrab hello [name]"
+category = "greeting"
+hidden = false
+
+[commands.hello.arguments.name]
+name = "name"
+description = "Name to greet"
+required = false
+multiple = false
+value_type = "string"
+default_value = "World"
+
+[commands.hello.examples]
+example1 = "jetcrab hello"
+example2 = "jetcrab hello Alice"
+
+[commands.time]
+name = "time"
+description = "Show current time"
+usage = "jetcrab time [--format FORMAT]"
+category = "utility"
+hidden = false
+
+[commands.time.options.format]
+name = "format"
+long = "format"
+description = "Time format (12h or 24h)"
+required = false
+value_type = "string"
+default_value = "24h"
+
+[commands.time.examples]
+example1 = "jetcrab time"
+example2 = "jetcrab time --format 12h"
+
+[config_schema]
+type = "object"
+properties = {
+    greeting = {
+        type = "string",
+        default = "Hello",
+        description = "Default greeting message"
+    },
+    timezone = {
+        type = "string",
+        default = "UTC",
+        description = "Default timezone"
+    }
+}

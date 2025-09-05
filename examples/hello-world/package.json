@@ -1,0 +1,23 @@
+{
+  "name": "hello-world-jetcrab",
+  "version": "0.4.0",
+  "description": "A simple Hello World example for JetCrab runtime",
+  "main": "index.js",
+  "scripts": {
+    "start": "jetcrab run index.js",
+    "dev": "claw dev",
+    "test": "claw test",
+    "build": "claw build"
+  },
+  "keywords": [
+    "jetcrab",
+    "javascript",
+    "runtime",
+    "example"
+  ],
+  "author": "JetCrab Team",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {}
+}
+

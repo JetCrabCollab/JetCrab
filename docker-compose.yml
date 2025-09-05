@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  jetcrab:
+    build: .
+    container_name: jetcrab-runtime
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./scripts:/app/scripts
+      - ./examples:/app/examples
+    environment:
+      - RUST_LOG=info
+    command: ["jetcrab", "run", "/app/examples/hello.js"]
+    restart: unless-stopped
+
+  jetcrab-dev:
+    build: .
+    container_name: jetcrab-dev
+    ports:
+      - "3001:3000"
+    volumes:
+      - .:/app
+      - /app/target
+    environment:
+      - RUST_LOG=debug
+    command: ["jetcrab", "dev"]
+    restart: unless-stopped
+

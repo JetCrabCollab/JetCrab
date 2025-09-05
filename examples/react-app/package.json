@@ -1,0 +1,33 @@
+{
+  "author": "JetCrab Team",
+  "dependencies": {
+    "axios": "^1.11.0",
+    "express": "^5.1.0",
+    "lodash": "^4.17.21",
+    "react": "^19.1.1",
+    "react-dom": "^18.2.0"
+  },
+  "description": "A modern React application built with JetCrab runtime",
+  "devDependencies": {},
+  "engines": {
+    "jetcrab": ">=0.4.0"
+  },
+  "keywords": [
+    "jetcrab",
+    "react",
+    "javascript",
+    "runtime",
+    "example"
+  ],
+  "license": "MIT",
+  "main": "src/console-app.js",
+  "name": "react-app-jetcrab",
+  "scripts": {
+    "build": "claw build",
+    "build:wasm": "wasm-pack build --target web --out-dir pkg",
+    "dev": "claw dev",
+    "start": "jetcrab run src/console-app.js",
+    "test": "claw test"
+  },
+  "version": "0.4.0"
+}

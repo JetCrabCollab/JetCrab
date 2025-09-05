@@ -1,0 +1,20 @@
+app: jetcrab
+ingredients:
+  script:
+    - wget https://github.com/JetCrabCollab/jetcrab/releases/download/v0.4.0/jetcrab-linux-x86_64.tar.gz
+    - tar -xzf jetcrab-linux-x86_64.tar.gz
+    - mv jetcrab jetcrab.AppDir/usr/bin/
+    - chmod +x jetcrab.AppDir/usr/bin/jetcrab
+  sources:
+    - https://github.com/JetCrabCollab/jetcrab/releases/download/v0.4.0/jetcrab-linux-x86_64.tar.gz
+  script-args:
+    - --include-binaries
+    - --include-files
+    - --include-deps
+  include-binaries:
+    - jetcrab
+  include-files:
+    - jetcrab.AppDir/usr/bin/jetcrab
+  include-deps:
+    - libc6
+    - libgcc-s1
