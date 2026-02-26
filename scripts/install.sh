@@ -54,7 +54,6 @@ DOWNLOAD_URL="https://github.com/$REPO/releases/download/$VERSION/jetcrab-$OS-$A
 
 echo "📦 Downloading JetCrab $VERSION for $OS-$ARCH..."
 
-# Download and install
 TEMP_DIR=$(mktemp -d)
 cd $TEMP_DIR
 
@@ -63,18 +62,17 @@ curl -L -o "jetcrab.$EXT" "$DOWNLOAD_URL"
 if [[ "$EXT" == "tar.gz" ]]; then
     tar -xzf "jetcrab.$EXT"
 else
-    unzip "jetcrab.$EXT"
+    unzip -o "jetcrab.$EXT"
 fi
 
 # Install to /usr/local/bin
 sudo mv jetcrab /usr/local/bin/
-sudo mv claw /usr/local/bin/
 sudo chmod +x /usr/local/bin/jetcrab
-sudo chmod +x /usr/local/bin/claw
 
 # Cleanup
 cd /
 rm -rf $TEMP_DIR
 
-echo "✅ JetCrab and Claw installed successfully!"
-echo "🚀 Run 'jetcrab --version' and 'claw --version' to verify installation"
+echo "✅ JetCrab installed successfully!"
+echo "🚀 Run 'jetcrab --version' to verify installation"
+echo "💡 Install CPM separately: cargo install cpm"

@@ -5,7 +5,7 @@
   
   <h1>JetCrab</h1>
   
-  <p>A modern JavaScript runtime implemented in Rust, powered by the Chitin (WASM) engine and integrated with Tokio for asynchronous operations.</p>
+  <p>JavaScript runtime for the JetCrab stack - our Node.js/Bun equivalent. Powered by the Chitin engine and Tokio for async I/O.</p>
   
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
   [![Rust](https://img.shields.io/badge/rust-1.70+-orange.svg)](https://www.rust-lang.org/)
@@ -20,7 +20,14 @@
 
 ## Overview
 
-JetCrab is a JavaScript runtime that provides a complete execution environment with built-in APIs for I/O, networking, and system operations. Built on top of the Chitin (WASM) engine and integrated with Tokio for asynchronous operations, JetCrab offers a modern alternative to Node.js with Rust's performance and safety guarantees.
+JetCrab is the **JavaScript runtime** for the JetCrab stack - our Node.js/Bun equivalent. It provides a complete execution environment with built-in APIs for I/O, networking, and system operations.
+
+**Stack mapping:**
+- **CPM** = npm/yarn (package manager)
+- **Chitin** = Bun engine (JS execution)
+- **JetCrab** = Node.js/Bun (runtime)
+
+See [ARCHITECTURE.md](../ARCHITECTURE.md) for the full ecosystem design.
 
 ## Features
 
@@ -76,7 +83,7 @@ Invoke-WebRequest -Uri "https://raw.githubusercontent.com/JetCrabCollab/jetcrab/
 📚 **Complete documentation is available in the [docs/](docs/) directory:**
 
 - [Installation Guide](docs/INSTALL.md) - Install JetCrab on any platform
-- [Distribution Strategy](docs/DISTRIBUTION.md) - How JetCrab is distributed
+- [Distribution Strategy](docs/development/distribution.md) - How JetCrab is distributed
 - [Documentation Index](docs/README.md) - All available documentation
 
 ## Quick Start
@@ -160,7 +167,7 @@ cpm dev
 - **Multi-Registry Support**: NPM, Cargo, and custom registries
 - **Development Tools**: Hot reload, linting, formatting, and testing
 
-For complete documentation, see the [CPM README](../cpm/README.md) or [Package Manager Guide](docs/guides/claw-package-manager.md) (CPM).
+For complete documentation, see the [CPM README](../cpm/README.md) or [Package Manager Guide](docs/guides/cpm-package-manager.md) (CPM).
 
 ## Architecture
 

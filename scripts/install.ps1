@@ -45,7 +45,6 @@ if (-not (Test-Path $BinDir)) {
 }
 
 Copy-Item -Path (Join-Path $ExtractDir "jetcrab.exe") -Destination $BinDir -Force
-Copy-Item -Path (Join-Path $ExtractDir "claw.exe") -Destination $BinDir -Force
 
 # Add to PATH
 $CurrentPath = [Environment]::GetEnvironmentVariable("PATH", "Machine")
@@ -59,6 +58,7 @@ if ($CurrentPath -notlike "*$BinDir*") {
 Remove-Item $ZipFile -Force
 Remove-Item $ExtractDir -Recurse -Force
 
-Write-Host "✅ JetCrab and Claw installed successfully!" -ForegroundColor Green
-Write-Host "🚀 Run 'jetcrab --version' and 'claw --version' to verify installation" -ForegroundColor Green
+Write-Host "✅ JetCrab installed successfully!" -ForegroundColor Green
+Write-Host "🚀 Run 'jetcrab --version' to verify installation" -ForegroundColor Green
+Write-Host "💡 Install CPM separately: cargo install cpm" -ForegroundColor Cyan
 Write-Host "⚠️  You may need to restart your terminal for PATH changes to take effect" -ForegroundColor Yellow
