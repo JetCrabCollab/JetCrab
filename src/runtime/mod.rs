@@ -3,17 +3,17 @@
 //! The core runtime implementation using the WASM-based JetCrab Engine.
 //!
 pub mod engine;
+pub mod module_loader;
 
 pub use chitin::EngineConfig;
 pub use engine::JetCrabEngine;
+pub use module_loader::ModuleLoader;
 
 use std::path::Path;
 use tracing::{error, info};
 
-/// JetCrab Runtime - High-level runtime environment
 pub struct JetCrabRuntime {
     pub engine: JetCrabEngine,
-    // apis: BuiltinAPIs, // Disabled for WASM migration
 }
 
 impl JetCrabRuntime {
@@ -27,10 +27,7 @@ impl JetCrabRuntime {
         let engine = JetCrabEngine::with_config(config);
         // let apis = BuiltinAPIs::new(); // Disabled
 
-        let mut runtime = Self {
-            engine,
-            // apis,
-        };
+        let mut runtime = Self { engine };
 
         // Initialize engine (load WASM)
         if let Err(e) = runtime.engine.init() {
@@ -48,10 +45,17 @@ impl JetCrabRuntime {
     //         .map_err(|e| format!("Failed to register APIs: {:?}", e))
     // }
 
-    /// Run a JavaScript file
+    /// Run a JavaScript file (uses module bundler when require/import detected)
     pub async fn run_file(&mut self, path: &Path, _args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
         let source = tokio::fs::read_to_string(path).await?;
-        self.evaluate_code(&source).await?;
+        let use_bundle = source.contains("require(") || source.contains("import ");
+        let to_eval = if use_bundle {
+            let mut loader = ModuleLoader::new();
+            loader.bundle_sync(path).unwrap_or(source)
+        } else {
+            source
+        };
+        self.evaluate_code(&to_eval).await?;
         Ok(())
     }
 

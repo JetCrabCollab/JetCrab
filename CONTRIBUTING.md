@@ -28,8 +28,8 @@ Thank you for your interest in contributing to JetCrab! This document provides g
 ### Quick Start
 ```bash
 # Clone the repository
-git clone https://github.com/JetCrabCollab/JetCrab.git.git
-cd jetcrab
+git clone https://github.com/JetCrabCollab/JetCrab.git
+cd JetCrab
 
 # Build the project
 cargo build
@@ -39,9 +39,6 @@ cargo test
 
 # Run benchmarks
 cargo bench
-
-# Run examples
-cargo run --example fibonacci
 ```
 
 ### Development Environment Setup

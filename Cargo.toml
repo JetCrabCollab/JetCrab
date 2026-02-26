@@ -161,6 +161,10 @@ path = "tests/property_tests.rs"
 name = "benchmark_tests"
 path = "tests/benchmark_tests.rs"
 
+[[test]]
+name = "prod_readiness_tests"
+path = "tests/prod_readiness_tests.rs"
+
 
 
 [profile.dev]

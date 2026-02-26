@@ -79,20 +79,56 @@ impl ModuleLoader {
         }
     }
 
-    /// Bundle modules starting from an entry point
     pub async fn bundle(&mut self, entry: &Path) -> Result<String, Box<dyn std::error::Error>> {
-        debug!("Bundling modules from entry: {:?}", entry);
-
-        let mut bundled_code = String::new();
+        let mut modules: Vec<(PathBuf, String)> = Vec::new();
         let mut visited = std::collections::HashSet::new();
+        self.collect_modules(entry, &mut modules, &mut visited)?;
+        Ok(Self::generate_bundle(entry, &modules))
+    }
 
-        bundled_code.push_str("// JetCrab Bundle\n");
-        bundled_code.push_str("// Generated automatically\n\n");
+    pub fn bundle_sync(&mut self, entry: &Path) -> Result<String, Box<dyn std::error::Error>> {
+        let mut modules: Vec<(PathBuf, String)> = Vec::new();
+        let mut visited = std::collections::HashSet::new();
+        self.collect_modules(entry, &mut modules, &mut visited)?;
+        Ok(Self::generate_bundle(entry, &modules))
+    }
 
-        self.bundle_recursive(entry, &mut bundled_code, &mut visited)?;
+    fn generate_bundle(entry: &Path, modules: &[(PathBuf, String)]) -> String {
+        let mut out = String::from("(function(){const __m={};");
+        out.push_str("function __run(p,c,dir){const m={exports:{}};__m[p]=m;");
+        out.push_str("function req(id){let r=(dir+id.replace('./','')).replace(/\\/?$/,'');if(!r.endsWith('.js'))r+='.js';if(__m[r])return __m[r].exports;throw new Error('Module not found: '+id);}");
+        out.push_str("(function(module,exports,require){const __dirname=dir;const __filename=p;eval(c);})(m,m.exports,req);return m.exports;}");
+        for (path, content) in modules {
+            let p = path.to_string_lossy().replace('\\', "/");
+            let dir = path.parent().map(|x| x.to_string_lossy().replace('\\', "/") + "/").unwrap_or_default();
+            let escaped: String = content.replace('\\', "\\\\").replace('`', "\\`");
+            out.push_str(&format!("__run(\"{}\",`{}`,\"{}\");", p, escaped, dir));
+        }
+        out.push_str("})();");
+        out
+    }
 
-        debug!("Bundle created successfully");
-        Ok(bundled_code)
+    fn collect_modules(
+        &mut self,
+        path: &Path,
+        modules: &mut Vec<(PathBuf, String)>,
+        visited: &mut std::collections::HashSet<PathBuf>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let path = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
+        if visited.contains(&path) {
+            return Ok(());
+        }
+        visited.insert(path.clone());
+        let content = std::fs::read_to_string(&path)?;
+        let deps = self.parse_dependencies(&content);
+        for spec in &deps {
+            let dep_path = Self::resolve_path(&path, spec);
+            if dep_path.exists() {
+                self.collect_modules(&dep_path, modules, visited)?;
+            }
+        }
+        modules.push((path, content));
+        Ok(())
     }
 
     /// Get module information
@@ -178,26 +214,13 @@ impl ModuleLoader {
         None
     }
 
-    /// Recursively bundle modules
-    fn bundle_recursive(
-        &mut self,
-        path: &Path,
-        bundled_code: &mut String,
-        visited: &mut std::collections::HashSet<PathBuf>,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        if visited.contains(path) {
-            return Ok(());
+    fn resolve_path(from: &Path, specifier: &str) -> PathBuf {
+        let from_dir = from.parent().unwrap_or(Path::new("."));
+        let mut p = from_dir.join(specifier);
+        if p.extension().is_none() {
+            p.set_extension("js");
         }
-
-        visited.insert(path.to_path_buf());
-
-        let content = std::fs::read_to_string(path)?;
-
-        bundled_code.push_str(&format!("// Module: {:?}\n", path));
-        bundled_code.push_str(&content);
-        bundled_code.push_str("\n\n");
-
-        Ok(())
+        p
     }
 }
 
