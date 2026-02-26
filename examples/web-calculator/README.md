@@ -21,17 +21,17 @@ A modern web calculator built with JetCrab runtime, demonstrating advanced featu
 cd examples/web-calculator
 
 # Initialize a new JetCrab project
-claw init
+cpm init
 
 # Install dependencies
-claw install
+cpm install
 ```
 
 ### 2. Build the WebAssembly Module
 
 ```bash
 # Build the Rust library to WebAssembly
-claw build
+cpm build
 ```
 
 ### 3. Start the Server
@@ -41,7 +41,7 @@ claw build
 jetcrab run server.js
 
 # Or use development mode with hot reload
-claw dev
+cpm dev
 ```
 
 ### 4. Access the Application
@@ -132,7 +132,7 @@ ws.onmessage = (event) => {
 
 ```bash
 # Run all tests
-claw test
+cpm test
 
 # Run specific test suite
 jetcrab run tests/api.test.js
@@ -142,7 +142,7 @@ jetcrab run tests/api.test.js
 
 ```bash
 # Build optimized version
-claw build --release
+cpm build --release
 
 # Start production server
 NODE_ENV=production jetcrab run server.js

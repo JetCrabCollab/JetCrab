@@ -2,7 +2,7 @@
 //!
 //! Real implementation of Node.js native modules in Rust using NativeFunction.
 
-use boa_engine::{js_string, Context, JsObject, JsResult, JsString, JsValue, NativeFunction};
+use chitin::boa_engine::{js_string, Context, JsObject, JsResult, JsString, JsValue, NativeFunction};
 use tracing::info;
 
 /// Native APIs implementation
@@ -33,7 +33,7 @@ impl NativeAPIs {
 
         let timers_module = crate::runtime::apis::utility::TimersAPI::new();
         timers_module.register(context).map_err(|_e| {
-            boa_engine::JsNativeError::typ().with_message("Failed to register timers")
+            chitin::boa_engine::JsNativeError::typ().with_message("Failed to register timers")
         })?;
 
         info!("✅ All Native APIs registered successfully");
@@ -124,7 +124,7 @@ impl NativeAPIs {
         for arg in args {
             let str_value = arg.to_string(context)?;
             parts.push(str_value.to_std_string().map_err(|e| {
-                boa_engine::JsNativeError::typ().with_message("String conversion error")
+                chitin::boa_engine::JsNativeError::typ().with_message("String conversion error")
             })?);
         }
         Ok(parts.join(" "))

@@ -2,7 +2,7 @@
 //!
 //! Real file system operations in Rust using std::fs and tokio::fs.
 
-use boa_engine::{js_string, Context, JsObject, JsResult, JsString, JsValue, NativeFunction};
+use chitin::boa_engine::{js_string, Context, JsObject, JsResult, JsString, JsValue, NativeFunction};
 use std::fs;
 use std::path::Path;
 use tracing::{error, info};
@@ -107,14 +107,14 @@ impl NativeFsModule {
         context: &mut Context,
     ) -> JsResult<JsValue> {
         if args.is_empty() {
-            return Err(boa_engine::JsError::from(
-                boa_engine::JsNativeError::typ().with_message("File path is required"),
+            return Err(chitin::boa_engine::JsError::from(
+                chitin::boa_engine::JsNativeError::typ().with_message("File path is required"),
             ));
         }
 
         let path = args[0].to_string(context)?;
         let path_str = path.to_std_string().map_err(|_e| {
-            boa_engine::JsNativeError::typ().with_message("String conversion error")
+            chitin::boa_engine::JsNativeError::typ().with_message("String conversion error")
         })?;
         info!("📖 Reading file: {}", path_str);
 
@@ -125,8 +125,8 @@ impl NativeFsModule {
             }
             Err(e) => {
                 error!("❌ Failed to read file {}: {}", path_str, e);
-                Err(boa_engine::JsError::from(
-                    boa_engine::JsNativeError::typ()
+                Err(chitin::boa_engine::JsError::from(
+                    chitin::boa_engine::JsNativeError::typ()
                         .with_message(format!("Failed to read file: {}", e)),
                 ))
             }
@@ -140,18 +140,18 @@ impl NativeFsModule {
         context: &mut Context,
     ) -> JsResult<JsValue> {
         if args.len() < 2 {
-            return Err(boa_engine::JsError::from(
-                boa_engine::JsNativeError::typ().with_message("File path and data are required"),
+            return Err(chitin::boa_engine::JsError::from(
+                chitin::boa_engine::JsNativeError::typ().with_message("File path and data are required"),
             ));
         }
 
         let path = args[0].to_string(context)?;
         let data = args[1].to_string(context)?;
         let path_str = path.to_std_string().map_err(|_e| {
-            boa_engine::JsNativeError::typ().with_message("String conversion error")
+            chitin::boa_engine::JsNativeError::typ().with_message("String conversion error")
         })?;
         let data_str = data.to_std_string().map_err(|_e| {
-            boa_engine::JsNativeError::typ().with_message("String conversion error")
+            chitin::boa_engine::JsNativeError::typ().with_message("String conversion error")
         })?;
 
         info!("📝 Writing file: {} ({} bytes)", path_str, data_str.len());
@@ -163,8 +163,8 @@ impl NativeFsModule {
             }
             Err(e) => {
                 error!("❌ Failed to write file {}: {}", path_str, e);
-                Err(boa_engine::JsError::from(
-                    boa_engine::JsNativeError::typ()
+                Err(chitin::boa_engine::JsError::from(
+                    chitin::boa_engine::JsNativeError::typ()
                         .with_message(format!("Failed to write file: {}", e)),
                 ))
             }
@@ -174,14 +174,14 @@ impl NativeFsModule {
     /// Native implementation of fs.existsSync
     fn exists_sync(_this: &JsValue, args: &[JsValue], context: &mut Context) -> JsResult<JsValue> {
         if args.is_empty() {
-            return Err(boa_engine::JsError::from(
-                boa_engine::JsNativeError::typ().with_message("File path is required"),
+            return Err(chitin::boa_engine::JsError::from(
+                chitin::boa_engine::JsNativeError::typ().with_message("File path is required"),
             ));
         }
 
         let path = args[0].to_string(context)?;
         let path_str = path.to_std_string().map_err(|_e| {
-            boa_engine::JsNativeError::typ().with_message("String conversion error")
+            chitin::boa_engine::JsNativeError::typ().with_message("String conversion error")
         })?;
         let exists = Path::new(&path_str).exists();
 
@@ -192,14 +192,14 @@ impl NativeFsModule {
     /// Native implementation of fs.statSync
     fn stat_sync(_this: &JsValue, args: &[JsValue], context: &mut Context) -> JsResult<JsValue> {
         if args.is_empty() {
-            return Err(boa_engine::JsError::from(
-                boa_engine::JsNativeError::typ().with_message("File path is required"),
+            return Err(chitin::boa_engine::JsError::from(
+                chitin::boa_engine::JsNativeError::typ().with_message("File path is required"),
             ));
         }
 
         let path = args[0].to_string(context)?;
         let path_str = path.to_std_string().map_err(|_e| {
-            boa_engine::JsNativeError::typ().with_message("String conversion error")
+            chitin::boa_engine::JsNativeError::typ().with_message("String conversion error")
         })?;
 
         match fs::metadata(&path_str) {
@@ -234,8 +234,8 @@ impl NativeFsModule {
             }
             Err(e) => {
                 error!("❌ Failed to get file stats {}: {}", path_str, e);
-                Err(boa_engine::JsError::from(
-                    boa_engine::JsNativeError::typ()
+                Err(chitin::boa_engine::JsError::from(
+                    chitin::boa_engine::JsNativeError::typ()
                         .with_message(format!("Failed to get file stats: {}", e)),
                 ))
             }
@@ -245,14 +245,14 @@ impl NativeFsModule {
     /// Native implementation of fs.mkdirSync
     fn mkdir_sync(_this: &JsValue, args: &[JsValue], context: &mut Context) -> JsResult<JsValue> {
         if args.is_empty() {
-            return Err(boa_engine::JsError::from(
-                boa_engine::JsNativeError::typ().with_message("Directory path is required"),
+            return Err(chitin::boa_engine::JsError::from(
+                chitin::boa_engine::JsNativeError::typ().with_message("Directory path is required"),
             ));
         }
 
         let path = args[0].to_string(context)?;
         let path_str = path.to_std_string().map_err(|_e| {
-            boa_engine::JsNativeError::typ().with_message("String conversion error")
+            chitin::boa_engine::JsNativeError::typ().with_message("String conversion error")
         })?;
 
         info!("📁 Creating directory: {}", path_str);
@@ -264,8 +264,8 @@ impl NativeFsModule {
             }
             Err(e) => {
                 error!("❌ Failed to create directory {}: {}", path_str, e);
-                Err(boa_engine::JsError::from(
-                    boa_engine::JsNativeError::typ()
+                Err(chitin::boa_engine::JsError::from(
+                    chitin::boa_engine::JsNativeError::typ()
                         .with_message(format!("Failed to create directory: {}", e)),
                 ))
             }
@@ -275,14 +275,14 @@ impl NativeFsModule {
     /// Native implementation of fs.rmdirSync
     fn rmdir_sync(_this: &JsValue, args: &[JsValue], context: &mut Context) -> JsResult<JsValue> {
         if args.is_empty() {
-            return Err(boa_engine::JsError::from(
-                boa_engine::JsNativeError::typ().with_message("Directory path is required"),
+            return Err(chitin::boa_engine::JsError::from(
+                chitin::boa_engine::JsNativeError::typ().with_message("Directory path is required"),
             ));
         }
 
         let path = args[0].to_string(context)?;
         let path_str = path.to_std_string().map_err(|_e| {
-            boa_engine::JsNativeError::typ().with_message("String conversion error")
+            chitin::boa_engine::JsNativeError::typ().with_message("String conversion error")
         })?;
 
         info!("🗑️ Removing directory: {}", path_str);
@@ -294,8 +294,8 @@ impl NativeFsModule {
             }
             Err(e) => {
                 error!("❌ Failed to remove directory {}: {}", path_str, e);
-                Err(boa_engine::JsError::from(
-                    boa_engine::JsNativeError::typ()
+                Err(chitin::boa_engine::JsError::from(
+                    chitin::boa_engine::JsNativeError::typ()
                         .with_message(format!("Failed to remove directory: {}", e)),
                 ))
             }

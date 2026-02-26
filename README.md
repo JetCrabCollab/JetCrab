@@ -5,11 +5,11 @@
   
   <h1>JetCrab</h1>
   
-  <p>A modern JavaScript runtime implemented in Rust, powered by the Boa JavaScript engine and integrated with Tokio for asynchronous operations.</p>
+  <p>A modern JavaScript runtime implemented in Rust, powered by the Chitin (WASM) engine and integrated with Tokio for asynchronous operations.</p>
   
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
   [![Rust](https://img.shields.io/badge/rust-1.70+-orange.svg)](https://www.rust-lang.org/)
-  [![Boa Engine](https://img.shields.io/badge/boa-engine-blue.svg)](https://github.com/boa-dev/boa)
+  [![Boa Engine](https://img.shields.io/badge/engine-Chitin%20WASM-blue.svg)](https://github.com/JetCrabCollab/chitin)
   [![Tokio](https://img.shields.io/badge/tokio-async-green.svg)](https://tokio.rs/)
   [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/JetCrabCollab/jetcrab)
   [![Coverage](https://img.shields.io/badge/coverage-85%25-brightgreen.svg)](https://codecov.io/gh/JetCrabCollab/jetcrab)
@@ -20,16 +20,16 @@
 
 ## Overview
 
-JetCrab is a JavaScript runtime that provides a complete execution environment with built-in APIs for I/O, networking, and system operations. Built on top of the Boa JavaScript engine and integrated with Tokio for asynchronous operations, JetCrab offers a modern alternative to Node.js with Rust's performance and safety guarantees.
+JetCrab is a JavaScript runtime that provides a complete execution environment with built-in APIs for I/O, networking, and system operations. Built on top of the Chitin (WASM) engine and integrated with Tokio for asynchronous operations, JetCrab offers a modern alternative to Node.js with Rust's performance and safety guarantees.
 
 ## Features
 
 ### Core Runtime
-- **JavaScript Execution**: Full JavaScript execution via Boa engine
-- **Built-in APIs**: Console, Process, and Fetch APIs
+- **JavaScript Execution**: Full JavaScript execution via Chitin (WASM) engine
+- **Built-in APIs**: Console, Process, and Fetch APIs (host bindings)
 - **Async Operations**: Tokio integration for asynchronous I/O
-- **CLI Interface**: Command-line tools for running and evaluating JavaScript
-- **Package Management**: Claw package manager for dependency management
+- **CLI Interface**: run, eval, repl, test, fmt, lint
+- **Package Management**: Use CPM (Crab Package Manager) for dependencies
 
 ### Development Tools
 - **Hot Reload**: Development server with automatic reloading
@@ -64,10 +64,10 @@ cargo install jetcrab
 
 ### Quick Install Scripts
 ```bash
-# Linux/macOS (installs both jetcrab and claw)
+# Linux/macOS (installs jetcrab; use CPM separately)
 curl -sSL https://raw.githubusercontent.com/JetCrabCollab/jetcrab/main/scripts/install.sh | bash
 
-# Windows PowerShell (installs both jetcrab and claw)
+# Windows PowerShell
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/JetCrabCollab/jetcrab/main/scripts/install.ps1" | Invoke-Expression
 ```
 
@@ -91,18 +91,29 @@ jetcrab eval "console.log('Hello, JetCrab!'); 42 + 8"
 
 # Start interactive REPL
 jetcrab repl
+
+# Run tests (npm test or cargo test)
+jetcrab test
+
+# Format files with Prettier (requires: npm install -D prettier)
+jetcrab fmt
+jetcrab fmt index.js src/
+
+# Lint with ESLint (requires: npm install -D eslint)
+jetcrab lint
+jetcrab lint src/
 ```
 
-### Claw - Package Manager
+### CPM - Package Manager
 ```bash
 # Initialize a new project
-claw init my-project
+cpm init my-project
 
 # Install packages
-claw install react lodash
+cpm install react lodash
 
 # Start development server
-claw dev
+cpm dev
 ```
 
 ### Example JavaScript Code
@@ -126,30 +137,30 @@ fetch("https://api.github.com/users/octocat")
 
 ## Package Management
 
-JetCrab includes **Claw**, a modern package manager that provides unified dependency management for both JavaScript and Rust packages:
+JetCrab works with **CPM** (Crab Package Manager) for dependency management:
 
 ```bash
 # Initialize a new project
-claw init my-project
+cpm init my-project
 cd my-project
 
 # Install JavaScript packages
-claw install react lodash
+cpm install react lodash
 
 # Install Rust crates
-claw install serde tokio
+cpm install serde tokio
 
 # Start development server
-claw dev
+cpm dev
 ```
 
-### Claw Features
+### CPM Features
 - **Unified Package Management**: Install JavaScript and Rust packages seamlessly
 - **WebAssembly Integration**: Automatic compilation of Rust code to WASM
 - **Multi-Registry Support**: NPM, Cargo, and custom registries
 - **Development Tools**: Hot reload, linting, formatting, and testing
 
-For complete documentation, see the [Claw Package Manager Guide](docs/guides/claw-package-manager.md).
+For complete documentation, see the [CPM README](../cpm/README.md) or [Package Manager Guide](docs/guides/claw-package-manager.md) (CPM).
 
 ## Architecture
 
@@ -157,21 +168,19 @@ JetCrab follows a layered architecture:
 
 1. **JavaScript Layer**: User code with standard Web/Node.js APIs
 2. **JetCrab Runtime Layer**: API implementations and event loop management
-3. **Boa Engine Layer**: JavaScript parsing, AST, and execution
+3. **Chitin Engine Layer**: WASM-based JavaScript execution (QuickJS)
 4. **Tokio Async Layer**: Asynchronous I/O operations and task management
 
-This separation ensures that Boa focuses on JavaScript execution while JetCrab manages runtime services and Tokio handles asynchronous operations.
+This separation ensures that Chitin handles JavaScript execution in a sandbox while JetCrab manages runtime services and Tokio handles asynchronous operations.
 
-## Boa Integration
+## Chitin Integration
 
-JetCrab leverages the Boa JavaScript engine as its core execution engine. This integration provides:
+JetCrab uses the Chitin (WASM) engine as its core execution engine. This integration provides:
 
-- **ECMAScript Compliance**: Full JavaScript specification support
-- **Performance**: Optimized JavaScript execution
-- **Reliability**: Battle-tested engine with extensive test coverage
-- **Maintenance**: Active development and community support
-
-We contribute improvements and optimizations back to the Boa project, ensuring the entire ecosystem benefits from our enhancements.
+- **Sandboxing**: JavaScript runs inside WebAssembly for isolation
+- **Portability**: No platform-specific linkers; runs wherever wasmtime runs
+- **Compliance**: Depends on the loaded WASM engine (e.g. QuickJS) for ECMAScript support
+- **Maintenance**: Chitin is developed alongside JetCrab in the same ecosystem
 
 ## API Reference
 
@@ -301,7 +310,8 @@ JetCrab is licensed under the MIT License. See [LICENSE](LICENSE) for details.
 
 JetCrab is built on top of several excellent open-source projects:
 
-- [Boa](https://github.com/boa-dev/boa) - JavaScript engine in Rust
+- [Boa](https://github.com/boa-dev/boa) - JavaScript engine in Rust (optional)
+- [Chitin](https://github.com/JetCrabCollab/chitin) - WASM-based engine for JetCrab
 - [Tokio](https://tokio.rs/) - Asynchronous runtime for Rust
 - [reqwest](https://github.com/seanmonstar/reqwest) - HTTP client for Rust
 - [wasm-pack](https://github.com/rustwasm/wasm-pack) - WebAssembly packaging tool

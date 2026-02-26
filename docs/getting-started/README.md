@@ -9,18 +9,18 @@ Welcome to JetCrab v0.4.0! This guide will help you get started with the modern 
 
 ## What is JetCrab?
 
-JetCrab is a modern JavaScript runtime implemented in Rust, powered by the Boa JavaScript engine and integrated with Tokio for asynchronous operations. It provides a complete JavaScript execution environment with built-in APIs for I/O, networking, and system operations.
+JetCrab is a modern JavaScript runtime implemented in Rust, powered by the Chitin (WASM) JavaScript engine and integrated with Tokio for asynchronous operations. It provides a complete JavaScript execution environment with built-in APIs for I/O, networking, and system operations.
 
 ## Key Features
 
 ### Core Runtime
-- **JavaScript Execution**: Full JavaScript execution via Boa engine
+- **JavaScript Execution**: Full JavaScript execution via Chitin engine
 - **Built-in APIs**: Console, Process, and Fetch APIs
 - **Async Operations**: Tokio integration for asynchronous I/O
 - **CLI Interface**: Command-line tools for running and evaluating JavaScript
 
 ### Development Tools
-- **Package Management**: Claw package manager for dependency management
+- **Package Management**: CPM package manager for dependency management
 - **Hot Reload**: Development server with automatic reloading
 - **Linting**: Code quality and style checking
 - **Testing**: Built-in testing framework
@@ -56,20 +56,20 @@ Current directory: /path/to/your/project
 ### Initialize a Project
 ```bash
 # Create a new project
-claw init my-project
+cpm init my-project
 cd my-project
 ```
 
 ### Install Packages
 ```bash
 # Install JavaScript packages
-claw install lodash
+cpm install lodash
 
 # Install Rust crates
-claw install serde
+cpm install serde
 
 # Install both types
-claw install react serde
+cpm install react serde
 ```
 
 ### Create a Package Configuration
@@ -92,28 +92,28 @@ claw install react serde
 ### 1. Development Server
 ```bash
 # Start development server with hot reload
-claw dev
+cpm dev
 
 # Or with file watching
-claw dev --watch
+cpm dev --watch
 ```
 
 ### 2. Code Quality
 ```bash
 # Lint your code
-claw lint
+cpm lint
 
 # Format your code
-claw format
+cpm format
 
 # Run tests
-claw test
+cpm test
 ```
 
 ### 3. Building for Production
 ```bash
 # Create production bundle
-claw bundle
+cpm bundle
 
 # Build optimized version
 cargo build --release
@@ -167,7 +167,7 @@ my-project/
 │   └── lib.rs           # Rust library (optional)
 ├── tests/
 │   └── test.js          # Test files
-├── claw.json            # Package configuration
+├── package.json            # Package configuration
 └── README.md            # Project documentation
 ```
 
@@ -231,10 +231,10 @@ try {
 #### Module Not Found
 ```bash
 # Check if package is installed
-claw build
+cpm build
 
 # Reinstall if needed
-claw install [package-name]
+cpm install [package-name]
 ```
 
 #### Build Errors

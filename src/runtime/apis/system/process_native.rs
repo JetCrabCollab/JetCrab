@@ -2,7 +2,7 @@
 //!
 //! Real process operations in Rust using std::process and std::env.
 
-use boa_engine::{js_string, Context, JsObject, JsResult, JsString, JsValue, NativeFunction};
+use chitin::boa_engine::{js_string, Context, JsObject, JsResult, JsString, JsValue, NativeFunction};
 use std::env;
 use std::process;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -147,8 +147,8 @@ impl NativeProcessModule {
     /// Native implementation of process.chdir
     fn chdir(_this: &JsValue, args: &[JsValue], context: &mut Context) -> JsResult<JsValue> {
         if args.is_empty() {
-            return Err(boa_engine::JsError::from(
-                boa_engine::JsNativeError::typ().with_message("Directory path is required"),
+            return Err(chitin::boa_engine::JsError::from(
+                chitin::boa_engine::JsNativeError::typ().with_message("Directory path is required"),
             ));
         }
 

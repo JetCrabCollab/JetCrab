@@ -59,7 +59,7 @@ cd jetcrab
 # Build the main binary
 cargo build
 
-# Build all binaries (jetcrab + claw)
+# Build all binaries (jetcrab + cpm)
 cargo build --bins
 
 # Build with all features
@@ -82,8 +82,8 @@ cargo build --release --all-features
 # Build only the jetcrab binary
 cargo build --bin jetcrab
 
-# Build only the claw binary
-cargo build --bin claw
+# Build only the cpm binary
+cargo build --bin cpm
 
 # Build for specific target
 cargo build --target x86_64-unknown-linux-gnu

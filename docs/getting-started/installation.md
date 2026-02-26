@@ -80,15 +80,15 @@ jetcrab eval "console.log('Hello, JetCrab!'); 42 + 8"
 
 ### Test Package Manager
 ```bash
-# Check Claw version
-claw --version
+# Check CPM version
+cpm --version
 
 # Initialize a test project
-claw init test-project
+cpm init test-project
 cd test-project
 
 # Install a package
-claw install lodash
+cpm install lodash
 ```
 
 ## Development Setup

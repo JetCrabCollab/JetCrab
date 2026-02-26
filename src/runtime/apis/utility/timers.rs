@@ -1,4 +1,4 @@
-use boa_engine::Context;
+use chitin::boa_engine::Context;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -163,7 +163,7 @@ impl TimersAPI {
         };
         "#;
 
-        context.eval(boa_engine::Source::from_bytes(timers_code))?;
+        context.eval(chitin::boa_engine::Source::from_bytes(timers_code))?;
         info!("✅ Timers API registered successfully");
         Ok(())
     }

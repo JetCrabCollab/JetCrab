@@ -1,6 +1,6 @@
-# JetCrab & Claw Installation Guide
+# JetCrab & CPM Installation Guide
 
-This guide covers installation of both JetCrab (JavaScript runtime) and Claw (package manager).
+This guide covers installation of both JetCrab (JavaScript runtime) and CPM (package manager).
 
 ## Quick Install
 
@@ -104,13 +104,13 @@ cargo build --release
 
 ```bash
 jetcrab --version
-claw --version
+cpm --version
 ```
 
 Expected output:
 ```
 jetcrab 0.4.0
-claw 0.4.0
+cpm 0.4.0
 ```
 
 ## Troubleshooting

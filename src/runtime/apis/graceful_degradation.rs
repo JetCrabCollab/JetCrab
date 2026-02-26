@@ -3,7 +3,7 @@
 //! This module provides graceful degradation functionality when API registration fails.
 
 use crate::runtime::apis::{ApiConfig, ApiError, ApiPlugin, ApiResult, HealthStatus};
-use boa_engine::Context;
+use chitin::boa_engine::Context;
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, RwLock};
 use tracing::{debug, error, info, warn};
@@ -282,7 +282,7 @@ impl GracefulDegradationManager {
         "#;
 
         context
-            .eval(boa_engine::Source::from_bytes(console_code))
+            .eval(chitin::boa_engine::Source::from_bytes(console_code))
             .map_err(|e| {
                 ApiError::registration_failed(
                     "console (minimal)",
@@ -308,7 +308,7 @@ impl GracefulDegradationManager {
         "#;
 
         context
-            .eval(boa_engine::Source::from_bytes(process_code))
+            .eval(chitin::boa_engine::Source::from_bytes(process_code))
             .map_err(|e| {
                 ApiError::registration_failed(
                     "process (minimal)",
@@ -338,7 +338,7 @@ impl GracefulDegradationManager {
         "#;
 
         context
-            .eval(boa_engine::Source::from_bytes(events_code))
+            .eval(chitin::boa_engine::Source::from_bytes(events_code))
             .map_err(|e| {
                 ApiError::registration_failed(
                     "events (minimal)",
@@ -363,7 +363,7 @@ impl GracefulDegradationManager {
         );
 
         context
-            .eval(boa_engine::Source::from_bytes(mock_code.as_bytes()))
+            .eval(chitin::boa_engine::Source::from_bytes(mock_code.as_bytes()))
             .map_err(|e| {
                 ApiError::registration_failed(
                     &format!("{} (mock)", api_name),
@@ -399,7 +399,7 @@ impl GracefulDegradationManager {
         );
 
         context
-            .eval(boa_engine::Source::from_bytes(alt_code.as_bytes()))
+            .eval(chitin::boa_engine::Source::from_bytes(alt_code.as_bytes()))
             .map_err(|e| {
                 ApiError::registration_failed(
                     &format!("{} (alternative)", api_name),

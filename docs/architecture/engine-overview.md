@@ -2,18 +2,18 @@
 
 ## Overview
 
-JetCrab is a modern JavaScript runtime implemented in Rust, powered by the Boa JavaScript engine and integrated with Tokio for asynchronous operations. The runtime provides a complete JavaScript execution environment with built-in APIs for I/O, networking, and system operations.
+JetCrab is a modern JavaScript runtime implemented in Rust, powered by the Chitin (WASM) JavaScript engine and integrated with Tokio for asynchronous operations. The runtime provides a complete JavaScript execution environment with built-in APIs for I/O, networking, and system operations.
 
-## Boa Integration
+## Chitin Integration
 
-JetCrab leverages the Boa JavaScript engine as its core execution engine. This integration provides:
+JetCrab leverages the Chitin JavaScript engine (WASM) as its core execution engine. This integration provides:
 
-- **ECMAScript Compliance**: Full JavaScript specification support through Boa
-- **Performance**: Optimized JavaScript execution with Boa's efficient implementation
+- **ECMAScript Compliance**: Full JavaScript specification support through Chitin
+- **Performance**: Optimized JavaScript execution with Chitin's efficient implementation
 - **Reliability**: Battle-tested engine with extensive test coverage
-- **Maintenance**: Active development and community support from the Boa project
+- **Maintenance**: Active development and integration with the JetCrab ecosystem
 
-We contribute improvements and optimizations back to the Boa project, ensuring the entire ecosystem benefits from our enhancements. This collaborative approach allows JetCrab to focus on runtime services while leveraging Boa's robust JavaScript execution capabilities.
+We maintain the Chitin integration to ensure the entire ecosystem benefits from our enhancements. This approach allows JetCrab to focus on runtime services while leveraging Chitin's robust JavaScript execution capabilities.
 
 ## Architecture
 
@@ -30,8 +30,8 @@ graph TB
         EL[Event Loop<br/>Promise resolution, Callbacks]
     end
     
-    subgraph "Boa Engine Layer"
-        BOA[Boa Engine<br/>Parsing, AST, Execution]
+    subgraph "Chitin Engine Layer"
+        BOA[Chitin Engine<br/>Parsing, AST, Execution]
     end
     
     subgraph "Tokio Async Layer"
@@ -69,8 +69,8 @@ graph LR
         EL[Event Loop<br/>Promise Resolution]
     end
     
-    subgraph "Boa Engine"
-        BOA[Boa Context<br/>JavaScript Execution]
+    subgraph "Chitin Engine"
+        BOA[Chitin Context<br/>JavaScript Execution]
     end
     
     subgraph "Tokio Async"
@@ -110,7 +110,7 @@ graph LR
 ```mermaid
 graph TB
     subgraph "JetCrab Runtime Components"
-        A[JetCrab Engine<br/>Boa Wrapper] --> A1[JavaScript Execution]
+        A[JetCrab Engine<br/>Chitin Wrapper] --> A1[JavaScript Execution]
         A --> A2[Context Management]
         A --> A3[Global Objects]
         
@@ -132,7 +132,7 @@ graph TB
         E --> E2[Function Binding]
         E --> E3[Memory Management]
         
-        F[Package Manager<br/>Claw] --> F1[Dependency Resolution]
+        F[Package Manager<br/>CPM] --> F1[Dependency Resolution]
         F --> F2[NPM/Cargo Support]
         F --> F3[Local Packages]
         
@@ -153,10 +153,10 @@ graph TB
 
 ## Core Components
 
-### 1. JetCrab Engine (Boa Wrapper)
-- **Purpose**: Wraps Boa engine with JetCrab-specific features
+### 1. JetCrab Engine (Chitin Wrapper)
+- **Purpose**: Wraps Chitin engine with JetCrab-specific features
 - **Features**:
-  - JavaScript execution via Boa
+  - JavaScript execution via Chitin
   - Context management
   - Global object setup
   - Configuration management
@@ -198,7 +198,7 @@ graph TB
   - Rust crate integration
 - **Status**: Basic structure implemented
 
-### 6. Package Manager (Claw)
+### 6. Package Manager (CPM)
 - **Purpose**: Manages dependencies and packages
 - **Features**:
   - NPM registry support
@@ -272,11 +272,11 @@ ECMAScript specification adherence, modern JavaScript feature support, V8 engine
 JetCrab Runtime v0.4.0 is functional with the following implemented features:
 
 - **Architecture**: Well-designed and documented
-- **JavaScript Execution**: Fully functional via Boa engine
+- **JavaScript Execution**: Fully functional via Chitin engine
 - **Built-in APIs**: Console, Process, and Fetch APIs working
 - **Async Runtime**: Tokio integration complete
 - **CLI Interface**: `jetcrab run`, `jetcrab eval` commands working
-- **Package Manager**: Claw structure implemented
+- **Package Manager**: CPM structure implemented
 - **Module System**: ES Modules support in development
 - **WebAssembly**: Basic Rust/JS integration structure
 - **Development Tools**: Hot reload, linting planned

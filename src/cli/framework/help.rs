@@ -436,15 +436,15 @@ pub fn create_jetcrab_help_system() -> HelpSystem {
 
     let global_help = HelpSection::new(
         "JetCrab - A modern JavaScript runtime in Rust".to_string(),
-        "JetCrab is a modern JavaScript runtime built with Rust, powered by the Boa engine. It provides a fast, secure, and extensible environment for running JavaScript applications with native Rust integration.".to_string(),
+        "JetCrab is a modern JavaScript runtime built with Rust, powered by the Chitin (WASM) engine. It provides a fast, secure, and extensible environment for running JavaScript applications with native Rust integration.".to_string(),
     )
     .with_subsection(HelpSection::new(
         "Features".to_string(),
-        "• Fast JavaScript execution with Boa engine\n• Native Rust integration\n• Comprehensive Node.js API compatibility\n• WebAssembly support\n• Built-in package management with Claw\n• Development tools and hot reloading".to_string(),
+        "• Fast JavaScript execution with Chitin (WASM) engine\n• Native Rust integration\n• Comprehensive Node.js API compatibility\n• WebAssembly support\n• Package management with CPM (Crab Package Manager)\n• Development tools: test, fmt, lint".to_string(),
     ))
     .with_subsection(HelpSection::new(
         "Getting Started".to_string(),
-        "1. Install JetCrab from source or package manager\n2. Create a new project with 'claw init'\n3. Write your JavaScript code\n4. Run with 'jetcrab run your-file.js'".to_string(),
+        "1. Install JetCrab from source or package manager\n2. Create a new project with 'cpm init'\n3. Write your JavaScript code\n4. Run with 'jetcrab run your-file.js'".to_string(),
     ));
 
     help_system.set_global_help(global_help);
@@ -499,9 +499,9 @@ pub fn create_jetcrab_help_system() -> HelpSystem {
 
     let install_help = CommandHelp::new(
         "install".to_string(),
-        "Install JavaScript and Rust packages".to_string(),
+        "Install JavaScript and Rust packages (use CPM)".to_string(),
     )
-    .with_usage("claw install [packages...] [options]".to_string())
+    .with_usage("cpm install [packages...] [options]".to_string())
     .with_argument(ArgumentHelp {
         name: "packages".to_string(),
         description: "Package names to install".to_string(),
@@ -527,16 +527,52 @@ pub fn create_jetcrab_help_system() -> HelpSystem {
     })
     .with_example(Example {
         description: "Install a package".to_string(),
-        command: "claw install express".to_string(),
+        command: "cpm install express".to_string(),
         explanation: Some("Installs the express package from npm".to_string()),
     })
     .with_example(Example {
         description: "Install as dev dependency".to_string(),
-        command: "claw install --dev jest".to_string(),
+        command: "cpm install --dev jest".to_string(),
         explanation: Some("Installs jest as a development dependency".to_string()),
     });
 
     help_system.add_command(install_help);
+
+    let test_help = CommandHelp::new(
+        "test".to_string(),
+        "Run tests (npm test or cargo test)".to_string(),
+    )
+    .with_usage("jetcrab test".to_string())
+    .with_example(Example {
+        description: "Run project tests".to_string(),
+        command: "jetcrab test".to_string(),
+        explanation: Some("Runs npm test or cargo test depending on project".to_string()),
+    });
+    help_system.add_command(test_help);
+
+    let fmt_help = CommandHelp::new(
+        "fmt".to_string(),
+        "Format code with Prettier".to_string(),
+    )
+    .with_usage("jetcrab fmt [files...]".to_string())
+    .with_example(Example {
+        description: "Format current directory".to_string(),
+        command: "jetcrab fmt".to_string(),
+        explanation: Some("Requires: npm install -D prettier".to_string()),
+    });
+    help_system.add_command(fmt_help);
+
+    let lint_help = CommandHelp::new(
+        "lint".to_string(),
+        "Lint code with ESLint".to_string(),
+    )
+    .with_usage("jetcrab lint [files...]".to_string())
+    .with_example(Example {
+        description: "Lint project".to_string(),
+        command: "jetcrab lint".to_string(),
+        explanation: Some("Requires: npm install -D eslint".to_string()),
+    });
+    help_system.add_command(lint_help);
 
     help_system
 }

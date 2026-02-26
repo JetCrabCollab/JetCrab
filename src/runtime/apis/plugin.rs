@@ -2,7 +2,7 @@
 //!
 //! This module defines the plugin architecture for JetCrab APIs.
 
-use boa_engine::{Context, JsResult};
+use chitin::boa_engine::{Context, JsResult};
 use std::time::Duration;
 
 /// Resource usage information for an API

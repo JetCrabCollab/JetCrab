@@ -2,7 +2,7 @@
 //!
 //! Real HTTP fetch implementation using Tokio and reqwest.
 
-use boa_engine::{Context, JsResult};
+use chitin::boa_engine::{Context, JsResult};
 use reqwest::Client;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -46,7 +46,7 @@ impl AsyncFetchAPI {
             }
         "#;
 
-        context.eval(boa_engine::Source::from_bytes(fetch_code))?;
+        context.eval(chitin::boa_engine::Source::from_bytes(fetch_code))?;
 
         debug!("Async Fetch API registered successfully");
         Ok(())

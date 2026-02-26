@@ -290,7 +290,7 @@ Add any other context or screenshots.
 - **Rust Book**: [https://doc.rust-lang.org/book/](https://doc.rust-lang.org/book/)
 - **Cargo Book**: [https://doc.rust-lang.org/cargo/](https://doc.rust-lang.org/cargo/)
 - **JetCrab Documentation**: [docs/](docs/)
-- **Boa Engine**: [https://boa-dev.github.io/](https://boa-dev.github.io/)
+- **Chitin**: [https://github.com/JetCrabCollab/chitin](https://github.com/JetCrabCollab/chitin)
 
 ## 📄 License
 

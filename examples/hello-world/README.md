@@ -18,10 +18,10 @@ This example demonstrates the basic usage of JetCrab runtime with a simple "Hell
 cd examples/hello-world
 
 # Initialize a new JetCrab project
-claw init
+cpm init
 
 # Install dependencies (if any)
-claw install
+cpm install
 ```
 
 ### 2. Run the Example
@@ -38,13 +38,13 @@ jetcrab run index.js --arg "Hello from command line"
 
 ```bash
 # Start development server with hot reload
-claw dev
+cpm dev
 
 # Run tests
-claw test
+cpm test
 
 # Build for production
-claw build
+cpm build
 ```
 
 ## Project Structure

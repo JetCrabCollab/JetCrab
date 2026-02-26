@@ -16,39 +16,39 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        rust: [stable, beta, nightly]
-        exclude:
-          - os: windows-latest
-            rust: nightly
-          - os: macos-latest
-            rust: nightly
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: ${{ matrix.rust }}
-          override: true
+      - name: Prepare workspace
+        shell: bash
+        run: |
+          REPO_NAME=$(basename "$GITHUB_WORKSPACE")
+          cd ..
+          printf '[workspace]\nresolver = "2"\nmembers = ["chitin", "%s"]\n\n[workspace.package]\nversion = "0.1.0"\nedition = "2021"\nauthors = ["JetCrab Team"]\nlicense = "MIT"\n' "$REPO_NAME" > Cargo.toml
+          git clone --depth 1 https://github.com/JetCrabCollab/chitin.git chitin
 
-      - name: Cache cargo registry
-        uses: actions/cache@v3
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ matrix.rust }}-${{ hashFiles('**/Cargo.lock') }}
+          components: clippy
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "${{ github.workspace }}/.."
 
       - name: Run tests
-        run: cargo test --verbose
+        working-directory: ${{ github.workspace }}/..
+        run: cargo test -p jetcrab --verbose
 
       - name: Run clippy
-        run: cargo clippy --all-targets --all-features -- -D warnings
+        working-directory: ${{ github.workspace }}/..
+        run: cargo clippy -p jetcrab --all-targets --all-features -- -D warnings
 
       - name: Check formatting
+        working-directory: ${{ github.workspace }}/..
         run: cargo fmt -- --check
 
   build:
@@ -63,25 +63,29 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
+      - name: Prepare workspace
+        shell: bash
+        run: |
+          REPO_NAME=$(basename "$GITHUB_WORKSPACE")
+          cd ..
+          printf '[workspace]\nresolver = "2"\nmembers = ["chitin", "%s"]\n\n[workspace.package]\nversion = "0.1.0"\nedition = "2021"\nauthors = ["JetCrab Team"]\nlicense = "MIT"\n' "$REPO_NAME" > Cargo.toml
+          git clone --depth 1 https://github.com/JetCrabCollab/chitin.git chitin
 
-      - name: Cache cargo registry
-        uses: actions/cache@v3
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          workspaces: "${{ github.workspace }}/.."
 
       - name: Build
-        run: cargo build --release
+        working-directory: ${{ github.workspace }}/..
+        run: cargo build -p jetcrab --release
 
       - name: Test binary
+        working-directory: ${{ github.workspace }}/..
+        shell: bash
         run: |
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
             ./target/release/jetcrab.exe --version
@@ -96,14 +100,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Prepare workspace
+        shell: bash
+        run: |
+          REPO_NAME=$(basename "$GITHUB_WORKSPACE")
+          cd ..
+          printf '[workspace]\nresolver = "2"\nmembers = ["chitin", "%s"]\n\n[workspace.package]\nversion = "0.1.0"\nedition = "2021"\nauthors = ["JetCrab Team"]\nlicense = "MIT"\n' "$REPO_NAME" > Cargo.toml
+          git clone --depth 1 https://github.com/JetCrabCollab/chitin.git chitin
+
       - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Install cargo-audit
         run: cargo install cargo-audit
 
       - name: Run security audit
+        working-directory: ${{ github.workspace }}/..
         run: cargo audit

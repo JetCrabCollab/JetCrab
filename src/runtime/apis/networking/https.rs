@@ -33,7 +33,7 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use boa_engine::{Context, JsValue, NativeFunction};
+use chitin::boa_engine::{Context, JsValue, NativeFunction};
 use rustls::{Certificate, PrivateKey, ServerConfig};
 use rustls_pemfile::{certs, pkcs8_private_keys};
 use std::{collections::HashMap, fs::File, io::BufReader, net::SocketAddr, sync::Arc};
@@ -336,7 +336,7 @@ impl HttpsAPI {
         console.log('HTTPS API registered successfully');
         "#;
 
-        context.eval(boa_engine::Source::from_bytes(https_code))?;
+        context.eval(chitin::boa_engine::Source::from_bytes(https_code))?;
         debug!("HTTPS API registration completed");
 
         Ok(())
@@ -360,7 +360,7 @@ impl Default for HttpsAPI {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use boa_engine::{Context, Source};
+    use chitin::boa_engine::{Context, Source};
     use std::sync::Arc;
     use tempfile::NamedTempFile;
     use tokio::fs;
@@ -449,7 +449,7 @@ mod tests {
 
         let global_https = context
             .global_object()
-            .get(boa_engine::js_string!("https"), &mut context)
+            .get(chitin::boa_engine::js_string!("https"), &mut context)
             .unwrap();
         assert!(global_https.is_object());
     }

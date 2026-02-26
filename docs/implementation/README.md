@@ -4,16 +4,16 @@ This directory contains implementation details and development guidelines for Je
 
 ## Overview
 
-JetCrab v0.4.0 is a functional JavaScript runtime built on top of the Boa JavaScript engine with Tokio integration for asynchronous operations.
+JetCrab v0.4.0 is a functional JavaScript runtime built on top of the Chitin (WASM) JavaScript engine with Tokio integration for asynchronous operations.
 
 ## Current Implementation Status
 
 ### Completed Features
-- **JavaScript Execution**: Fully functional via Boa engine
+- **JavaScript Execution**: Fully functional via Chitin engine
 - **Built-in APIs**: Console, Process, and Fetch APIs working
 - **Async Runtime**: Tokio integration complete
 - **CLI Interface**: `jetcrab run`, `jetcrab eval` commands working
-- **Package Manager**: Claw structure implemented
+- **Package Manager**: CPM structure implemented
 
 ### In Development
 - **Module System**: ES Modules support in development
@@ -61,7 +61,7 @@ JetCrab follows a layered architecture:
 
 1. **JavaScript Layer**: User code with standard Web/Node.js APIs
 2. **JetCrab Runtime Layer**: API implementations and event loop management
-3. **Boa Engine Layer**: JavaScript parsing, AST, and execution
+3. **Chitin Engine Layer**: JavaScript parsing, AST, and execution
 4. **Tokio Async Layer**: Asynchronous I/O operations and task management
 
 ## Contributing

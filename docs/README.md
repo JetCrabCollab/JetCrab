@@ -5,11 +5,11 @@
   
   <h1>JetCrab Documentation</h1>
   
-  <p>A modern JavaScript runtime implemented in Rust, powered by the Boa JavaScript engine</p>
+  <p>A modern JavaScript runtime implemented in Rust, powered by the Chitin (WASM) JavaScript engine</p>
   
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
   [![Rust](https://img.shields.io/badge/rust-1.70+-orange.svg)](https://www.rust-lang.org/)
-  [![Boa Engine](https://img.shields.io/badge/boa-engine-blue.svg)](https://github.com/boa-dev/boa)
+  [![Chitin](https://img.shields.io/badge/chitin-engine-blue.svg)](https://github.com/JetCrabCollab/chitin)
   [![Tokio](https://img.shields.io/badge/tokio-async-green.svg)](https://tokio.rs/)
   [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/JetCrabCollab/jetcrab)
   [![Coverage](https://img.shields.io/badge/coverage-85%25-brightgreen.svg)](https://codecov.io/gh/JetCrabCollab/jetcrab)
@@ -28,7 +28,7 @@ Welcome to the JetCrab documentation! This directory contains comprehensive docu
 - **[CLI Reference](guides/cli-reference.md)** - Command-line interface documentation
 - **[API Reference](guides/api-reference.md)** - Complete API documentation
 - **[Examples](guides/examples.md)** - Code examples and tutorials
-- **[Claw Package Manager](guides/claw-package-manager.md)** - Package management guide
+- **[CPM Package Manager](guides/cpm-package-manager.md)** - Package management guide
 
 ### 🏗️ Architecture & Development
 - **[Architecture Overview](architecture/README.md)** - System design and architecture
@@ -73,13 +73,13 @@ If you're new to JetCrab, follow this path:
 ## 🎯 Key Features
 
 ### Core Runtime
-- **JavaScript Execution**: Full JavaScript support via Boa engine
+- **JavaScript Execution**: Full JavaScript support via Chitin engine
 - **Built-in APIs**: Console, Process, Fetch, and more
 - **Async Operations**: Tokio integration for asynchronous I/O
 - **CLI Interface**: Command-line tools for running JavaScript
 
 ### Development Tools
-- **Package Management**: Claw package manager
+- **Package Management**: CPM package manager
 - **Hot Reload**: Development server with automatic reloading
 - **Linting & Formatting**: Code quality tools
 - **Testing**: Built-in testing framework
@@ -96,7 +96,7 @@ If you're new to JetCrab, follow this path:
 - ✅ **Quick Start Guide** - Complete
 - ✅ **JetCrab Guide** - Complete
 - ✅ **Architecture Overview** - Complete
-- ✅ **Claw Package Manager** - Complete
+- ✅ **CPM Package Manager** - Complete
 - ✅ **CLI Reference** - Complete
 - ✅ **API Reference** - Complete
 - ✅ **Examples** - Complete

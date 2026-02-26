@@ -1,4 +1,4 @@
-use boa_engine::Context;
+use chitin::boa_engine::Context;
 use tracing::info;
 
 pub struct PathAPI;
@@ -221,7 +221,7 @@ impl PathAPI {
         };
         "#;
 
-        context.eval(boa_engine::Source::from_bytes(path_code))?;
+        context.eval(chitin::boa_engine::Source::from_bytes(path_code))?;
         info!("✅ Path API registered successfully");
         Ok(())
     }

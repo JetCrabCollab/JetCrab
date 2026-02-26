@@ -1,4 +1,4 @@
-use boa_engine::Context;
+use chitin::boa_engine::Context;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs::File;
@@ -613,7 +613,7 @@ impl TlsAPI {
         };
         "#;
 
-        context.eval(boa_engine::Source::from_bytes(tls_code))?;
+        context.eval(chitin::boa_engine::Source::from_bytes(tls_code))?;
         info!("✅ TLS API registered successfully");
         Ok(())
     }

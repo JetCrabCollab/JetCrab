@@ -122,9 +122,9 @@ impl CliApp {
     }
 
     pub fn build_clap_app(mut self) -> Self {
-        let mut clap_app = Command::new("claw")
+        let mut clap_app = Command::new("jetcrab")
             .version("0.4.0")
-            .about("🦀 Modern package manager for JavaScript + Rust")
+            .about("Modern JavaScript runtime (Chitin WASM) + package tools")
             .arg(
                 Arg::new("verbose")
                     .short('v')

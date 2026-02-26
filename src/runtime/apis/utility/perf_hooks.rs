@@ -1,4 +1,4 @@
-use boa_engine::{Context, JsValue};
+use chitin::boa_engine::{Context, JsValue};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
@@ -390,7 +390,7 @@ impl PerfHooksAPI {
         };
         "#;
 
-        context.eval(boa_engine::Source::from_bytes(perf_hooks_code))?;
+        context.eval(chitin::boa_engine::Source::from_bytes(perf_hooks_code))?;
         info!("✅ Performance Hooks API registered successfully");
         Ok(())
     }

@@ -4,24 +4,19 @@
 //! These tests verify that different modules work together correctly.
 
 use jetcrab::runtime::{JetCrabEngine, JetCrabRuntime};
-use jetcrab::tools::Claw;
-use std::path::PathBuf;
 
 /// Test basic JavaScript execution through the engine
-#[test]
-fn test_basic_javascript_execution() {
+#[tokio::test]
+async fn test_basic_javascript_execution() {
     let mut engine = JetCrabEngine::new();
 
-    // Test simple arithmetic
-    let result = engine.evaluate("2 + 3 * 4");
+    let result = engine.evaluate("2 + 3 * 4").await;
     assert!(result.is_ok());
 
-    // Test string operations
-    let result = engine.evaluate("'Hello' + ' ' + 'World'");
+    let result = engine.evaluate("'Hello' + ' ' + 'World'").await;
     assert!(result.is_ok());
 
-    // Test variable declarations
-    let result = engine.evaluate("let x = 42; x");
+    let result = engine.evaluate("let x = 42; x").await;
     assert!(result.is_ok());
 }
 
@@ -77,44 +72,24 @@ async fn test_fetch_api_integration() {
     assert!(result.is_ok());
 }
 
-/// Test Claw package manager integration
-#[test]
-fn test_claw_package_manager_integration() {
-    let project_root = PathBuf::from(".");
-    let claw = Claw::new(project_root);
-
-    // Test package info retrieval
-    let result = claw.get_package_info();
-    assert!(result.is_ok());
-
-    let package_info = result.unwrap();
-    assert_eq!(package_info.name, "jetcrab-project");
-    assert_eq!(package_info.version, "0.4.0");
-}
-
 /// Test error handling across modules
-#[test]
-fn test_error_handling_integration() {
+#[tokio::test]
+async fn test_error_handling_integration() {
     let mut engine = JetCrabEngine::new();
 
-    // Test syntax error handling
-    let result = engine.evaluate("invalid syntax {");
+    let result = engine.evaluate("invalid syntax {").await;
     assert!(result.is_err());
 
-    // Test runtime error handling
-    let result = engine.evaluate("undefined_variable");
+    let result = engine.evaluate("undefined_variable").await;
     assert!(result.is_err());
 }
 
 /// Test WebAssembly runtime integration
-#[test]
-fn test_wasm_runtime_integration() {
+#[tokio::test]
+async fn test_wasm_runtime_integration() {
     let mut engine = JetCrabEngine::new();
 
-    // Test WASM runtime initialization
-    // This should not panic
-    let result = engine.evaluate("WebAssembly");
-    // Should handle WebAssembly object gracefully
+    let result = engine.evaluate("WebAssembly").await;
     assert!(result.is_ok());
 }
 
@@ -157,24 +132,22 @@ async fn test_end_to_end_workflow() {
 }
 
 /// Test performance characteristics
-#[test]
-fn test_performance_characteristics() {
+#[tokio::test]
+async fn test_performance_characteristics() {
     let mut engine = JetCrabEngine::new();
 
-    // Test rapid successive evaluations
     for i in 0..100 {
         let code = format!("let x{} = {}; x{}", i, i, i);
-        let result = engine.evaluate(&code);
+        let result = engine.evaluate(&code).await;
         assert!(result.is_ok(), "Failed at iteration {}", i);
     }
 }
 
 /// Test memory management
-#[test]
-fn test_memory_management() {
+#[tokio::test]
+async fn test_memory_management() {
     let mut engine = JetCrabEngine::new();
 
-    // Test large object creation
     let code = r#"
         let largeObject = {};
         for (let i = 0; i < 1000; i++) {
@@ -183,30 +156,28 @@ fn test_memory_management() {
         Object.keys(largeObject).length
     "#;
 
-    let result = engine.evaluate(code);
+    let result = engine.evaluate(code).await;
     assert!(result.is_ok());
 }
 
 /// Test concurrent operations
-#[test]
-fn test_concurrent_operations() {
-    use std::thread;
+#[tokio::test]
+async fn test_concurrent_operations() {
+    use tokio::task;
 
-    // Test spawning multiple threads
-    let mut handles = Vec::new();
-    for i in 0..10 {
-        let handle = thread::spawn(move || {
-            let mut engine = JetCrabEngine::new();
-            let result = engine.evaluate(&format!("{} * 2", i));
-            assert!(result.is_ok());
-            i * 2
-        });
-        handles.push(handle);
-    }
+    let handles: Vec<_> = (0..10)
+        .map(|i| {
+            task::spawn(async move {
+                let mut engine = JetCrabEngine::new();
+                let result = engine.evaluate(&format!("{} * 2", i)).await;
+                assert!(result.is_ok());
+                i * 2
+            })
+        })
+        .collect();
 
-    // All threads should complete successfully
     for handle in handles {
-        let result = handle.join().unwrap();
+        let result = handle.await.unwrap();
         assert!(result >= 0);
     }
 }

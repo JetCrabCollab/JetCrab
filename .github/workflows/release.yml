@@ -21,69 +21,69 @@ jobs:
             os: ubuntu-latest
             artifact_name: jetcrab-linux-x86_64
             jetcrab_path: target/x86_64-unknown-linux-gnu/release/jetcrab
-            claw_path: target/x86_64-unknown-linux-gnu/release/claw
             archive_format: tar.gz
           - target: x86_64-pc-windows-msvc
             os: windows-latest
             artifact_name: jetcrab-windows-x86_64
             jetcrab_path: target/x86_64-pc-windows-msvc/release/jetcrab.exe
-            claw_path: target/x86_64-pc-windows-msvc/release/claw.exe
             archive_format: zip
           - target: x86_64-apple-darwin
             os: macos-latest
             artifact_name: jetcrab-macos-x86_64
             jetcrab_path: target/x86_64-apple-darwin/release/jetcrab
-            claw_path: target/x86_64-apple-darwin/release/claw
             archive_format: tar.gz
           - target: aarch64-apple-darwin
             os: macos-latest
             artifact_name: jetcrab-macos-aarch64
             jetcrab_path: target/aarch64-apple-darwin/release/jetcrab
-            claw_path: target/aarch64-apple-darwin/release/claw
             archive_format: tar.gz
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          target: ${{ matrix.target }}
-          override: true
+      - name: Prepare workspace
+        shell: bash
+        run: |
+          REPO_NAME=$(basename "$GITHUB_WORKSPACE")
+          cd ..
+          printf '[workspace]\nresolver = "2"\nmembers = ["chitin", "%s"]\n\n[workspace.package]\nversion = "0.1.0"\nedition = "2021"\nauthors = ["JetCrab Team"]\nlicense = "MIT"\n' "$REPO_NAME" > Cargo.toml
+          git clone --depth 1 https://github.com/JetCrabCollab/chitin.git chitin
 
-      - name: Cache cargo registry
-        uses: actions/cache@v3
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
+          targets: ${{ matrix.target }}
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "${{ github.workspace }}/.."
 
       - name: Build
-        run: cargo build --release --target ${{ matrix.target }}
+        working-directory: ${{ github.workspace }}/..
+        run: cargo build -p jetcrab --release --target ${{ matrix.target }}
 
       - name: Strip binaries (Linux/macOS)
         if: matrix.os != 'windows-latest'
-        run: |
-          strip ${{ matrix.jetcrab_path }}
-          strip ${{ matrix.claw_path }}
+        working-directory: ${{ github.workspace }}/..
+        run: strip ${{ matrix.jetcrab_path }}
 
       - name: Compress binaries
+        working-directory: ${{ github.workspace }}/..
+        shell: bash
         run: |
           if [ "${{ matrix.archive_format }}" = "tar.gz" ]; then
-            tar -czf ${{ matrix.artifact_name }}.${{ matrix.archive_format }} -C target/${{ matrix.target }}/release jetcrab claw
+            tar -czf ${{ matrix.artifact_name }}.${{ matrix.archive_format }} -C target/${{ matrix.target }}/release jetcrab
           else
-            cd target/${{ matrix.target }}/release && zip -r ../../../${{ matrix.artifact_name }}.${{ matrix.archive_format }} jetcrab.exe claw.exe
+            cd target/${{ matrix.target }}/release && zip -r ../../../${{ matrix.artifact_name }}.${{ matrix.archive_format }} jetcrab.exe
           fi
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
-          path: ${{ matrix.artifact_name }}.${{ matrix.archive_format }}
+          path: ${{ github.workspace }}/../${{ matrix.artifact_name }}.${{ matrix.archive_format }}
 
   release:
     name: Create Release
@@ -96,12 +96,15 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
 
       - name: Create checksums
+        shell: bash
         run: |
-          for file in jetcrab-*; do
-            sha256sum "$file" > "$file.sha256"
+          for f in jetcrab-*.*; do
+            [ -f "$f" ] && sha256sum "$f" > "$f.sha256"
           done
 
       - name: Create Release

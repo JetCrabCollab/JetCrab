@@ -58,7 +58,7 @@ JetCrab follows a layered architecture:
 
 1. **JavaScript Layer**: User code with standard Web/Node.js APIs
 2. **JetCrab Runtime Layer**: API implementations and event loop management
-3. **Boa Engine Layer**: JavaScript parsing, AST, and execution
+3. **Chitin Engine Layer**: JavaScript parsing, AST, and execution
 4. **Tokio Async Layer**: Asynchronous I/O operations and task management
 
 ## 📝 Development Guidelines

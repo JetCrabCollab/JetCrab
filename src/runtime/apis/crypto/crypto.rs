@@ -1,4 +1,4 @@
-use boa_engine::{Context, JsValue, NativeFunction};
+use chitin::boa_engine::{Context, JsValue, NativeFunction};
 use tracing::info;
 
 pub struct CryptoAPI;
@@ -275,7 +275,7 @@ impl CryptoAPI {
         };
         "#;
 
-        context.eval(boa_engine::Source::from_bytes(crypto_code))?;
+        context.eval(chitin::boa_engine::Source::from_bytes(crypto_code))?;
         info!("✅ Crypto API registered successfully");
         Ok(())
     }

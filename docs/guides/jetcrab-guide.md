@@ -1,6 +1,6 @@
 # JetCrab Guide
 
-Welcome to the comprehensive guide for JetCrab, a modern JavaScript runtime built with Rust and powered by the Boa engine.
+Welcome to the comprehensive guide for JetCrab, a modern JavaScript runtime built with Rust and powered by the Chitin engine.
 
 ## Table of Contents
 
@@ -18,7 +18,7 @@ Welcome to the comprehensive guide for JetCrab, a modern JavaScript runtime buil
 
 JetCrab is a high-performance JavaScript runtime that combines the speed and safety of Rust with the flexibility of JavaScript. It provides:
 
-- **Fast Execution**: Powered by the Boa JavaScript engine
+- **Fast Execution**: Powered by the Chitin JavaScript engine
 - **Rust Integration**: Seamless interoperability between JavaScript and Rust
 - **Node.js Compatibility**: Familiar APIs and module system
 - **WebAssembly Support**: Run Rust modules as WebAssembly in JavaScript
@@ -267,24 +267,24 @@ JetCrab includes Claw, a package manager for both JavaScript and Rust packages:
 
 #### Install JavaScript packages
 ```bash
-claw install express lodash
+cpm install express lodash
 ```
 
 #### Install Rust packages
 ```bash
-claw install --rust serde tokio
+cpm install --rust serde tokio
 ```
 
 #### Initialize a new project
 ```bash
-claw init my-project
+cpm init my-project
 cd my-project
 ```
 
 #### Build and run
 ```bash
-claw build
-claw run
+cpm build
+cpm run
 ```
 
 ### Development Tools
@@ -351,33 +351,33 @@ jetcrab build
 
 ### Claw Package Manager Commands
 
-#### `claw init <name>`
+#### `cpm init <name>`
 Initialize a new JetCrab project.
 
 ```bash
-claw init my-app
+cpm init my-app
 ```
 
-#### `claw install <packages>`
+#### `cpm install <packages>`
 Install JavaScript or Rust packages.
 
 ```bash
-claw install express
-claw install --rust serde
+cpm install express
+cpm install --rust serde
 ```
 
-#### `claw build`
+#### `cpm build`
 Build the project.
 
 ```bash
-claw build
+cpm build
 ```
 
-#### `claw run`
+#### `cpm run`
 Run the project.
 
 ```bash
-claw run
+cpm run
 ```
 
 ## Troubleshooting
@@ -391,7 +391,7 @@ Error: Cannot find module 'express'
 
 **Solution**: Install the module using Claw:
 ```bash
-claw install express
+cpm install express
 ```
 
 #### Rust Compilation Error

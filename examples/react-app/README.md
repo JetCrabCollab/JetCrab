@@ -21,10 +21,10 @@ A modern React application built with JetCrab runtime, demonstrating how to crea
 cd examples/react-app
 
 # Initialize a new JetCrab project
-claw init
+cpm init
 
 # Install React dependencies
-claw install react react-dom
+cpm install react react-dom
 ```
 
 ### 2. Run the Application
@@ -34,7 +34,7 @@ claw install react react-dom
 jetcrab run src/index.js
 
 # Or use development mode with hot reload
-claw dev
+cpm dev
 ```
 
 ### 3. Access the Application
@@ -93,7 +93,7 @@ Todo list application showing CRUD operations and local storage.
 
 ```bash
 # Run all tests
-claw test
+cpm test
 
 # Run specific test suite
 jetcrab run tests/App.test.js
@@ -103,7 +103,7 @@ jetcrab run tests/App.test.js
 
 ```bash
 # Build optimized version
-claw build
+cpm build
 
 # Start production server
 NODE_ENV=production jetcrab run src/index.js

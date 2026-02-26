@@ -5,9 +5,9 @@
   "main": "server.js",
   "scripts": {
     "start": "jetcrab run server.js",
-    "dev": "claw dev",
-    "test": "claw test",
-    "build": "claw build",
+    "dev": "cpm dev",
+    "test": "cpm test",
+    "build": "cpm build",
     "build:wasm": "wasm-pack build --target web --out-dir pkg"
   },
   "keywords": [
