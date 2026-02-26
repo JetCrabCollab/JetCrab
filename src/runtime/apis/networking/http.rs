@@ -2,7 +2,7 @@
 //!
 //! Provides HTTP client and server functionality similar to Node.js http module.
 
-use boa_engine::{js_string, property::Attribute, Context, JsResult};
+use chitin::boa_engine::{js_string, property::Attribute, Context, JsResult};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use tracing::info;
@@ -268,9 +268,9 @@ impl HttpAPI {
         console.log('✅ HTTP API registered successfully');
         "#;
 
-        context.eval(boa_engine::Source::from_bytes(http_code))?;
+        context.eval(chitin::boa_engine::Source::from_bytes(http_code))?;
 
-        let http_object = context.eval(boa_engine::Source::from_bytes("globalThis.http"))?;
+        let http_object = context.eval(chitin::boa_engine::Source::from_bytes("globalThis.http"))?;
         context.register_global_property(js_string!("http"), http_object, Attribute::all())?;
 
         Ok(())

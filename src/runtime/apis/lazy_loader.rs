@@ -3,7 +3,7 @@
 //! This module provides lazy loading functionality for JetCrab APIs.
 
 use crate::runtime::apis::{ApiConfig, ApiError, ApiPlugin, ApiRegistry, ApiResult};
-use boa_engine::Context;
+use chitin::boa_engine::Context;
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use std::time::{Duration, Instant};

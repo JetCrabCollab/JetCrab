@@ -6,7 +6,7 @@ This document provides a comprehensive reference for the JetCrab command-line in
 
 JetCrab provides two main CLI tools:
 - **`jetcrab`**: Main JavaScript runtime and execution tool
-- **`claw`**: Package manager for JavaScript and Rust packages
+- **`cpm`**: Package manager for JavaScript and Rust packages
 
 ## jetcrab Command
 
@@ -144,13 +144,13 @@ jetcrab build --release
 jetcrab build --target x86_64-unknown-linux-gnu
 ```
 
-## claw Command
+## cpm Command
 
-The Claw package manager for managing JavaScript and Rust dependencies.
+The CPM package manager for managing JavaScript and Rust dependencies.
 
 ### Usage
 ```bash
-claw [OPTIONS] <COMMAND>
+cpm [OPTIONS] <COMMAND>
 ```
 
 ### Global Options
@@ -165,8 +165,8 @@ claw [OPTIONS] <COMMAND>
 Initialize a new JetCrab project.
 
 ```bash
-claw init
-claw init my-project
+cpm init
+cpm init my-project
 ```
 
 **Options:**
@@ -178,22 +178,22 @@ claw init my-project
 **Examples:**
 ```bash
 # Initialize in current directory
-claw init
+cpm init
 
 # Initialize with specific name
-claw init my-awesome-project
+cpm init my-awesome-project
 
 # Initialize with metadata
-claw init --name "My Project" --version "1.0.0" --author "John Doe"
+cpm init --name "My Project" --version "1.0.0" --author "John Doe"
 ```
 
 #### `install [PACKAGES]...`
 Install JavaScript or Rust packages.
 
 ```bash
-claw install package-name
-claw install --rust crate-name
-claw install --dev dev-package
+cpm install package-name
+cpm install --rust crate-name
+cpm install --dev dev-package
 ```
 
 **Options:**
@@ -205,44 +205,44 @@ claw install --dev dev-package
 **Examples:**
 ```bash
 # Install JavaScript package
-claw install lodash
+cpm install lodash
 
 # Install Rust crate
-claw install --rust serde
+cpm install --rust serde
 
 # Install development dependency
-claw install --dev jest
+cpm install --dev jest
 
 # Install multiple packages
-claw install express lodash --rust serde tokio
+cpm install express lodash --rust serde tokio
 ```
 
 #### `uninstall [PACKAGES]...`
 Uninstall packages.
 
 ```bash
-claw uninstall package-name
-claw uninstall --rust crate-name
+cpm uninstall package-name
+cpm uninstall --rust crate-name
 ```
 
 **Options:**
 - `--rust`: Uninstall Rust crate
-- `--save`: Update package.json/claw.json
+- `--save`: Update package.json
 
 **Examples:**
 ```bash
 # Uninstall JavaScript package
-claw uninstall lodash
+cpm uninstall lodash
 
 # Uninstall Rust crate
-claw uninstall --rust serde
+cpm uninstall --rust serde
 ```
 
 #### `list`
 List installed packages.
 
 ```bash
-claw list
+cpm list
 ```
 
 **Options:**
@@ -253,21 +253,21 @@ claw list
 **Examples:**
 ```bash
 # List all packages
-claw list
+cpm list
 
 # List only Rust crates
-claw list --rust
+cpm list --rust
 
 # List only JavaScript packages
-claw list --js
+cpm list --js
 ```
 
 #### `update [PACKAGES]...`
 Update packages to latest versions.
 
 ```bash
-claw update
-claw update package-name
+cpm update
+cpm update package-name
 ```
 
 **Options:**
@@ -278,20 +278,20 @@ claw update package-name
 **Examples:**
 ```bash
 # Update all packages
-claw update
+cpm update
 
 # Update specific package
-claw update lodash
+cpm update lodash
 
 # Update Rust crates
-claw update --rust
+cpm update --rust
 ```
 
 #### `build`
 Build the project.
 
 ```bash
-claw build
+cpm build
 ```
 
 **Options:**
@@ -302,22 +302,22 @@ claw build
 **Examples:**
 ```bash
 # Build project
-claw build
+cpm build
 
 # Build for release
-claw build --release
+cpm build --release
 
 # Clean and build
-claw build --clean
+cpm build --clean
 ```
 
 #### `run [SCRIPT]`
 Run a script or the main entry point.
 
 ```bash
-claw run
-claw run start
-claw run build
+cpm run
+cpm run start
+cpm run build
 ```
 
 **Options:**
@@ -327,20 +327,20 @@ claw run build
 **Examples:**
 ```bash
 # Run main script
-claw run
+cpm run
 
 # Run specific script
-claw run start
+cpm run start
 
 # Run with arguments
-claw run --args "arg1" "arg2"
+cpm run --args "arg1" "arg2"
 ```
 
 #### `dev`
 Start development mode.
 
 ```bash
-claw dev
+cpm dev
 ```
 
 **Options:**
@@ -351,20 +351,20 @@ claw dev
 **Examples:**
 ```bash
 # Start dev mode
-claw dev
+cpm dev
 
 # Start dev mode with watching
-claw dev --watch
+cpm dev --watch
 
 # Start dev mode on specific port
-claw dev --port 3000
+cpm dev --port 3000
 ```
 
 #### `test`
 Run tests.
 
 ```bash
-claw test
+cpm test
 ```
 
 **Options:**
@@ -375,20 +375,20 @@ claw test
 **Examples:**
 ```bash
 # Run tests
-claw test
+cpm test
 
 # Run tests with coverage
-claw test --coverage
+cpm test --coverage
 
 # Run tests in watch mode
-claw test --watch
+cpm test --watch
 ```
 
 #### `lint`
 Lint the code.
 
 ```bash
-claw lint
+cpm lint
 ```
 
 **Options:**
@@ -399,20 +399,20 @@ claw lint
 **Examples:**
 ```bash
 # Lint code
-claw lint
+cpm lint
 
 # Lint and fix
-claw lint --fix
+cpm lint --fix
 
 # Lint with strict rules
-claw lint --strict
+cpm lint --strict
 ```
 
 #### `format`
 Format the code.
 
 ```bash
-claw format
+cpm format
 ```
 
 **Options:**
@@ -422,13 +422,13 @@ claw format
 **Examples:**
 ```bash
 # Format code
-claw format
+cpm format
 
 # Check formatting
-claw format --check
+cpm format --check
 
 # Format and write
-claw format --write
+cpm format --write
 ```
 
 ## Configuration
@@ -463,8 +463,8 @@ enable_source_maps = true
 enable_hot_reload = true
 ```
 
-### claw Configuration
-Claw uses `claw.json` for project configuration:
+### cpm Configuration
+CPM uses `package.json` for project configuration:
 
 ```json
 {
@@ -507,30 +507,30 @@ jetcrab eval "console.log('Hello, World!')"
 ### Package Management
 ```bash
 # Initialize new project
-claw init my-project
+cpm init my-project
 cd my-project
 
 # Install packages
-claw install express lodash
-claw install --rust serde tokio
+cpm install express lodash
+cpm install --rust serde tokio
 
 # Run the project
-claw run
+cpm run
 ```
 
 ### Development Workflow
 ```bash
 # Start development server
-claw dev --watch
+cpm dev --watch
 
 # Run tests
-claw test
+cpm test
 
 # Lint code
-claw lint
+cpm lint
 
 # Format code
-claw format
+cpm format
 ```
 
 ## Troubleshooting
@@ -541,7 +541,7 @@ claw format
 ```bash
 # Check if JetCrab is installed
 which jetcrab
-which claw
+which cpm
 
 # Check installation
 cargo install --list | grep jetcrab

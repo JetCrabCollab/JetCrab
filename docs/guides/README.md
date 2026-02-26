@@ -15,7 +15,7 @@ This directory contains comprehensive guides and tutorials for using JetCrab.
 - **[Examples](examples.md)** - Code examples and tutorials
 
 ### Package Management
-- **[Claw Package Manager](claw-package-manager.md)** - Complete guide to the package manager
+- **[CPM Package Manager](cpm-package-manager.md)** - Complete guide to the package manager
 
 ### Architecture
 - **[Engine Overview](../architecture/engine-overview.md)** - High-level architecture and design principles
@@ -27,14 +27,14 @@ This directory contains comprehensive guides and tutorials for using JetCrab.
 2. Follow the [Quick Start Guide](../getting-started/README.md)
 3. Read the comprehensive [JetCrab Guide](jetcrab-guide.md)
 4. Check out [Examples](examples.md) to see JetCrab in action
-5. Learn about [Claw Package Manager](claw-package-manager.md)
+5. Learn about [CPM Package Manager](cpm-package-manager.md)
 6. Explore the [Architecture Overview](../architecture/engine-overview.md)
 
 ### For Developers
 1. Review the [Architecture Documentation](../architecture/engine-overview.md)
 2. Read the comprehensive [JetCrab Guide](jetcrab-guide.md)
 3. Check the [Implementation Status](../implementation/README.md)
-4. Learn about [Claw Package Manager](claw-package-manager.md)
+4. Learn about [CPM Package Manager](cpm-package-manager.md)
 5. Explore [Examples](examples.md) and [API Reference](api-reference.md)
 6. Check out the [Examples](../../examples/) directory
 
@@ -48,17 +48,17 @@ This directory contains comprehensive guides and tutorials for using JetCrab.
 
 ### JavaScript Runtime
 JetCrab is a JavaScript runtime that provides:
-- JavaScript execution via Boa engine
+- JavaScript execution via Chitin engine
 - Built-in APIs (console, process, fetch)
 - Asynchronous operations via Tokio
-- Package management via Claw
+- Package management via CPM
 
-### Boa Integration
-JetCrab leverages the Boa JavaScript engine for:
+### Chitin Integration
+JetCrab leverages the Chitin JavaScript engine for:
 - ECMAScript compliance
 - Performance optimization
 - Reliability and stability
-- Active community support
+- WASM-based execution
 
 ### Async Operations
 Tokio integration provides:
@@ -90,13 +90,13 @@ fetch("https://api.github.com/users/octocat")
 ### Package Management
 ```bash
 # Initialize project
-claw init my-project
+cpm init my-project
 
 # Install packages
-claw install lodash serde
+cpm install lodash serde
 
 # Run development server
-claw dev
+cpm dev
 ```
 
 ## Resources

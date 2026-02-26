@@ -3,79 +3,13 @@
 //! Command-line interface for JetCrab Runtime.
 
 pub mod framework;
+pub mod options;
+pub mod commands;
 
-use crate::easter_egg::{
-    should_trigger_easter_egg, should_trigger_easter_egg_for_command, show_walking_jetcrab,
-};
+pub use options::Cli;
+
 use crate::runtime::JetCrabRuntime;
-use clap::{Parser, Subcommand};
-use std::path::PathBuf;
-
-/// JetCrab - A modern JavaScript runtime in Rust
-#[derive(Parser)]
-#[command(name = "jetcrab")]
-#[command(about = "A modern JavaScript runtime in Rust")]
-#[command(version = "0.4.0")]
-pub struct Cli {
-    /// Enable verbose logging
-    #[arg(short, long)]
-    pub verbose: bool,
-
-    #[command(subcommand)]
-    pub command: Commands,
-}
-
-#[derive(Subcommand)]
-pub enum Commands {
-    /// Run a JavaScript file or load a Rust module
-    Run {
-        /// File to execute (.js for JavaScript or .rs for Rust modules)
-        file: PathBuf,
-        /// Additional arguments to pass to the script
-        #[arg(short, long)]
-        args: Vec<String>,
-    },
-    /// Start interactive REPL
-    Repl,
-    /// Evaluate JavaScript code directly
-    Eval {
-        /// JavaScript code to evaluate
-        code: String,
-    },
-    /// Run tests
-    Test {
-        /// Test pattern to match
-        pattern: Option<String>,
-        /// Test directory
-        #[arg(short, long, default_value = ".")]
-        dir: PathBuf,
-    },
-    /// Format JavaScript code
-    Fmt {
-        /// Files or directories to format
-        files: Vec<PathBuf>,
-        /// Check formatting without making changes
-        #[arg(long)]
-        check: bool,
-    },
-    /// Lint JavaScript code
-    Lint {
-        /// Files or directories to lint
-        files: Vec<PathBuf>,
-    },
-    /// Bundle JavaScript modules
-    Bundle {
-        /// Entry point file
-        entry: PathBuf,
-        /// Output file
-        #[arg(short, long)]
-        output: Option<PathBuf>,
-    },
-    /// Show version information
-    Version,
-    /// 🦀 Easter egg - show walking crab animation
-    Crab,
-}
+use crate::easter_egg::{should_trigger_easter_egg, should_trigger_easter_egg_for_command, show_walking_jetcrab};
 
 impl Cli {
     /// Execute the CLI command
@@ -83,40 +17,65 @@ impl Cli {
         &self,
         runtime: &mut JetCrabRuntime,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        match &self.command {
-            Commands::Run { file, args } => {
-                runtime.run_file(file, args).await?;
-            }
-            Commands::Repl => {
-                runtime.start_repl().await?;
-            }
-            Commands::Eval { code } => {
-                if should_trigger_easter_egg_for_command(&code) {
-                    show_walking_jetcrab();
-                } else if should_trigger_easter_egg() {
-                    show_walking_jetcrab();
-                }
-                runtime.evaluate_code(code).await?;
-            }
-            Commands::Test { pattern, dir } => {
-                runtime.run_tests(pattern.as_deref(), dir).await?;
-            }
-            Commands::Fmt { files, check } => {
-                runtime.format_code(files, *check).await?;
-            }
-            Commands::Lint { files } => {
-                runtime.lint_code(files).await?;
-            }
-            Commands::Bundle { entry, output } => {
-                runtime.bundle_modules(entry, output.as_deref()).await?;
-            }
-            Commands::Version => {
-                runtime.show_version();
-            }
-            Commands::Crab => {
-                show_walking_jetcrab();
-            }
+        // Handle help manually if needed (clap does it mostly, but --help flag is custom handled in node)
+        // With disable_help_flag=true, we should probably print help here if self.main.help is true
+        if self.main.help {
+            // We can use clap to print help, but since we parsed it into our struct, 
+            // and we disabled the flag, we might need to regenerate the help message or just print our custom one.
+            // For now, let's assume clap handles it if we don't completely override execution flow before parsing.
+            // Wait, if disable_help_flag=true, clap parses '--help' as a value or ignores it?
+            // Actually, if we defined `help` field in `options.rs`, it parses it into that boolean.
+            // So we must print help manually.
+            // Since we don't have the Command object here easily without rebuilding it, 
+            // we can just print the help template or let clap do it if we didn't disable it.
+            // The user wanted Node behavior. Node prints help and exits.
+            // We can print the help string we constructed or use Cli::command().print_help().
+            // But `Cli` is the struct. `Cli::command()` is available via `CommandFactory`.
+            use clap::CommandFactory;
+            Cli::command().print_help()?;
+            return Ok(());
         }
+
+        if self.main.version {
+            println!("v{}", env!("CARGO_PKG_VERSION"));
+            return Ok(());
+        }
+        
+        if self.main.eval.is_some() || self.main.print.is_some() {
+             let code = self.main.eval.as_ref().or(self.main.print.as_ref()).unwrap();
+             commands::eval::execute(runtime, code).await?;
+             return Ok(());
+        }
+
+        // REPL (Interactive or no args)
+        if self.main.interactive || (self.script.is_none() && self.main.eval.is_none()) {
+             commands::repl::execute(runtime).await?;
+             return Ok(());
+        }
+        
+        // Modules/Script
+        if let Some(script) = &self.script {
+            // Easter egg check
+            if script == "crab" {
+                 commands::crab::execute();
+                 return Ok(());
+            }
+            if script == "test" {
+                 commands::test_cmd::execute(runtime).await?;
+                 return Ok(());
+            }
+            if script == "fmt" {
+                 commands::fmt_cmd::execute(&self.script_args)?;
+                 return Ok(());
+            }
+            if script == "lint" {
+                 commands::lint_cmd::execute(&self.script_args)?;
+                 return Ok(());
+            }
+
+            commands::run::execute(runtime, script, &self.script_args).await?;
+        }
+
         Ok(())
     }
 }

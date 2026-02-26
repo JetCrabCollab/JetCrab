@@ -378,7 +378,7 @@ impl ReplAPI {
 
     pub fn register(
         &self,
-        context: &mut boa_engine::Context,
+        context: &mut chitin::boa_engine::Context,
     ) -> Result<(), Box<dyn std::error::Error>> {
         info!("🔄 Registering REPL API...");
 
@@ -551,7 +551,7 @@ impl ReplAPI {
         };
         "#;
 
-        context.eval(boa_engine::Source::from_bytes(repl_code))?;
+        context.eval(chitin::boa_engine::Source::from_bytes(repl_code))?;
         info!("✅ REPL API registered successfully");
         Ok(())
     }
@@ -701,7 +701,7 @@ mod tests {
     #[test]
     async fn test_repl_api_register() {
         let api = ReplAPI::new();
-        let mut context = boa_engine::Context::default();
+        let mut context = chitin::boa_engine::Context::default();
         let result = api.register(&mut context);
         assert!(result.is_ok());
     }

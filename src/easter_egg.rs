@@ -6,131 +6,49 @@ use std::io::{self, Write};
 use std::thread;
 use std::time::Duration;
 
-/// Crab animation frames for walking left to right
-const CRAB_FRAMES: &[&str] = &[
-    "🦀     ",
-    " 🦀    ",
-    "  🦀   ",
-    "   🦀  ",
-    "    🦀 ",
-    "     🦀",
-    "    🦀 ",
-    "   🦀  ",
-    "  🦀   ",
-    " 🦀    ",
-];
-
 /// JetCrab logo frames for walking left to right
 const JETCRAB_FRAMES: &[&str] = &[
-    "🦀 JetCrab     ",
-    " 🦀 JetCrab    ",
-    "  🦀 JetCrab   ",
-    "   🦀 JetCrab  ",
-    "    🦀 JetCrab ",
-    "     🦀 JetCrab",
-    "    🦀 JetCrab ",
-    "   🦀 JetCrab  ",
-    "  🦀 JetCrab   ",
-    " 🦀 JetCrab    ",
+    "🚀🦀       ",
+    " 🚀🦀      ",
+    "  🚀🦀     ",
+    "   🚀🦀    ",
+    "    🚀🦀   ",
+    "     🚀🦀  ",
+    "      🚀🦀 ",
+    "       🚀🦀",
+    "      🚀🦀 ",
+    "     🚀🦀  ",
 ];
-
-/// Claw logo frames for walking left to right
-const CLAW_FRAMES: &[&str] = &[
-    "🦀 Claw     ",
-    " 🦀 Claw    ",
-    "  🦀 Claw   ",
-    "   🦀 Claw  ",
-    "    🦀 Claw ",
-    "     🦀 Claw",
-    "    🦀 Claw ",
-    "   🦀 Claw  ",
-    "  🦀 Claw   ",
-    " 🦀 Claw    ",
-];
-
-/// Display a walking crab animation
-pub fn show_walking_crab() {
-    println!("\n🦀 JetCrab Easter Egg! 🦀\n");
-
-    print!("\x1B[2J\x1B[1;1H\x1B[?25l");
-    io::stdout().flush().unwrap();
-
-    for _ in 0..3 {
-        for frame in CRAB_FRAMES {
-            print!("\r{}", frame);
-            io::stdout().flush().unwrap();
-            thread::sleep(Duration::from_millis(200));
-        }
-
-        for frame in CRAB_FRAMES.iter().rev() {
-            print!("\r{}", frame);
-            io::stdout().flush().unwrap();
-            thread::sleep(Duration::from_millis(200));
-        }
-    }
-
-    print!("\r🦀 JetCrab is ready! 🦀\n\n");
-    io::stdout().flush().unwrap();
-
-    print!("\x1B[?25h");
-    io::stdout().flush().unwrap();
-}
 
 /// Display a walking JetCrab logo animation
 pub fn show_walking_jetcrab() {
-    println!("\n🦀 JetCrab Easter Egg! 🦀\n");
+    eprintln!("\n🚀🦀 Whoosh! JetCrab taking off! 🚀🦀\n");
 
     print!("\x1B[2J\x1B[1;1H\x1B[?25l");
     io::stdout().flush().unwrap();
 
-    for _ in 0..2 {
+    for _ in 0..4 { // Faster, more loops
         for frame in JETCRAB_FRAMES {
             print!("\r{}", frame);
             io::stdout().flush().unwrap();
-            thread::sleep(Duration::from_millis(150));
+            thread::sleep(Duration::from_millis(50)); // Fast!
         }
 
         for frame in JETCRAB_FRAMES.iter().rev() {
             print!("\r{}", frame);
             io::stdout().flush().unwrap();
-            thread::sleep(Duration::from_millis(150));
+            thread::sleep(Duration::from_millis(50));
         }
     }
 
-    print!("\r🦀 JetCrab Runtime v0.4.0 🦀\n\n");
+    print!("\r🚀🦀 JetCrab Engine v0.4.0 - Powered by Chitin 🚀🦀\n\n");
     io::stdout().flush().unwrap();
 
     print!("\x1B[?25h");
     io::stdout().flush().unwrap();
 }
 
-/// Display a walking Claw logo animation
-pub fn show_walking_claw() {
-    println!("\n🦀 Claw Easter Egg! 🦀\n");
 
-    print!("\x1B[2J\x1B[1;1H\x1B[?25l");
-    io::stdout().flush().unwrap();
-
-    for _ in 0..2 {
-        for frame in CLAW_FRAMES {
-            print!("\r{}", frame);
-            io::stdout().flush().unwrap();
-            thread::sleep(Duration::from_millis(150));
-        }
-
-        for frame in CLAW_FRAMES.iter().rev() {
-            print!("\r{}", frame);
-            io::stdout().flush().unwrap();
-            thread::sleep(Duration::from_millis(150));
-        }
-    }
-
-    print!("\r🦀 Claw Package Manager v0.4.0 🦀\n\n");
-    io::stdout().flush().unwrap();
-
-    print!("\x1B[?25h");
-    io::stdout().flush().unwrap();
-}
 
 /// Check if easter egg should be triggered
 pub fn should_trigger_easter_egg() -> bool {
@@ -160,32 +78,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_crab_frames_length() {
-        assert_eq!(CRAB_FRAMES.len(), 10);
-        assert_eq!(JETCRAB_FRAMES.len(), 10);
-        assert_eq!(CLAW_FRAMES.len(), 10);
-    }
-
-    #[test]
-    fn test_crab_frames_contain_crab() {
-        for frame in CRAB_FRAMES {
-            assert!(frame.contains("🦀"));
-        }
-    }
-
-    #[test]
     fn test_jetcrab_frames_contain_both() {
         for frame in JETCRAB_FRAMES {
             assert!(frame.contains("🦀"));
             assert!(frame.contains("JetCrab"));
-        }
-    }
-
-    #[test]
-    fn test_claw_frames_contain_both() {
-        for frame in CLAW_FRAMES {
-            assert!(frame.contains("🦀"));
-            assert!(frame.contains("Claw"));
         }
     }
 

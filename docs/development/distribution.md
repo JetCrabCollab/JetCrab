@@ -1,7 +1,7 @@
-# JetCrab & Claw Distribution Strategy
+# JetCrab & CPM Distribution Strategy
 
 ## Overview
-This document outlines the distribution strategy for JetCrab (JavaScript runtime) and Claw (package manager) across Linux, Windows, and macOS platforms. Both tools are distributed together as a unified package.
+This document outlines the distribution strategy for JetCrab (JavaScript runtime) and CPM (package manager) across Linux, Windows, and macOS platforms. Both tools are distributed together as a unified package.
 
 ## Distribution Methods
 
@@ -19,11 +19,11 @@ jetcrab-0.4.0-windows-x86_64.zip
 jetcrab-0.4.0-macos-x86_64.tar.gz
 jetcrab-0.4.0-macos-aarch64.tar.gz  # Apple Silicon
 
-claw-{version}-{platform}-{arch}.{ext}
-claw-0.4.0-linux-x86_64.tar.gz
-claw-0.4.0-windows-x86_64.zip
-claw-0.4.0-macos-x86_64.tar.gz
-claw-0.4.0-macos-aarch64.tar.gz  # Apple Silicon
+cpm-{version}-{platform}-{arch}.{ext}
+cpm-0.4.0-linux-x86_64.tar.gz
+cpm-0.4.0-windows-x86_64.zip
+cpm-0.4.0-macos-x86_64.tar.gz
+cpm-0.4.0-macos-aarch64.tar.gz  # Apple Silicon
 ```
 
 ### 2. **Package Managers**

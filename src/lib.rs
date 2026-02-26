@@ -1,12 +1,12 @@
 //! # JetCrab Runtime
 //!
-//! A modern JavaScript runtime in Rust, powered by Boa engine.
+//! A modern JavaScript runtime in Rust, powered by Chitin (WASM) engine.
 //!
 //! ## Overview
 //!
 //! JetCrab provides a complete JavaScript runtime environment with:
 //!
-//! - **Modern JavaScript Engine**: Powered by Boa (85%+ ECMAScript compliance)
+//! - **Modern JavaScript Engine**: Chitin (WASM)
 //! - **CLI Interface**: Command-line tools for development
 //! - **Interactive REPL**: Read-Eval-Print Loop for testing
 //! - **Built-in Tools**: Test runner, formatter, linter, bundler
@@ -18,7 +18,7 @@
 //! JetCrab Runtime architecture:
 //!
 //! ```text
-//! CLI → Runtime Core → JetCrab Engine → Boa Backend → JavaScript Execution
+//! CLI → Runtime Core → Chitin Engine (WASM) → JavaScript Execution
 //! ```
 //!
 //! ## Usage
@@ -53,8 +53,8 @@
 //!
 //! ## Features
 //!
-//! - **ECMAScript 2020+ Support**: Modern JavaScript features via Boa
-//! - **High Performance**: Rust-native performance with Boa backend
+//! - **ECMAScript 2020+ Support**: Via Chitin (WASM) engine
+//! - **High Performance**: Rust-native with Chitin backend
 //! - **Memory Safe**: Built with Rust's memory safety guarantees
 //! - **Built-in Tools**: Test, format, lint, bundle out of the box
 //! - **Cross Platform**: Runs on Windows, macOS, and Linux
@@ -62,15 +62,15 @@
 pub mod cli;
 pub mod easter_egg;
 pub mod runtime;
-pub mod tools;
 
-pub use runtime::apis::BuiltinAPIs;
-pub use runtime::engine::JetCrabEngine;
-pub use runtime::module_loader::{ModuleInfo, ModuleLoader};
-pub use runtime::repl::Repl;
-pub use runtime::wasm_runtime::WasmRuntime;
+
+// pub use runtime::apis::BuiltinAPIs;
+pub use runtime::JetCrabEngine;
+// pub use runtime::module_loader::{ModuleInfo, ModuleLoader};
+// pub use runtime::repl::Repl;
+// pub use runtime::wasm_runtime::WasmRuntime;
 pub use runtime::JetCrabRuntime;
 
 pub use cli::Cli;
 
-pub use tools::{Claw, DevConfig, DevTools};
+

@@ -29,7 +29,7 @@
 //! });
 //! ```
 
-use boa_engine::Context;
+use chitin::boa_engine::Context;
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex},
@@ -320,7 +320,7 @@ impl ChildProcessAPI {
         console.log('Child Process API registered successfully');
         "#;
 
-        context.eval(boa_engine::Source::from_bytes(child_process_code))?;
+        context.eval(chitin::boa_engine::Source::from_bytes(child_process_code))?;
         debug!("Child Process API registration completed");
 
         Ok(())
@@ -344,7 +344,7 @@ impl Default for ChildProcessAPI {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use boa_engine::{Context, Source};
+    use chitin::boa_engine::{Context, Source};
 
     /// Helper function to setup test context with console
     fn setup_test_context() -> Context {
@@ -463,7 +463,7 @@ mod tests {
 
         let global_cp = context
             .global_object()
-            .get(boa_engine::js_string!("child_process"), &mut context)
+            .get(chitin::boa_engine::js_string!("child_process"), &mut context)
             .unwrap();
         assert!(global_cp.is_object());
     }

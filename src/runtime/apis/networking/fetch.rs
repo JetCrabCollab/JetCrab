@@ -2,7 +2,7 @@
 //!
 //! Implementation of the fetch() API for HTTP requests.
 
-use boa_engine::{Context, JsResult};
+use chitin::boa_engine::{Context, JsResult};
 use tracing::debug;
 
 /// Fetch API implementation
@@ -33,7 +33,7 @@ impl FetchAPI {
             }
         "#;
 
-        context.eval(boa_engine::Source::from_bytes(fetch_code))?;
+        context.eval(chitin::boa_engine::Source::from_bytes(fetch_code))?;
 
         debug!("Fetch API registered successfully");
         Ok(())

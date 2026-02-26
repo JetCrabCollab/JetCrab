@@ -123,9 +123,9 @@ impl Repl {
         unsafe {
             let engine = &mut *self.engine;
 
-            match engine.evaluate_to_string(input) {
+            match engine.evaluate_to_string(input).await {
                 Ok(result) => {
-                    if result != "undefined" {
+                    if result != "undefined" && !result.is_empty() {
                         println!("{}", result);
                     }
                 }
@@ -156,7 +156,7 @@ impl Repl {
     /// Show welcome message
     fn show_welcome(&self) {
         println!("🦀 JetCrab Runtime v0.4.0");
-        println!("Powered by Boa Engine");
+        println!("Powered by Chitin (WASM) Engine");
         println!("Type .help for commands, .exit to quit");
         println!();
     }
@@ -199,7 +199,7 @@ impl Repl {
     fn show_version(&self) {
         println!("JetCrab Runtime v0.4.0");
         println!("Built with Rust");
-        println!("JavaScript Engine: Boa");
+        println!("JavaScript Engine: Chitin (WASM)");
     }
 
     /// Show engine statistics

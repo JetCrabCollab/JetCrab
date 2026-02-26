@@ -3,7 +3,7 @@
 //! This module provides batch registration functionality for better performance.
 
 use crate::runtime::apis::{ApiConfig, ApiError, ApiPlugin, ApiRegistry, ApiResult};
-use boa_engine::Context;
+use chitin::boa_engine::Context;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};

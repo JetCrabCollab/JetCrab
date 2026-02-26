@@ -2,7 +2,7 @@
 //!
 //! Provides operating system-related utilities and information.
 
-use boa_engine::{js_string, property::Attribute, Context, JsResult};
+use chitin::boa_engine::{js_string, property::Attribute, Context, JsResult};
 use sysinfo::System;
 
 /// OS API implementation
@@ -46,7 +46,7 @@ impl OsAPI {
             if cfg!(windows) { "\\r\\n" } else { "\\n" }
         );
 
-        let os_object = context.eval(boa_engine::Source::from_bytes(&os_code))?;
+        let os_object = context.eval(chitin::boa_engine::Source::from_bytes(&os_code))?;
 
         context.register_global_property(js_string!("os"), os_object, Attribute::all())?;
 

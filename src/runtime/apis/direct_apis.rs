@@ -2,7 +2,7 @@
 //!
 //! Direct injection of APIs into the Boa context without using NativeFunction.
 
-use boa_engine::{js_string, Context, JsObject, JsResult, JsValue};
+use chitin::boa_engine::{js_string, Context, JsObject, JsResult, JsValue};
 use std::env;
 
 /// Direct APIs implementation
@@ -61,7 +61,7 @@ impl DirectAPIs {
             })
         "#;
 
-        let console = context.eval(boa_engine::Source::from_bytes(console_code))?;
+        let console = context.eval(chitin::boa_engine::Source::from_bytes(console_code))?;
 
         context
             .global_object()
@@ -104,7 +104,7 @@ impl DirectAPIs {
         }
 
         Ok(JsValue::from(
-            boa_engine::object::builtins::JsArray::from_iter(js_args, context),
+            chitin::boa_engine::object::builtins::JsArray::from_iter(js_args, context),
         ))
     }
 
@@ -123,8 +123,8 @@ impl DirectAPIs {
     fn register_http(&self, context: &mut Context) -> JsResult<()> {
         let http_api = crate::runtime::apis::networking::HttpAPI::new();
         http_api.register(context).map_err(|e| {
-            boa_engine::JsError::from(
-                boa_engine::JsNativeError::typ()
+            chitin::boa_engine::JsError::from(
+                chitin::boa_engine::JsNativeError::typ()
                     .with_message(format!("Failed to register HTTP API: {}", e)),
             )
         })?;
@@ -135,8 +135,8 @@ impl DirectAPIs {
     fn register_fs(&self, context: &mut Context) -> JsResult<()> {
         let fs_api = crate::runtime::apis::filesystem::NativeFsModule::new();
         fs_api.register(context).map_err(|e| {
-            boa_engine::JsError::from(
-                boa_engine::JsNativeError::typ()
+            chitin::boa_engine::JsError::from(
+                chitin::boa_engine::JsNativeError::typ()
                     .with_message(format!("Failed to register FS API: {}", e)),
             )
         })?;
@@ -147,8 +147,8 @@ impl DirectAPIs {
     fn register_path(&self, context: &mut Context) -> JsResult<()> {
         let path_api = crate::runtime::apis::filesystem::PathAPI::new();
         path_api.register(context).map_err(|e| {
-            boa_engine::JsError::from(
-                boa_engine::JsNativeError::typ()
+            chitin::boa_engine::JsError::from(
+                chitin::boa_engine::JsNativeError::typ()
                     .with_message(format!("Failed to register path API: {}", e)),
             )
         })?;
@@ -159,8 +159,8 @@ impl DirectAPIs {
     fn register_os(&self, context: &mut Context) -> JsResult<()> {
         let os_api = crate::runtime::apis::system::OsAPI::new();
         os_api.register(context).map_err(|e| {
-            boa_engine::JsError::from(
-                boa_engine::JsNativeError::typ()
+            chitin::boa_engine::JsError::from(
+                chitin::boa_engine::JsNativeError::typ()
                     .with_message(format!("Failed to register OS API: {}", e)),
             )
         })?;
@@ -171,8 +171,8 @@ impl DirectAPIs {
     fn register_require(&self, context: &mut Context) -> JsResult<()> {
         let require_api = crate::runtime::apis::core::RequireAPI::new();
         require_api.register(context).map_err(|e| {
-            boa_engine::JsError::from(
-                boa_engine::JsNativeError::typ()
+            chitin::boa_engine::JsError::from(
+                chitin::boa_engine::JsNativeError::typ()
                     .with_message(format!("Failed to register require API: {}", e)),
             )
         })?;
@@ -183,8 +183,8 @@ impl DirectAPIs {
     fn register_timers(&self, context: &mut Context) -> JsResult<()> {
         let timers_api = crate::runtime::apis::utility::TimersAPI::new();
         timers_api.register(context).map_err(|e| {
-            boa_engine::JsError::from(
-                boa_engine::JsNativeError::typ()
+            chitin::boa_engine::JsError::from(
+                chitin::boa_engine::JsNativeError::typ()
                     .with_message(format!("Failed to register timers API: {}", e)),
             )
         })?;

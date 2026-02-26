@@ -1,4 +1,4 @@
-use boa_engine::Context;
+use chitin::boa_engine::Context;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU32, Ordering};
@@ -308,7 +308,7 @@ impl WorkerThreadsAPI {
         globalThis.Worker = Worker;
         "#;
 
-        context.eval(boa_engine::Source::from_bytes(worker_threads_code))?;
+        context.eval(chitin::boa_engine::Source::from_bytes(worker_threads_code))?;
         info!("✅ Worker Threads API registered successfully");
         Ok(())
     }

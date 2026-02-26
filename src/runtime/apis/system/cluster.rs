@@ -416,7 +416,7 @@ impl ClusterAPI {
 
     pub fn register(
         &self,
-        context: &mut boa_engine::Context,
+        context: &mut chitin::boa_engine::Context,
     ) -> Result<(), Box<dyn std::error::Error>> {
         info!("🔄 Registering Cluster API...");
 
@@ -516,7 +516,7 @@ impl ClusterAPI {
         };
         "#;
 
-        context.eval(boa_engine::Source::from_bytes(cluster_code))?;
+        context.eval(chitin::boa_engine::Source::from_bytes(cluster_code))?;
         info!("✅ Cluster API registered successfully");
         Ok(())
     }
@@ -696,7 +696,7 @@ mod tests {
     #[test]
     async fn test_cluster_api_register() {
         let api = ClusterAPI::new();
-        let mut context = boa_engine::Context::default();
+        let mut context = chitin::boa_engine::Context::default();
         let result = api.register(&mut context);
         assert!(result.is_ok());
     }

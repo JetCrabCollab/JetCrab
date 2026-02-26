@@ -1,4 +1,4 @@
-use boa_engine::Context;
+use chitin::boa_engine::Context;
 use std::collections::VecDeque;
 use std::sync::{Arc, Mutex};
 use tracing::info;
@@ -485,7 +485,7 @@ impl StreamAPI {
         globalThis.PassThrough = PassThrough;
         "#;
 
-        context.eval(boa_engine::Source::from_bytes(stream_code))?;
+        context.eval(chitin::boa_engine::Source::from_bytes(stream_code))?;
         info!("✅ Stream API registered successfully");
         Ok(())
     }

@@ -1,217 +1,88 @@
 //! # JetCrab Runtime Core
 //!
-//! The core runtime implementation using Boa as the JavaScript engine backend.
+//! The core runtime implementation using the WASM-based JetCrab Engine.
+//!
+pub mod engine;
 
-use boa_engine::JsValue;
-use std::path::{Path, PathBuf};
-use tokio::fs;
+pub use chitin::EngineConfig;
+pub use engine::JetCrabEngine;
+
+use std::path::Path;
 use tracing::{error, info};
 
-pub mod apis;
-pub mod async_runtime;
-pub mod engine;
-pub mod module_loader;
-pub mod repl;
-pub mod wasm_runtime;
-
-pub use apis::BuiltinAPIs;
-pub use async_runtime::AsyncRuntime;
-pub use engine::JetCrabEngine;
-pub use module_loader::ModuleLoader;
-pub use repl::Repl;
-pub use wasm_runtime::WasmRuntime;
-
-/// Main JetCrab Runtime
+/// JetCrab Runtime - High-level runtime environment
 pub struct JetCrabRuntime {
-    engine: JetCrabEngine,
-    module_loader: ModuleLoader,
-    wasm_runtime: Option<WasmRuntime>,
-    async_runtime: AsyncRuntime,
-    #[allow(dead_code)]
-    builtin_apis: BuiltinAPIs,
-    #[allow(dead_code)]
-    working_directory: PathBuf,
+    pub engine: JetCrabEngine,
+    // apis: BuiltinAPIs, // Disabled for WASM migration
 }
 
 impl JetCrabRuntime {
-    /// Create a new JetCrab Runtime instance
+    /// Create a new JetCrab Runtime
     pub fn new() -> Self {
-        let mut engine = JetCrabEngine::new();
-        let module_loader = ModuleLoader::new();
+        Self::with_config(EngineConfig::default())
+    }
 
-        let async_runtime = match AsyncRuntime::new() {
-            Ok(runtime) => {
-                info!("AsyncRuntime initialized successfully");
-                runtime
-            }
-            Err(e) => {
-                error!("Failed to initialize AsyncRuntime: {}", e);
-                panic!("Cannot continue without async runtime");
-            }
-        };
+    /// Create a new JetCrab Runtime with custom configuration
+    pub fn with_config(config: EngineConfig) -> Self {
+        let engine = JetCrabEngine::with_config(config);
+        // let apis = BuiltinAPIs::new(); // Disabled
 
-        info!("Initializing WasmRuntime...");
-        let wasm_runtime = match WasmRuntime::new(&mut engine) {
-            Ok(runtime) => {
-                info!("WasmRuntime initialized successfully");
-                Some(runtime)
-            }
-            Err(e) => {
-                error!("Failed to initialize WasmRuntime: {}", e);
-                None
-            }
-        };
-
-        let mut builtin_apis = BuiltinAPIs::new();
-        let working_directory = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
-
-        info!("Setting up built-in APIs...");
-        if let Err(e) = builtin_apis.setup(&mut engine) {
-            error!("Failed to setup built-in APIs: {}", e);
-        } else {
-            info!("Built-in APIs setup completed successfully");
-        }
-
-        Self {
+        let mut runtime = Self {
             engine,
-            module_loader,
-            wasm_runtime,
-            async_runtime,
-            builtin_apis,
-            working_directory,
+            // apis,
+        };
+
+        // Initialize engine (load WASM)
+        if let Err(e) = runtime.engine.init() {
+            error!("Failed to initialize engine: {}", e);
         }
+
+        // runtime.register_apis().unwrap(); // Disabled
+
+        runtime
     }
 
-    /// Run a JavaScript file or load a Rust module as WebAssembly
-    pub async fn run_file(
-        &mut self,
-        file: &Path,
-        args: &[String],
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        info!("Running file: {:?}", file);
+    /// Initialize and register built-in APIs
+    // fn register_apis(&mut self) -> Result<(), String> {
+    //     self.apis.register(&mut self.engine.get_context()) // get_context no longer exists
+    //         .map_err(|e| format!("Failed to register APIs: {:?}", e))
+    // }
 
-        if file.extension().map_or(false, |ext| ext == "rs") {
-            return self.load_rust_module_as_wasm(file).await;
-        }
-
-        let content = fs::read_to_string(file).await?;
-
-        let _ = self
-            .engine
-            .set_global("process", self.create_process_object(args));
-
-        let _result = self.engine.evaluate_to_string(&content)?;
-
-        info!("Execution completed successfully");
+    /// Run a JavaScript file
+    pub async fn run_file(&mut self, path: &Path, _args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
+        let source = tokio::fs::read_to_string(path).await?;
+        self.evaluate_code(&source).await?;
         Ok(())
     }
 
-    /// Load a Rust module as WebAssembly
-    async fn load_rust_module_as_wasm(
-        &mut self,
-        file: &Path,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        info!("Loading Rust module as WebAssembly: {:?}", file);
-
-        if let Some(ref mut wasm_runtime) = self.wasm_runtime {
-            info!("WasmRuntime is available, attempting to load module");
-            match wasm_runtime.load_rust_module(file).await {
-                Ok(_module) => {
-                    info!("Rust module loaded as WebAssembly successfully");
-                    Ok(())
+    /// Evaluate JavaScript code string
+    pub async fn evaluate_code(&mut self, source: &str) -> Result<(), Box<dyn std::error::Error>> {
+        match self.engine.evaluate(source).await {
+            Ok(result) => {
+                // If the result string is not empty and not "undefined", print it (REPL style)
+                // But for `evaluate_code`, maybe we just execute?
+                // The new evaluate returns String result.
+                if !result.is_empty() && result != "undefined" {
+                     println!("{}", result);
                 }
-                Err(e) => {
-                    error!("Failed to load Rust module as WebAssembly: {}", e);
-                    Err(e.into())
-                }
+                Ok(())
+            },
+            Err(e) => {
+                error!("Uncaught Exception: {}", e);
+                Err(e.into())
             }
-        } else {
-            error!("WebAssembly runtime not available - this should not happen");
-            Err("WebAssembly runtime not available".into())
         }
     }
 
-    /// Start interactive REPL
+    /// Start the interactive REPL
     pub async fn start_repl(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        info!("Starting REPL");
-
-        let mut repl = Repl::new(&mut self.engine);
-        repl.start().await?;
-
-        Ok(())
+        use crate::cli::commands::repl; // Use the repl command logic
+        repl::execute(self).await
     }
 
-    /// Evaluate JavaScript code directly
-    pub async fn evaluate_code(&mut self, code: &str) -> Result<(), Box<dyn std::error::Error>> {
-        info!("Evaluating code: {}", code);
-
-        let result = self.engine.evaluate(code)?;
-        println!("{:?}", result);
-
-        Ok(())
-    }
-
-    /// Run tests
-    pub async fn run_tests(
-        &mut self,
-        _pattern: Option<&str>,
-        _dir: &Path,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        println!("Test runner not implemented yet");
-        Ok(())
-    }
-
-    /// Format JavaScript code
-    pub async fn format_code(
-        &mut self,
-        _files: &[PathBuf],
-        _check: bool,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        println!("Formatter not implemented yet");
-        Ok(())
-    }
-
-    /// Lint JavaScript code
-    pub async fn lint_code(
-        &mut self,
-        _files: &[PathBuf],
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        println!("Linter not implemented yet");
-        Ok(())
-    }
-
-    /// Bundle JavaScript modules
-    pub async fn bundle_modules(
-        &mut self,
-        entry: &Path,
-        output: Option<&Path>,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        info!("Bundling modules from entry: {:?}", entry);
-
-        let bundled_code = self.module_loader.bundle(entry).await?;
-
-        let default_output = PathBuf::from("bundle.js");
-        let output_path = output.unwrap_or(&default_output);
-        fs::write(output_path, bundled_code).await?;
-
-        println!("Bundle created: {:?}", output_path);
-        Ok(())
-    }
-
-    /// Show version information
     pub fn show_version(&self) {
-        println!("JetCrab Runtime v0.4.0");
-        println!("Powered by Boa Engine");
-        println!("Built with Rust");
-    }
-
-    /// Get reference to the async runtime
-    pub fn get_async_runtime(&self) -> &AsyncRuntime {
-        &self.async_runtime
-    }
-
-    fn create_process_object(&self, _args: &[String]) -> JsValue {
-        JsValue::undefined()
+        println!("JetCrab Runtime v{}", env!("CARGO_PKG_VERSION"));
+        println!("Engine: Chitin (WASM/QuickJS Mode)");
     }
 }
 

@@ -3,7 +3,7 @@
 //! This module provides the registry system for managing JetCrab APIs.
 
 use crate::runtime::apis::plugin::{ApiMetrics, ApiPlugin, HealthStatus, ResourceUsage};
-use boa_engine::{Context, JsResult};
+use chitin::boa_engine::{Context, JsResult};
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, RwLock};
 use std::time::Instant;
@@ -76,7 +76,7 @@ impl ApiRegistry {
     /// Register a plugin in the JavaScript context
     pub fn register_in_context(&self, name: &str, context: &mut Context) -> JsResult<()> {
         let plugin = self.plugins.get(name).ok_or_else(|| {
-            boa_engine::JsNativeError::error().with_message(format!("Plugin not found: {}", name))
+            chitin::boa_engine::JsNativeError::error().with_message(format!("Plugin not found: {}", name))
         })?;
 
         let start_time = Instant::now();

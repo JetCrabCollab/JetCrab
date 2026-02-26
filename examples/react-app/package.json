@@ -23,11 +23,11 @@
   "main": "src/console-app.js",
   "name": "react-app-jetcrab",
   "scripts": {
-    "build": "claw build",
+    "build": "cpm build",
     "build:wasm": "wasm-pack build --target web --out-dir pkg",
-    "dev": "claw dev",
+    "dev": "cpm dev",
     "start": "jetcrab run src/console-app.js",
-    "test": "claw test"
+    "test": "cpm test"
   },
   "version": "0.4.0"
 }

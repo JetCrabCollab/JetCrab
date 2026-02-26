@@ -1,13 +1,11 @@
-# Multi-stage build for JetCrab
-FROM rust:1.75 as builder
+# Multi-stage build for JetCrab (build from workspace root: docker build -f JetCrab/Dockerfile .)
+FROM rust:1.82-bookworm as builder
 
 WORKDIR /app
 
-# Copy source code
 COPY . .
 
-# Build the application
-RUN cargo build --release
+RUN cargo build --release -p jetcrab
 
 # Runtime stage
 FROM debian:bookworm-slim
@@ -23,8 +21,7 @@ RUN useradd -r -s /bin/false jetcrab
 
 # Copy binaries from builder stage
 COPY --from=builder /app/target/release/jetcrab /usr/local/bin/jetcrab
-COPY --from=builder /app/target/release/claw /usr/local/bin/claw
-RUN chmod +x /usr/local/bin/jetcrab /usr/local/bin/claw
+RUN chmod +x /usr/local/bin/jetcrab
 
 # Switch to non-root user
 USER jetcrab

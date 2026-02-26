@@ -1,8 +1,8 @@
-# Claw Package Manager
+# CPM Package Manager
 
 ## Overview
 
-Claw is the official package manager for JetCrab, providing unified dependency management for both JavaScript and Rust packages through WebAssembly integration. It serves as the package manager for JetCrab, similar to how npm serves Node.js.
+CPM is the official package manager for JetCrab, providing unified dependency management for both JavaScript and Rust packages through WebAssembly integration. It serves as the package manager for JetCrab, similar to how npm serves Node.js.
 
 ## Features
 
@@ -15,13 +15,13 @@ Claw is the official package manager for JetCrab, providing unified dependency m
 
 ## Installation
 
-Claw is included with JetCrab installation. If you have JetCrab installed, Claw is available as a separate binary:
+CPM is included with JetCrab installation. If you have JetCrab installed, CPM is available as a separate binary:
 
 ```bash
-# Verify Claw installation
-claw --version
+# Verify CPM installation
+cpm --version
 
-# Expected output: Claw v0.4.0
+# Expected output: CPM v0.4.0
 ```
 
 ## Quick Start
@@ -29,11 +29,11 @@ claw --version
 ### Initialize a New Project
 ```bash
 # Create a new project
-claw init my-project
+cpm init my-project
 cd my-project
 
 # This creates:
-# - claw.json (package configuration)
+# - package.json (package configuration)
 # - src/ directory
 # - Basic project structure
 ```
@@ -41,22 +41,22 @@ cd my-project
 ### Install Packages
 ```bash
 # Install JavaScript packages
-claw install react lodash
+cpm install react lodash
 
 # Install Rust crates
-claw install serde tokio
+cpm install serde tokio
 
 # Install both types
-claw install react serde
+cpm install react serde
 ```
 
 ### Run Development Server
 ```bash
 # Start development server with hot reload
-claw dev
+cpm dev
 
 # With file watching
-claw dev --watch
+cpm dev --watch
 ```
 
 ## Commands Reference
@@ -64,28 +64,28 @@ claw dev --watch
 ### Package Management
 | Command | Description | Example |
 |---------|-------------|---------|
-| `claw install [packages...]` | Install packages from registries | `claw install react lodash` |
-| `claw build` | Build the project | `claw build` |
+| `cpm install [packages...]` | Install packages from registries | `cpm install react lodash` |
+| `cpm build` | Build the project | `cpm build` |
 
 ### Project Management
 | Command | Description | Example |
 |---------|-------------|---------|
-| `claw init [name]` | Initialize a new project | `claw init my-app` |
-| `claw build` | Build the project | `claw build` |
-| `claw run [script]` | Run a project script | `claw run start` |
-| `claw test` | Run project tests | `claw test` |
+| `cpm init [name]` | Initialize a new project | `cpm init my-app` |
+| `cpm build` | Build the project | `cpm build` |
+| `cpm run [script]` | Run a project script | `cpm run start` |
+| `cpm test` | Run project tests | `cpm test` |
 
 ### Development Tools
 | Command | Description | Example |
 |---------|-------------|---------|
-| `claw dev` | Start development server | `claw dev` |
-| `claw lint` | Run code linting | `claw lint --fix` |
-| `claw format` | Format code | `claw format` |
-| `claw bundle` | Create production bundle | `claw bundle` |
+| `cpm dev` | Start development server | `cpm dev` |
+| `cpm lint` | Run code linting | `cpm lint --fix` |
+| `cpm format` | Format code | `cpm format` |
+| `cpm bundle` | Create production bundle | `cpm bundle` |
 
 ## Configuration
 
-### Package Configuration (claw.json)
+### Package Configuration (package.json)
 ```json
 {
   "name": "my-project",
@@ -95,7 +95,7 @@ claw dev --watch
   "scripts": {
     "start": "jetcrab run src/index.js",
     "test": "jetcrab run tests/",
-    "build": "claw bundle"
+    "build": "cpm bundle"
   },
   "dependencies": {
     "react": "^18.0.0",
@@ -128,7 +128,7 @@ claw dev --watch
 ### Package Resolution Flow
 ```mermaid
 graph TD
-    A[claw install package] --> B{Check Registry}
+    A[cpm install package] --> B{Check Registry}
     B -->|JavaScript| C[NPM Registry]
     B -->|Rust| D[Cargo Registry]
     B -->|Local| E[Local Registry]
@@ -142,7 +142,7 @@ graph TD
     H --> K[Link Local Package]
     
     J --> L[Generate JS Bindings]
-    I --> M[Update claw.json]
+    I --> M[Update package.json]
     L --> M
     K --> M
 ```
@@ -184,7 +184,7 @@ Packages that combine JavaScript and Rust:
 # Registry management not yet implemented
 
 # Install from custom registry
-claw install @my-registry/package
+cpm install @my-registry/package
 ```
 
 ### Workspace Support
@@ -202,29 +202,29 @@ claw install @my-registry/package
 ### 1. Project Setup
 ```bash
 # Initialize project
-claw init my-project
+cpm init my-project
 cd my-project
 
 # Install dependencies
-claw install react serde
+cpm install react serde
 ```
 
 ### 2. Development
 ```bash
 # Start development server
-claw dev
+cpm dev
 
 # In another terminal, run tests
-claw test
+cpm test
 
 # Lint code
-claw lint
+cpm lint
 ```
 
 ### 3. Building
 ```bash
 # Create production bundle
-claw bundle
+cpm bundle
 
 # Build optimized version
 cargo build --release
@@ -265,8 +265,8 @@ cargo build --release
 #### Package Installation Fails
 ```bash
 # Clear cache and retry
-claw cache clear
-claw install [package]
+cpm cache clear
+cpm install [package]
 ```
 
 #### WebAssembly Compilation Errors
@@ -290,10 +290,10 @@ cargo install wasm-pack --force
 ### Debug Mode
 ```bash
 # Enable verbose logging
-claw --verbose install [package]
+cpm --verbose install [package]
 
 # Debug specific command
-RUST_LOG=debug claw install react
+RUST_LOG=debug cpm install react
 ```
 
 ## Best Practices
@@ -306,7 +306,7 @@ my-project/
 │   └── lib.rs           # Rust library (optional)
 ├── tests/
 │   └── test.js          # Test files
-├── claw.json            # Package configuration
+├── package.json            # Package configuration
 └── README.md            # Project documentation
 ```
 
@@ -326,7 +326,7 @@ my-project/
 
 ### Runtime Integration
 ```javascript
-// Claw automatically configures JetCrab runtime
+// CPM automatically configures JetCrab runtime
 // No additional setup required
 
 // JavaScript code can import packages
@@ -339,11 +339,11 @@ console.log(add(2, 3));
 
 ### Development Integration
 ```bash
-# Claw validates JetCrab installation
-claw install react  # Automatically checks JetCrab
+# CPM validates JetCrab installation
+cpm install react  # Automatically checks JetCrab
 
 # Skip validation if needed
-claw --skip-jetcrab-check install react
+cpm --skip-jetcrab-check install react
 ```
 
 ## Examples
@@ -351,27 +351,27 @@ claw --skip-jetcrab-check install react
 ### Basic JavaScript Project
 ```bash
 # Initialize project
-claw init js-project
+cpm init js-project
 cd js-project
 
 # Install dependencies
-claw install lodash axios
+cpm install lodash axios
 
 # Create main file
 echo "import _ from 'lodash'; console.log(_.chunk([1,2,3,4], 2));" > src/index.js
 
 # Run project
-claw run start
+cpm run start
 ```
 
 ### Hybrid JavaScript + Rust Project
 ```bash
 # Initialize project
-claw init hybrid-project
+cpm init hybrid-project
 cd hybrid-project
 
 # Install both JS and Rust dependencies
-claw install react serde
+cpm install react serde
 
 # Create Rust library
 echo 'use serde::{Serialize, Deserialize}; #[derive(Serialize, Deserialize)] pub struct User { pub name: String, pub age: u32 }' > src/lib.rs
@@ -380,7 +380,7 @@ echo 'use serde::{Serialize, Deserialize}; #[derive(Serialize, Deserialize)] pub
 echo "import { User } from './pkg/hybrid_project.js'; const user = new User('Alice', 30); console.log(user);" > src/index.js
 
 # Run project
-claw run start
+cpm run start
 ```
 
 ## Resources
@@ -393,4 +393,4 @@ claw run start
 
 ---
 
-**Claw v0.4.0** - Modern Package Manager for JetCrab
+**CPM v0.4.0** - Modern Package Manager for JetCrab

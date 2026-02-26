@@ -5,9 +5,9 @@
   "main": "index.js",
   "scripts": {
     "start": "jetcrab run index.js",
-    "dev": "claw dev",
-    "test": "claw test",
-    "build": "claw build"
+    "dev": "cpm dev",
+    "test": "cpm test",
+    "build": "cpm build"
   },
   "keywords": [
     "jetcrab",

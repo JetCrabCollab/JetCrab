@@ -290,7 +290,7 @@ wasm-opt = ["-Os", "--enable-mutable-globals"]
                 engine
                     .add_function(&name_clone.clone(), move |_args, _context| {
                         warn!("WASM function call not fully implemented: {}", name_clone);
-                        Ok(boa_engine::JsValue::from(42)) // Placeholder return
+                        Ok(chitin::boa_engine::JsValue::from(42)) // Placeholder return
                     })
                     .map_err(|e| anyhow::anyhow!("Failed to add function: {}", e))?;
             }

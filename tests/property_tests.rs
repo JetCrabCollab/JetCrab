@@ -7,18 +7,17 @@ use jetcrab::easter_egg::should_trigger_easter_egg_for_command;
 use jetcrab::runtime::JetCrabEngine;
 
 /// Test that arithmetic operations are commutative
-#[test]
-fn test_arithmetic_commutativity() {
+#[tokio::test]
+async fn test_arithmetic_commutativity() {
     let mut engine = JetCrabEngine::new();
 
-    // Test addition commutativity: a + b = b + a
     for a in -100..=100 {
         for b in -100..=100 {
             let code1 = format!("{} + {}", a, b);
             let code2 = format!("{} + {}", b, a);
 
-            let result1 = engine.evaluate(&code1);
-            let result2 = engine.evaluate(&code2);
+            let result1 = engine.evaluate(&code1).await;
+            let result2 = engine.evaluate(&code2).await;
 
             assert!(result1.is_ok());
             assert!(result2.is_ok());
@@ -28,8 +27,8 @@ fn test_arithmetic_commutativity() {
 }
 
 /// Test that string concatenation is associative
-#[test]
-fn test_string_concatenation_associativity() {
+#[tokio::test]
+async fn test_string_concatenation_associativity() {
     let mut engine = JetCrabEngine::new();
 
     let test_strings = vec![
@@ -48,15 +47,14 @@ fn test_string_concatenation_associativity() {
                 let code2 = format!("('{}' + '{}') + '{}'", a, b, c);
                 let code3 = format!("'{}' + ('{}' + '{}')", a, b, c);
 
-                let result1 = engine.evaluate(&code1);
-                let result2 = engine.evaluate(&code2);
-                let result3 = engine.evaluate(&code3);
+                let result1 = engine.evaluate(&code1).await;
+                let result2 = engine.evaluate(&code2).await;
+                let result3 = engine.evaluate(&code3).await;
 
                 assert!(result1.is_ok());
                 assert!(result2.is_ok());
                 assert!(result3.is_ok());
 
-                // All should produce the same result
                 let val1 = result1.unwrap();
                 let val2 = result2.unwrap();
                 let val3 = result3.unwrap();
@@ -68,8 +66,8 @@ fn test_string_concatenation_associativity() {
 }
 
 /// Test that variable assignment is idempotent
-#[test]
-fn test_variable_assignment_idempotency() {
+#[tokio::test]
+async fn test_variable_assignment_idempotency() {
     let mut engine = JetCrabEngine::new();
 
     let test_values = vec![
@@ -86,11 +84,10 @@ fn test_variable_assignment_idempotency() {
 
     for value in test_values {
         let code = format!("let x = {}; let y = x; x = y; x", value);
-        let result = engine.evaluate(&code);
+        let result = engine.evaluate(&code).await;
 
         assert!(result.is_ok());
-        // The final value should be the same as the original
-        let original_result = engine.evaluate(value);
+        let original_result = engine.evaluate(value).await;
         assert!(original_result.is_ok());
         let final_value = result.unwrap();
         let original_value = original_result.unwrap();
@@ -99,11 +96,10 @@ fn test_variable_assignment_idempotency() {
 }
 
 /// Test that function definitions are consistent
-#[test]
-fn test_function_definition_consistency() {
+#[tokio::test]
+async fn test_function_definition_consistency() {
     let mut engine = JetCrabEngine::new();
 
-    // Test that a function always returns the same result for the same input
     let code = r#"
         function identity(x) { return x; }
         function test() {
@@ -116,11 +112,11 @@ fn test_function_definition_consistency() {
         test()
     "#;
 
-    let result = engine.evaluate(code);
+    let result = engine.evaluate(code).await;
     assert!(result.is_ok());
-    // Should return true (all results are 42)
     let result_value = result.unwrap();
-    assert!(!result_value.is_undefined() && !result_value.is_null());
+    assert_ne!(result_value, "undefined");
+    assert_ne!(result_value, "null");
 }
 
 /// Test easter egg trigger consistency
@@ -142,22 +138,20 @@ fn test_easter_egg_trigger_consistency() {
 }
 
 /// Test that object property access is consistent
-#[test]
-fn test_object_property_consistency() {
+#[tokio::test]
+async fn test_object_property_consistency() {
     let mut engine = JetCrabEngine::new();
 
     let code = r#"
         let obj = { a: 1, b: 2, c: 3 };
         let results = [];
         
-        // Access properties multiple times
         for (let i = 0; i < 5; i++) {
             results.push(obj.a);
             results.push(obj.b);
             results.push(obj.c);
         }
         
-        // All accesses should return the same values
         results.every((val, idx) => {
             if (idx % 3 === 0) return val === 1;
             if (idx % 3 === 1) return val === 2;
@@ -165,51 +159,50 @@ fn test_object_property_consistency() {
         })
     "#;
 
-    let result = engine.evaluate(code);
+    let result = engine.evaluate(code).await;
     assert!(result.is_ok());
     let result_value = result.unwrap();
-    assert!(!result_value.is_undefined() && !result_value.is_null());
+    assert_ne!(result_value, "undefined");
+    assert_ne!(result_value, "null");
 }
 
 /// Test that array operations maintain consistency
-#[test]
-fn test_array_operation_consistency() {
+#[tokio::test]
+async fn test_array_operation_consistency() {
     let mut engine = JetCrabEngine::new();
 
     let code = r#"
         let arr = [1, 2, 3, 4, 5];
         let originalLength = arr.length;
         
-        // Push and pop should maintain length consistency
         arr.push(6);
         let afterPush = arr.length;
         arr.pop();
         let afterPop = arr.length;
         
-        // Length should be consistent
         afterPush === originalLength + 1 && afterPop === originalLength
     "#;
 
-    let result = engine.evaluate(code);
+    let result = engine.evaluate(code).await;
     assert!(result.is_ok());
     let result_value = result.unwrap();
-    assert!(!result_value.is_undefined() && !result_value.is_null());
+    assert_ne!(result_value, "undefined");
+    assert_ne!(result_value, "null");
 }
 
 /// Test that mathematical operations follow expected properties
-#[test]
-fn test_mathematical_properties() {
+#[tokio::test]
+async fn test_mathematical_properties() {
     let mut engine = JetCrabEngine::new();
 
-    // Test distributive property: a * (b + c) = a * b + a * c
     for a in 1..=10 {
         for b in 1..=10 {
             for c in 1..=10 {
                 let code1 = format!("{} * ({} + {})", a, b, c);
                 let code2 = format!("{} * {} + {} * {}", a, b, a, c);
 
-                let result1 = engine.evaluate(&code1);
-                let result2 = engine.evaluate(&code2);
+                let result1 = engine.evaluate(&code1).await;
+                let result2 = engine.evaluate(&code2).await;
 
                 assert!(result1.is_ok());
                 assert!(result2.is_ok());
@@ -220,8 +213,8 @@ fn test_mathematical_properties() {
 }
 
 /// Test that boolean operations follow logical properties
-#[test]
-fn test_boolean_logic_properties() {
+#[tokio::test]
+async fn test_boolean_logic_properties() {
     let mut engine = JetCrabEngine::new();
 
     let boolean_combinations = vec![
@@ -232,12 +225,11 @@ fn test_boolean_logic_properties() {
     ];
 
     for (a, b) in boolean_combinations {
-        // Test De Morgan's laws: !(a && b) = !a || !b
         let code1 = format!("!({} && {})", a, b);
         let code2 = format!("!{} || !{}", a, b);
 
-        let result1 = engine.evaluate(&code1);
-        let result2 = engine.evaluate(&code2);
+        let result1 = engine.evaluate(&code1).await;
+        let result2 = engine.evaluate(&code2).await;
 
         assert!(result1.is_ok());
         assert!(result2.is_ok());
@@ -246,8 +238,8 @@ fn test_boolean_logic_properties() {
 }
 
 /// Test that type coercion is consistent
-#[test]
-fn test_type_coercion_consistency() {
+#[tokio::test]
+async fn test_type_coercion_consistency() {
     let mut engine = JetCrabEngine::new();
 
     let test_cases = vec![
@@ -257,21 +249,20 @@ fn test_type_coercion_consistency() {
         ("false", "false"),
     ];
 
-    for (input, expected) in test_cases {
-        // Test that String() conversion is consistent
+    for (input, _expected) in test_cases {
         let code = format!("String({})", input);
-        let result = engine.evaluate(&code);
+        let result = engine.evaluate(&code).await;
 
         assert!(result.is_ok());
-        // The result should be a string representation
         let result_value = result.unwrap();
-        assert!(!result_value.is_undefined() && !result_value.is_null());
+        assert_ne!(result_value, "undefined");
+        assert_ne!(result_value, "null");
     }
 }
 
 /// Test that error handling is consistent
-#[test]
-fn test_error_handling_consistency() {
+#[tokio::test]
+async fn test_error_handling_consistency() {
     let mut engine = JetCrabEngine::new();
 
     let error_cases = vec![
@@ -282,41 +273,36 @@ fn test_error_handling_consistency() {
     ];
 
     for error_case in error_cases {
-        let result = engine.evaluate(error_case);
-        // All error cases should result in an error
+        let result = engine.evaluate(error_case).await;
         assert!(result.is_err());
     }
 }
 
 /// Test that the engine state is isolated between evaluations
-#[test]
-fn test_engine_state_isolation() {
+#[tokio::test]
+async fn test_engine_state_isolation() {
     let mut engine = JetCrabEngine::new();
 
-    // Set a variable in first evaluation
-    let result1 = engine.evaluate("let x = 42; x");
+    let result1 = engine.evaluate("let x = 42; x").await;
     assert!(result1.is_ok());
 
-    // Try to access the same variable in a new engine instance
     let mut engine2 = JetCrabEngine::new();
-    let result2 = engine2.evaluate("x");
+    let result2 = engine2.evaluate("x").await;
 
-    // Should fail because x is not defined in the new engine
     assert!(result2.is_err());
 }
 
 /// Test that global variables persist within the same engine
-#[test]
-fn test_global_variable_persistence() {
+#[tokio::test]
+async fn test_global_variable_persistence() {
     let mut engine = JetCrabEngine::new();
 
-    // Set a global variable
-    let result1 = engine.evaluate("globalThis.testVar = 42");
+    let result1 = engine.evaluate("globalThis.testVar = 42").await;
     assert!(result1.is_ok());
 
-    // Access it in a subsequent evaluation
-    let result2 = engine.evaluate("globalThis.testVar");
+    let result2 = engine.evaluate("globalThis.testVar").await;
     assert!(result2.is_ok());
     let result_value = result2.unwrap();
-    assert!(!result_value.is_undefined() && !result_value.is_null());
+    assert_ne!(result_value, "undefined");
+    assert_ne!(result_value, "null");
 }
